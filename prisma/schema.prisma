@@ -1,0 +1,326 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model apiKey {
+  id                    String            @id @default(cuid())
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  apiKey                String            @unique
+  status                APIKeyStatus
+  permission            Permission
+  usageLimited          Boolean           @default(false)
+  remainingUsageCredits UsageAmount[]
+  PurchaseRequest       PurchaseRequest[]
+
+  @@index([apiKey])
+}
+
+model UsageAmount {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  amount    BigInt
+  unit      String
+  apiKey    apiKey?  @relation(fields: [apiKeyId], references: [id])
+  apiKeyId  String?
+}
+
+enum APIKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum Permission {
+  READ
+  READ_PAY
+  ADMIN
+}
+
+model SellingWallet {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  walletVkey     String
+  walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
+  walletSecretId String
+
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String         @unique
+
+  note String?
+}
+
+model PurchasingWallet {
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  walletVkey     String
+  walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
+  walletSecretId String
+
+  networkHandler   NetworkHandler    @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String
+  note             String?
+  PurchaseRequest  PurchaseRequest[]
+
+  @@unique([networkHandlerId, walletVkey])
+}
+
+model WalletSecret {
+  id               String             @id @default(cuid())
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  secret           String             @unique //encrypted 
+  SellerWallet     SellingWallet[]
+  PurchasingWallet PurchasingWallet[]
+}
+
+model BuyerWallet {
+  id               String         @id @default(cuid())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  walletVkey       String
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String
+
+  note           String?
+  PaymentRequest PaymentRequest[]
+
+  @@unique([networkHandlerId, walletVkey])
+}
+
+model SellerWallet {
+  id               String         @id @default(cuid())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  walletVkey       String
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String
+
+  note            String?
+  PurchaseRequest PurchaseRequest[]
+
+  @@unique([networkHandlerId, walletVkey])
+}
+
+model CollectionWallet {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  walletAddress String
+
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String         @unique
+  note             String?
+
+  @@unique([networkHandlerId, walletAddress])
+}
+
+model PaymentRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lastCheckedAt DateTime?
+  checkedBy     NetworkHandler @relation("PaymentRequestHandler", fields: [checkedById], references: [id])
+  checkedById   String
+
+  buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id])
+  buyerWalletId String?
+
+  amounts         RequestAmount[]
+  status          PaymentRequestStatus
+  identifier      String
+  resultHash      String?
+  unlockTime      BigInt
+  refundTime      BigInt
+  utxo            String?
+  txHash          String?
+  potentialTxHash String?
+
+  errorRetries              Int?
+  errorType                 PaymentRequestErrorType?
+  errorNote                 String?
+  errorRequiresManualReview Boolean?
+
+  @@unique([checkedById, identifier])
+  @@unique([checkedById, txHash])
+}
+
+model PurchaseRequest {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lastCheckedAt    DateTime?
+  networkHandler   NetworkHandler @relation("PurchaseRequestNetworkHandler", fields: [networkHandlerId], references: [id])
+  networkHandlerId String
+
+  sellerWallet       SellerWallet      @relation(fields: [sellerWalletId], references: [id])
+  sellerWalletId     String
+  purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id])
+  purchasingWalletId String?
+
+  amounts         RequestAmount[]
+  status          PurchasingRequestStatus
+  identifier      String
+  resultHash      String?
+  unlockTime      BigInt
+  refundTime      BigInt
+  utxo            String?
+  txHash          String?
+  potentialTxHash String?
+
+  errorRetries              Int?
+  errorType                 PurchaseRequestErrorType?
+  errorNote                 String?
+  errorRequiresManualReview Boolean?
+
+  triggeredBy   apiKey @relation(fields: [triggeredById], references: [id])
+  triggeredById String
+
+  @@unique([networkHandlerId, identifier, sellerWalletId])
+  @@unique([networkHandlerId, txHash])
+}
+
+model RequestAmount {
+  id                String           @id @default(cuid())
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  amount            BigInt
+  unit              String
+  PaymentRequest    PaymentRequest?  @relation(fields: [paymentRequestId], references: [id])
+  paymentRequestId  String?
+  PurchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id])
+  purchaseRequestId String?
+}
+
+//TODO maybe add a rating system via payment amounts (success and failure)
+enum PaymentRequestErrorType {
+  NETWORK_ERROR
+  UNKNOWN
+}
+
+//TODO maybe add a rating system via payment amounts (success and failure)
+enum PurchaseRequestErrorType {
+  NETWORK_ERROR
+  INSUFFICIENT_FUNDS
+  UNKNOWN
+}
+
+enum PaymentType {
+  WEB3_CARDANO_V1
+}
+
+enum PaymentRequestStatus {
+  PaymentRequested
+
+  PaymentConfirmed
+  PaymentInvalid
+
+  ResultGenerated
+
+  WithdrawInitiated
+  WithdrawConfirmed
+
+  RefundRequested
+
+  Refunded
+
+  RefundRequestCanceled
+
+  RefundDeniedInitiated
+  RefundDeniedConfirmed
+
+  FeesWithdrawn
+
+  DisputedWithdrawn
+
+  Error
+}
+
+enum PurchasingRequestStatus {
+  PurchaseRequested
+
+  PurchaseInitiated
+  PurchaseConfirmed
+
+  Withdrawn
+
+  RefundRequestInitiated
+  RefundRequestConfirmed
+
+  RefundInitiated
+  RefundConfirmed
+
+  RefundRequestCanceledInitiated
+  RefundRequestCanceledConfirmed
+
+  RefundDenied
+
+  FeesWithdrawn
+
+  DisputedWithdrawn
+
+  Error
+}
+
+model NetworkHandler {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  network            Network
+  lastCheckedAt      DateTime?
+  page               Int               @default(1)
+  blockfrostApiKey   String
+  latestIdentifier   String?
+  addressToCheck     String
+  scriptJSON         String
+  registryJSON       String
+  registryIdentifier String
+  AdminWallets       AdminWallet[]
+  CollectionWallet   CollectionWallet?
+
+  PurchasingWallets PurchasingWallet[]
+  paymentType       PaymentType
+
+  isSyncing Boolean @default(false)
+
+  PaymentRequests  PaymentRequest[]  @relation("PaymentRequestHandler")
+  PurchaseRequests PurchaseRequest[] @relation("PurchaseRequestNetworkHandler")
+
+  BuyerWallets  BuyerWallet[]
+  SellerWallets SellerWallet[]
+  SellingWallet SellingWallet?
+
+  @@unique([network, addressToCheck])
+}
+
+model AdminWallet {
+  id               String         @id @default(cuid())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  walletAddress    String
+  NetworkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandlerId String
+  order            Int
+}
+
+enum Network {
+  PREVIEW
+  PREPROD
+  MAINNET
+}

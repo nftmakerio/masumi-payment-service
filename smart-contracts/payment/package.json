@@ -1,0 +1,20 @@
+{
+  "name": "permission-based-wallet",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "mint": "node mint-example.mjs",
+    "generate-wallet": "node generate-wallet.mjs",
+    "defrag": "node cleanup-utxo.mjs"
+  },
+  "dependencies": {
+    "@emurgo/cardano-serialization-lib-nodejs": "^13.2.0",
+    "@meshsdk/core": "^1.7.19",
+    "cbor": "^9.0.2",
+    "dotenv": "^16.4.5",
+    "ethereum-cryptography": "^3.0.0",
+    "lucid-cardano": "^0.10.10"
+  }
+}

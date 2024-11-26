@@ -1,0 +1,98 @@
+name: Test-runner
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Run Jest
+        run: npm run test
+
+      - name: Run Build
+        run: npm run build
+
+  lint:
+    name: Auto-Fix Lint Issues, Push to PR and Comment
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      # Step 2: Set up Node.js environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 3: Install dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # Step 4: Run Linter
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Run Format
+        run: npm run format
+
+      # Step 4: Run ESLint with Auto-Fix
+      - name: Run ESLint with Auto-Fix
+        id: lint_fix
+        run: |
+          npm run lint
+
+      # Step 5: Commit and Push Fixes (if any)
+      - name: Commit and Push Fixes
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "No changes to push.";
+          else
+            git commit -m "chore: auto-fix lint issues"
+            git push origin ${{ github.head_ref }}
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run ESLint remaining issues
+        id: lint_fix_remaining
+        run: |
+          npx eslint --fix --config eslint.config.mjs --format=stylish > lint-results.txt || true
+
+      - name: Check Lint Results File
+        run: |
+          if [ ! -s lint-results.txt ]; then echo "No lint issues found." > lint-results.txt; fi
+
+      - name: Comment Remaining Lint Issues
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: Linter Report
+          path: lint-results.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
