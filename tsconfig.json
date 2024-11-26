@@ -14,11 +14,7 @@
     "strict": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/index": ["src/index"],
-      "@/routes/*": ["src/routes/*"],
-      "@/services/*": ["src/services/*"],
-      "@/utils/*": ["src/utils/*"],
-      "@/repositories/*": ["src/repositories/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*.ts"],
