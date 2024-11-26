@@ -23,9 +23,7 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma ./prisma
-#temporary fix for tsx
-COPY --from=builder /usr/src/app/tsconfig.json .
-COPY --from=builder /usr/src/app/src ./src
+
 #optional copy env file
 COPY .env .env
 

@@ -1,4 +1,3 @@
-import 'module-alias/register'
 import "dotenv/config";
 import { CONFIG } from "@/utils/config/";
 import { logger } from "@/utils/logger/";
