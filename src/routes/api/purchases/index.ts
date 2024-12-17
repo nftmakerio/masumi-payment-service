@@ -15,6 +15,7 @@ export const queryPurchaseRequestSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
     sellingWalletVkey: z.string().max(250),
     paymentType: z.nativeEnum($Enums.PaymentType),
+    contractAddress: z.string().max(250),
 })
 
 export const queryPurchaseRequestSchemaOutput = z.object({
@@ -42,7 +43,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
     handler: async ({ input, logger }) => {
         logger.info("Querying registry", input.paymentTypes);
 
-        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } } })
+        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } } })
         if (networkHandler == null) {
             throw createHttpError(404, "Network handler not found")
         }
@@ -70,7 +71,7 @@ export const createPurchaseInitSchemaInput = z.object({
     identifier: z.string().max(250),
     network: z.nativeEnum($Enums.Network),
     sellerVkey: z.string().max(250),
-    address: z.string().max(250),
+    contractAddress: z.string().max(250),
     amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7),
     paymentType: z.nativeEnum($Enums.PaymentType),
     unlockTime: ez.dateIn(),
@@ -88,9 +89,9 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
     method: "post",
     input: createPurchaseInitSchemaInput,
     output: createPurchaseInitSchemaOutput,
-    handler: async ({ input, logger }) => {
+    handler: async ({ input, options, logger }) => {
         logger.info("Creating purchase", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } } })
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } } })
         if (networkCheckSupported == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
@@ -99,7 +100,7 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
             throw createHttpError(404, "No valid purchasing wallets found")
         }
 
-        const initial = await tokenCreditService.handlePurchaseCreditInit(input.apiKey, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.sellerVkey, input.unlockTime, input.refundTime);
+        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.unlockTime, input.refundTime);
         return initial
     },
 });
@@ -148,7 +149,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
             },
         });
 
-        const address = wallet.getUsedAddresses()[0];
+        const address = (await wallet.getUsedAddresses())[0];
 
         const blueprint = JSON.parse(networkCheckSupported.scriptJSON);
 

@@ -13,7 +13,6 @@ import {
 import fs from 'node:fs';
 import 'dotenv/config';
 
-import { Data } from 'lucid-cardano';
 console.log('Requesting refund example');
 const network = 'preprod';
 const blockchainProvider = new KoiosProvider(network);
@@ -28,7 +27,7 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
@@ -61,7 +60,7 @@ async function fetchUtxo(txHash) {
   });
 }
 const utxo = await fetchUtxo(
-  '8e7133eb97f65ad90eadb00ba13241d05ddaa7c6b098a65e314b19aafbe3d315',
+  'c99851e2c0cb728f334c3645678ac84ace56fc47218262dda07b52aacc6266a7',
 );
 
 if (!utxo) {
@@ -70,11 +69,12 @@ if (!utxo) {
 
 // Decode the CBOR-encoded datum
 
-const buyer = wallet.getUsedAddresses()[0];
+const buyer = (await wallet.getUsedAddresses())[0];
 const buyerVerificationKeyHash = resolvePaymentKeyHash(buyer);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
 const sellerVerificationKeyHash = resolvePaymentKeyHash(sellerAddress);
+
 /*
 buyer: VerificationKeyHash,
   seller: VerificationKeyHash,
@@ -149,7 +149,6 @@ const unsignedTx = new Transaction({
     value: utxo,
     script: script,
     redeemer: redeemer,
-    //datum: datum,
   })
   .sendValue(
     { address: resolvePlutusScriptAddress(script, 0), datum: datum },
@@ -157,6 +156,8 @@ const unsignedTx = new Transaction({
   )
   .setChangeAddress(address)
   .setRequiredSigners([address]);
+
+unsignedTx.setNetwork(network);
 
 unsignedTx.txBuilder.invalidBefore(invalidBefore);
 unsignedTx.txBuilder.invalidHereafter(invalidHereafter);

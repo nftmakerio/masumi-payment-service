@@ -71,7 +71,7 @@ export async function collectOutstandingPaymentsV1() {
                         },
                     });
 
-                    const address = wallet.getUsedAddresses()[0];
+                    const address = (await wallet.getUsedAddresses())[0];
                     console.log(address);
 
 

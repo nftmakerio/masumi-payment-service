@@ -24,7 +24,7 @@ const address = wallet.getUsedAddresses()[0];
 
 const tx = new Transaction({ initiator: wallet });
 tx.sendLovelace(address, '120000000');
-tx.setRequiredSigners([address]).setChangeAddress(address);
+tx.setRequiredSigners([address]).setChangeAddress(address).setNetwork(network);
 
 const unsignedTx = await tx.build();
 const signedTx = await wallet.signTx(unsignedTx, true);

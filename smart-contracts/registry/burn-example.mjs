@@ -72,7 +72,7 @@ tx.burnAsset;
 //used to defrag for further transactions
 tx.sendLovelace(address, '120000000');
 //sign the transaction with our address
-tx.setRequiredSigners([address]).setChangeAddress(address);
+tx.setRequiredSigners([address]).setChangeAddress(address).setNetwork(network);
 //build the transaction
 const unsignedTx = await tx.build();
 const signedTx = await wallet.signTx(unsignedTx, true);

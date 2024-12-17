@@ -2,7 +2,7 @@ import { prisma } from '@/utils/db';
 import { InsufficientFundsError } from '@/utils/errors/insufficient-funds-error';
 import { $Enums } from '@prisma/client';
 
-async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit: string }[], network: $Enums.Network, identifier: string, paymentType: $Enums.PaymentType, sellerVkey: string, refundTime: Date, unlockTime: Date) {
+async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit: string }[], network: $Enums.Network, identifier: string, paymentType: $Enums.PaymentType, contractAddress: string, sellerVkey: string, refundTime: Date, unlockTime: Date) {
     return await prisma.$transaction(async (transaction) => {
         const result = await transaction.apiKey.findUnique({ where: { id: id }, include: { remainingUsageCredits: true } })
         if (!result) {
@@ -58,7 +58,7 @@ async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit
             })
         }
 
-        const networkHandler = await transaction.networkHandler.findUnique({ where: { network_addressToCheck: { network: network, addressToCheck: sellerVkey } } })
+        const networkHandler = await transaction.networkHandler.findUnique({ where: { network_addressToCheck: { network: network, addressToCheck: contractAddress } } })
         if (!networkHandler) {
             throw Error("Invalid networkHandler: " + networkHandler)
         }
@@ -72,7 +72,7 @@ async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit
                         unit: unit
                     }))
                 },
-                networkHandler: { connect: { id: networkHandler!.id } },
+                networkHandler: { connect: { id: networkHandler.id } },
                 sellerWallet: {
                     connectOrCreate: {
                         where: { networkHandlerId_walletVkey: { networkHandlerId: networkHandler.id, walletVkey: sellerVkey } },
@@ -80,14 +80,14 @@ async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit
                     }
                 },
                 identifier: identifier,
-                status: $Enums.PurchasingRequestStatus.PurchaseInitiated,
+                status: $Enums.PurchasingRequestStatus.PurchaseRequested,
                 refundTime: refundTime.getTime(),
                 unlockTime: unlockTime.getTime()
             },
         })
 
         return purchaseRequest
-    }, { isolationLevel: "ReadCommitted" });
+    }, { isolationLevel: "ReadCommitted", maxWait: 15000, timeout: 15000 });
 
 }
 

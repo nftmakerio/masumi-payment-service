@@ -28,7 +28,7 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
@@ -161,6 +161,7 @@ const unsignedTx = new Transaction({ initiator: wallet })
 
 unsignedTx.txBuilder.invalidBefore(invalidBefore);
 unsignedTx.txBuilder.invalidHereafter(invalidHereafter);
+unsignedTx.setNetwork(network);
 const buildTransaction = await unsignedTx.build();
 const signedTx = await wallet.signTx(buildTransaction);
 

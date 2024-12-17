@@ -4,7 +4,7 @@ const { combine, timestamp, errors, json } = format;
 function buildProdLogger() {
     return createLogger({
         format: combine(timestamp(), errors({ stack: true }), json()),
-        defaultMeta: { service: "registry-service" },
+        defaultMeta: { service: "payment-service" },
         transports: [new transports.Console()],
     });
 }

@@ -1,13 +1,13 @@
-name = "schaier-io/permission-based-wallet"
+name = "nmkr/masumi-registry"
 version = "0.0.0"
-compiler = "v1.1.0"
+compiler = "v1.1.7"
 plutus = "v3"
 license = "Apache-2.0"
-description = "Aiken contracts for project 'schaier-io/permission-based-wallet'"
+description = "Aiken contracts for project 'nmkr/masumi-registry'"
 
 [repository]
-user = "schaier-io"
-project = "permission-based-wallet"
+user = "nmkr"
+project = "masumi-registry"
 platform = "github"
 
 [[dependencies]]
