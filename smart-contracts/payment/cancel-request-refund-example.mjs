@@ -27,7 +27,7 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
@@ -68,7 +68,7 @@ if (!utxo) {
   throw new Error('UTXO not found');
 }
 
-const buyer = wallet.getUsedAddresses()[0];
+const buyer = (await wallet.getUsedAddresses())[0];
 const buyerVerificationKeyHash = resolvePaymentKeyHash(buyer);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
@@ -157,6 +157,7 @@ const unsignedTx = new Transaction({ initiator: wallet })
 
 unsignedTx.txBuilder.invalidBefore(invalidBefore);
 unsignedTx.txBuilder.invalidHereafter(invalidHereafter);
+unsignedTx.setNetwork(network);
 const buildTransaction = await unsignedTx.build();
 const signedTx = await wallet.signTx(buildTransaction);
 

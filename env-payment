@@ -1,0 +1,31 @@
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+DATABASE_URL="postgresql://neondb_owner:Uvt5mlhpZ7rL@ep-jolly-feather-a20pty6y.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+PORT= "3001"
+ENCRYPTION_KEY="fksamcsacd12345678901234567890123456789012kdjsckdmsa"
+UPDATE_PAYMENT_REGISTRY_INTERVAL="*/2 * * * *" #cron expression for updating registry entries every 2 minutes
+BATCH_PAYMENT_INTERVAL="*/4 * * * *" #cron expression for batching requests every 4 minutes
+CHECK_TX_INTERVAL="*/3 * * * *" #cron expression for checking payment every 3 minutes
+CHECK_COLLECTION_INTERVAL="*/5 * * * *" #cron expression for checking collection every 5 minutes
+
+#this is only for seeding
+BLOCKFROST_API_KEY="preprodGUGCdL87Nwt7eglhJiMNBfAsmuCfrObx"
+
+
+REGISTRY_POLICY_ID="c7842ba56912a2df2f2e1b89f8e11751c6ec2318520f4d312423a272"
+ADMIN_KEY="pvmaopmdopwmefpsocmopafd"
+PAYMENT_CONTRACT_SOURCE_ADDRESS_CARDANO="addr_test1wqwryqpm70ldtryqr2fa9y72ex9e6pyq0k5z4p5260wq0zq8yrz6n" 
+NETWORK="preprod" #or "preview" or "mainnet"
+#Those are used to solve disputes
+ADMIN_WALLET1_ADDRESS="addr_test1qrgpga399l0r8fg7n0jfshhxsjl26w0uslxf5m02yclur8mremst4rk8xsz9lx78e9sdtjfsyj3c9kll2c4958uhkals2qrm9q" #the wallet address of the admin
+ADMIN_WALLET2_ADDRESS="addr_test1qqturqflellkrv0kcg9guuzkk8wx5yaytpsfcd3mmvemg0v7akaxvzel56ls59kw2fs20ckxhs09365medeen6tyy0pqkx3hku" #the wallet address of the admin
+ADMIN_WALLET3_ADDRESS="addr_test1qz93vk0v6jcy4n8g4w3srqkjmcy6ryw90gngx0llvyek5rsc665n90486m4vvue3c2dsjg8sw3tchkjzgxgp4y77rkxqgxjd2h" #the wallet address of the admin
+
+COLLECTION_WALLET_ADDRESS="addr_test1qra89xrexu3vq28g5glatk44s96mysv345rvxsve4x5uh9vvmn2lu5e2ma4eavm9sx3jk5unu0n8vl93k0h3lcqkauwqpcpttu" #the wallet address of the collection wallet; does not need any funds
+PURCHASE_WALLET_MNEMONIC="rack prison item vapor scale food amateur neck blade enough sword cream alcohol unfold fold edge target parade record flower bulk dish view glad" 
+SELLING_WALLET_MNEMONIC="rack prison item vapor scale food amateur neck blade enough sword cream alcohol unfold fold edge target parade record flower bulk dish view glad"
+
+

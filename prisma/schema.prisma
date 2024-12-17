@@ -156,7 +156,6 @@ model PaymentRequest {
   errorRequiresManualReview Boolean?
 
   @@unique([checkedById, identifier])
-  @@unique([checkedById, txHash])
 }
 
 model PurchaseRequest {
@@ -192,7 +191,6 @@ model PurchaseRequest {
   triggeredById String
 
   @@unique([networkHandlerId, identifier, sellerWalletId])
-  @@unique([networkHandlerId, txHash])
 }
 
 model RequestAmount {

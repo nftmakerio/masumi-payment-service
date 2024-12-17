@@ -1,5 +1,5 @@
 {
-  "name": "permission-based-wallet",
+  "name": "masumi-payment",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@emurgo/cardano-serialization-lib-nodejs": "^13.2.0",
-    "@meshsdk/core": "^1.7.19",
+    "@meshsdk/core": "1.7.33",
     "cbor": "^9.0.2",
     "dotenv": "^16.4.5",
     "ethereum-cryptography": "^3.0.0",

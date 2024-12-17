@@ -26,16 +26,18 @@ initialize()
                 patch: ["body", "params"],
                 delete: ["query", "params"],
             },
-            server: {
+            startupLogo: false,
+            beforeRouting: ({ app, }) => {
+                logger.info("Serving the API documentation at localhost:" + PORT + "/docs");
+                app.use("/docs", ui.serve, ui.setup(generateOpenAPI()));
+            },
+            http: {
                 listen: PORT,
-                beforeRouting: ({ app, logger }) => {
-                    logger.info("Serving the API documentation at localhost:" + PORT + "/docs");
-                    app.use("/docs", ui.serve, ui.setup(generateOpenAPI()));
-                },
             },
             cors: true,
             logger: logger
         });
+
 
         createServer(serverConfig, router);
 

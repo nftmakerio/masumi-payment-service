@@ -11,7 +11,7 @@ export const queryPaymentsSchemaInput = z.object({
     identifier: z.string().max(250),
     network: z.nativeEnum($Enums.Network),
     paymentType: z.nativeEnum($Enums.PaymentType),
-    address: z.string().max(250),
+    contractAddress: z.string().max(250),
 })
 
 export const queryRegistrySchemaOutput = z.object({
@@ -39,7 +39,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
     handler: async ({ input, logger }) => {
         logger.info("Querying db", input.paymentTypes);
 
-        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { SellingWallet: true, CollectionWallet: true } })
+        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallet: true, CollectionWallet: true } })
         if (!networkHandler) {
             throw createHttpError(404, "Network handler not found")
         }
@@ -64,13 +64,14 @@ export const createPaymentsSchemaInput = z.object({
     sellerVkey: z.string().max(250),
     amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7),
     paymentType: z.nativeEnum($Enums.PaymentType),
-    address: z.string().max(250),
+    contractAddress: z.string().max(250),
     unlockTime: ez.dateIn(),
     refundTime: ez.dateIn(),
 })
 
 export const createPaymentSchemaOutput = z.object({
     id: z.string(),
+    identifier: z.string(),
     createdAt: z.date(),
     updatedAt: z.date(),
     status: z.nativeEnum($Enums.PaymentRequestStatus),
@@ -82,7 +83,7 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
     output: createPaymentSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Creating purchase", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { SellingWallet: true, CollectionWallet: true } })
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallet: true, CollectionWallet: true } })
         if (networkCheckSupported == null || networkCheckSupported.SellingWallet == null || networkCheckSupported.CollectionWallet == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
@@ -103,7 +104,7 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
 export const updatePaymentsSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
     sellerVkey: z.string().max(250),
-    address: z.string().max(250),
+    contractAddress: z.string().max(250),
     hash: z.string().max(250),
     identifier: z.string().max(250),
 })

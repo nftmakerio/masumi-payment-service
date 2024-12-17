@@ -25,7 +25,7 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
@@ -50,7 +50,7 @@ if (utxos.length === 0) {
   throw new Error('No UTXOs found in the wallet. Wallet is empty.');
 }
 
-const buyer = wallet.getUsedAddresses()[0];
+const buyer = (await wallet.getUsedAddresses())[0];
 const buyerVerificationKeyHash = resolvePaymentKeyHash(buyer);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
@@ -82,7 +82,7 @@ const datum = {
       //refund time is 30 days from now
       refundTime,
       //is converted to false
-      mBool(true),
+      mBool(false),
       //is converted to false
       mBool(false),
     ],
@@ -98,6 +98,7 @@ const unsignedTx = await new Transaction({ initiator: wallet })
     },
     '50000000',
   )
+  .setNetwork(network)
   .build();
 
 const signedTx = await wallet.signTx(unsignedTx);

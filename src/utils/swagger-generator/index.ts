@@ -8,7 +8,7 @@ import { healthResponseSchema } from '@/routes/api/health';
 import { addAPIKeySchemaInput, addAPIKeySchemaOutput, deleteAPIKeySchemaInput, deleteAPIKeySchemaOutput, getAPIKeySchemaInput, getAPIKeySchemaOutput, updateAPIKeySchemaInput, updateAPIKeySchemaOutput } from '@/routes/api/api-key';
 import { $Enums } from '@prisma/client';
 import { createPaymentSchemaOutput, createPaymentsSchemaInput, queryPaymentsSchemaInput, queryRegistrySchemaOutput as queryPaymentsSchemaOutput, updatePaymentSchemaOutput, updatePaymentsSchemaInput } from '@/routes/api/payments';
-import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, refundPurchaseSchemaInput, refundPurchaseSchemaOutput } from '@/routes/api/purchases';
+import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, queryPurchaseRequestSchemaInput, queryPurchaseRequestSchemaOutput, refundPurchaseSchemaInput, refundPurchaseSchemaOutput } from '@/routes/api/purchases';
 import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput } from '@/routes/api/payment-source';
 import { registerAgentSchemaInput, registerAgentSchemaOutput, unregisterAgentSchemaInput, unregisterAgentSchemaOutput } from '@/routes/api/registry';
 
@@ -263,8 +263,8 @@ export function generateOpenAPI() {
         example: {
           paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
           identifier: "identifier",
-          network: $Enums.Network.PREVIEW,
-          address: "addr_abcd1234567890"
+          network: $Enums.Network.PREPROD,
+          contractAddress: "addr_abcd1234567890"
         }
       })
     },
@@ -291,7 +291,7 @@ export function generateOpenAPI() {
                   collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
                   buyerWallet: { walletVkey: "wallet_vkey" },
                   amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
-                  checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREVIEW, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
+                  checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
                 }, status: "success"
               }
             }),
@@ -323,13 +323,13 @@ export function generateOpenAPI() {
           'application/json': {
             schema: createPaymentsSchemaInput.openapi({
               example: {
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
-                address: "address",
+                contractAddress: "address",
                 amounts: [{ amount: 1000000, unit: "unit" }],
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
-                unlockTime: "01.12.2024 00:00:00",
-                refundTime: "02.12.2024 00:00:00",
+                unlockTime: "2024-12-01T23:00:00.000Z",
+                refundTime: "2024-12-02T23:00:00.000Z",
               }
             })
           }
@@ -347,6 +347,7 @@ export function generateOpenAPI() {
                 status: "success",
                 data: {
                   id: "unique-cuid-v2-auto-generated",
+                  identifier: "identifier",
                   createdAt: new Date(),
                   updatedAt: new Date(),
                   status: $Enums.PaymentRequestStatus.PaymentRequested,
@@ -381,9 +382,9 @@ export function generateOpenAPI() {
           'application/json': {
             schema: updatePaymentsSchemaInput.openapi({
               example: {
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
-                address: "address",
+                contractAddress: "address",
                 hash: "hash",
                 identifier: "identifier",
               }
@@ -433,40 +434,44 @@ export function generateOpenAPI() {
     summary: 'REQUIRES API KEY Authentication (+READ)',
     tags: ['purchase',],
     request: {
-      query: queryPaymentsSchemaInput.openapi({
+      query: queryPurchaseRequestSchemaInput.openapi({
         example: {
           paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
           identifier: "identifier",
-          network: $Enums.Network.PREVIEW,
-          address: "addr_abcd1234567890"
+          network: $Enums.Network.PREPROD,
+          contractAddress: "addr_abcd1234567890",
+          sellingWalletVkey: "wallet_vkey"
         }
       })
     },
     security: [{ [apiKeyAuth.name]: [] }],
     responses: {
       200: {
-        description: 'Payment status',
+        description: 'Purchase status',
         content: {
           'application/json': {
-            schema: z.object({ status: z.string(), data: queryPaymentsSchemaOutput }).openapi({
+            schema: z.object({ status: z.string(), data: queryPurchaseRequestSchemaOutput }).openapi({
               example: {
+                status: "success",
                 data: {
                   id: "unique-cuid-v2-auto-generated",
                   createdAt: new Date(),
                   updatedAt: new Date(),
-                  status: $Enums.PaymentRequestStatus.PaymentRequested,
+                  status: $Enums.PurchasingRequestStatus.PurchaseRequested,
                   txHash: "tx_hash",
                   utxo: "utxo",
-                  errorType: $Enums.PaymentRequestErrorType.NETWORK_ERROR,
+                  errorType: $Enums.PurchaseRequestErrorType.NETWORK_ERROR,
                   errorNote: "error_note",
                   errorRequiresManualReview: false,
                   identifier: "identifier",
-                  sellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
-                  collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
-                  buyerWallet: { walletVkey: "wallet_vkey" },
+
                   amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
-                  checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREVIEW, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
-                }, status: "success"
+                  networkHandler: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
+
+                  purchaserWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                  sellerWallet: { walletVkey: "wallet_vkey", note: "note" },
+
+                },
               }
             }),
           },
@@ -498,13 +503,13 @@ export function generateOpenAPI() {
             schema: createPurchaseInitSchemaInput.openapi({
               example: {
                 identifier: "identifier",
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
-                address: "address",
+                contractAddress: "address",
                 amounts: [{ amount: 1000000, unit: "unit" }],
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
-                unlockTime: "01.12.2024 00:00:00",
-                refundTime: "02.12.2024 00:00:00",
+                unlockTime: "2024-12-01T23:00:00.000Z",
+                refundTime: "2024-12-02T23:00:00.000Z",
               }
             })
           }
@@ -556,7 +561,7 @@ export function generateOpenAPI() {
           'application/json': {
             schema: refundPurchaseSchemaInput.openapi({
               example: {
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
                 address: "address",
                 identifier: "identifier",
@@ -612,7 +617,7 @@ export function generateOpenAPI() {
               example: {
                 name: "Agent Name",
                 description: "Agent Description",
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 address: "addr_test1...",
                 companyName: "Company Name",
                 capabilityName: "Capability Name",
@@ -653,7 +658,7 @@ export function generateOpenAPI() {
     security: [{ [apiKeyAuth.name]: [] }],
     request: {
       query: unregisterAgentSchemaInput.openapi({
-        example: { assetName: "asset_name", network: $Enums.Network.PREVIEW, address: "address" }
+        example: { assetName: "asset_name", network: $Enums.Network.PREPROD, address: "address" }
       })
     },
     responses: {
@@ -699,7 +704,7 @@ export function generateOpenAPI() {
                     id: "unique-cuid-v2-auto-generated",
                     createdAt: new Date(),
                     updatedAt: new Date(),
-                    network: $Enums.Network.PREVIEW,
+                    network: $Enums.Network.PREPROD,
                     paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
                     addressToCheck: "address_to_check",
                     blockfrostApiKey: "blockfrost_api_key",
@@ -737,7 +742,7 @@ export function generateOpenAPI() {
           'application/json': {
             schema: paymentSourceCreateSchemaInput.openapi({
               example: {
-                network: $Enums.Network.PREVIEW,
+                network: $Enums.Network.PREPROD,
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
                 addressToCheck: "address_to_check",
                 blockfrostApiKey: "blockfrost_api_key",
@@ -766,7 +771,7 @@ export function generateOpenAPI() {
                   id: "unique-cuid-v2-auto-generated",
                   createdAt: new Date(),
                   updatedAt: new Date(),
-                  network: $Enums.Network.PREVIEW,
+                  network: $Enums.Network.PREPROD,
                   paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
                   addressToCheck: "address_to_check",
                   blockfrostApiKey: "blockfrost_api_key",

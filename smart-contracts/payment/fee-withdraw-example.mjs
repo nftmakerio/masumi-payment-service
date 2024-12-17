@@ -40,7 +40,7 @@ const wallet3 = new MeshWallet({
     words: fs.readFileSync('wallet_5.sk').toString().split(' '),
   },
 });
-const address = wallet1.getUsedAddresses()[0];
+const address = (await wallet1.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
@@ -113,10 +113,11 @@ const unsignedTx = await new Transaction({ initiator: wallet1 })
   })
   .sendValue({ address: wallet1.getUnusedAddresses()[0] }, utxo)
   .setRequiredSigners([
-    wallet1.getUsedAddresses()[0],
-    wallet2.getUsedAddresses()[0],
+    (await wallet1.getUsedAddresses())[0],
+    (await wallet2.getUsedAddresses())[0],
   ])
   .setChangeAddress(wallet1.getUnusedAddresses()[0])
+  .setNetwork(network)
   .build();
 
 let signedTx = await wallet1.signTx(unsignedTx, true);

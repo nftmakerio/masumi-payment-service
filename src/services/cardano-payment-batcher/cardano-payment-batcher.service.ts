@@ -13,6 +13,7 @@ const updateMutex = new Sema(1);
 export async function batchLatestPaymentEntriesV1() {
 
     const maxBatchSize = 10;
+    const minTransactionCalculation = 300000n;
 
     const acquiredMutex = await updateMutex.tryAcquire();
     //if we are already performing an update, we wait for it to finish and return
@@ -20,15 +21,21 @@ export async function batchLatestPaymentEntriesV1() {
         return await updateMutex.acquire();
 
     try {
-        const networkChecks = await prisma.networkHandler.findMany({ where: { paymentType: "WEB3_CARDANO_V1" }, include: { PurchaseRequests: { where: { status: $Enums.PurchasingRequestStatus.PurchaseInitiated }, include: { amounts: { select: { amount: true, unit: true } }, sellerWallet: { select: { walletVkey: true } } } }, PurchasingWallets: { include: { walletSecret: true } } } })
+        const networkChecks = await prisma.networkHandler.findMany({ where: { paymentType: "WEB3_CARDANO_V1" }, include: { PurchaseRequests: { where: { status: $Enums.PurchasingRequestStatus.PurchaseRequested }, include: { amounts: { select: { amount: true, unit: true } }, sellerWallet: { select: { walletVkey: true } } } }, PurchasingWallets: { include: { walletSecret: true } } } })
         await Promise.all(networkChecks.map(async (networkCheck) => {
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
             if (!network)
                 throw new Error("Invalid network")
 
-            const blockchainHandler = new BlockfrostProvider(networkCheck.blockfrostApiKey, undefined);
+            const blockchainHandler = new BlockfrostProvider(networkCheck.blockfrostApiKey, 0);
             const paymentRequests = networkCheck.PurchaseRequests;
+            if (paymentRequests.length == 0) {
+                logger.info("no payment requests found for network " + networkCheck.network + " " + networkCheck.addressToCheck)
+                return;
+            }
+
             const potentialWallets = networkCheck.PurchasingWallets;
+
             const walletAmounts = await Promise.all(potentialWallets.map(async (wallet) => {
                 const secretEncrypted = wallet.walletSecret.secret;
                 const secretDecrypted = decrypt(secretEncrypted);
@@ -42,6 +49,7 @@ export async function batchLatestPaymentEntriesV1() {
                     },
                 });
                 const amounts = await meshWallet.getBalance();
+
                 //TODO check if conversion to float fails
                 return {
                     wallet: meshWallet,
@@ -56,25 +64,24 @@ export async function batchLatestPaymentEntriesV1() {
             for (const walletData of walletAmounts) {
                 const wallet = walletData.wallet;
                 const amounts = walletData.amounts;
-                let index = paymentRequests.length;
                 const batchedPaymentRequests = [];
 
 
-                while (index < paymentRequestsRemaining.length) {
-                    if (batchedPaymentRequests.length < maxBatchSize) {
+                while (paymentRequestsRemaining.length > 0) {
+                    if (batchedPaymentRequests.length >= maxBatchSize) {
                         maxBatchSizeReached = true;
                         break;
                     }
-                    const paymentRequest = paymentRequestsRemaining[index];
+                    const paymentRequest = paymentRequestsRemaining[0];
 
 
                     //set min ada required;
                     const lovelaceRequired = paymentRequest.amounts.findIndex((amount) => amount.unit.toLowerCase() == "lovelace");
-                    if (lovelaceRequired != -1) {
-                        paymentRequest.amounts.push({ unit: "lovelace", amount: 300000n })
+                    if (lovelaceRequired == -1) {
+                        paymentRequest.amounts.push({ unit: "lovelace", amount: minTransactionCalculation })
                     } else {
                         const result = paymentRequest.amounts.splice(lovelaceRequired, 1);
-                        paymentRequest.amounts.push({ unit: "lovelace", amount: 300000n + result[0].amount })
+                        paymentRequest.amounts.push({ unit: "lovelace", amount: minTransactionCalculation + result[0].amount })
                     }
                     let isFulfilled = true;
                     for (const paymentAmount of paymentRequest.amounts) {
@@ -91,9 +98,8 @@ export async function batchLatestPaymentEntriesV1() {
                             const walletAmount = amounts.find((amount) => amount.unit == paymentAmount.unit);
                             walletAmount!.quantity -= parseInt(paymentAmount.amount.toString());
                         }
-                        paymentRequestsRemaining.splice(index, 1);
+                        paymentRequestsRemaining.splice(0, 1);
                     }
-                    index++;
                 }
 
                 walletPairings.push({ wallet: wallet, scriptAddress: walletData.scriptAddress, batchedRequests: batchedPaymentRequests });
@@ -122,6 +128,14 @@ export async function batchLatestPaymentEntriesV1() {
                         const sellerVerificationKeyHash = paymentRequest.sellerWallet.walletVkey;
                         const unlockTime = parseInt(paymentRequest.unlockTime.toString());
                         const refundTime = parseInt(paymentRequest.refundTime.toString());
+                        const correctedPaymentAmounts = paymentRequest.amounts;
+                        const lovelaceIndex = correctedPaymentAmounts.findIndex((amount) => amount.unit.toLowerCase() == "lovelace");
+                        if (lovelaceIndex != -1) {
+                            const removedLovelace = correctedPaymentAmounts.splice(lovelaceIndex, 1);
+                            if (removedLovelace[0].amount > minTransactionCalculation) {
+                                correctedPaymentAmounts.push({ unit: "lovelace", amount: removedLovelace[0].amount - minTransactionCalculation })
+                            }
+                        }
 
                         const datum = {
                             value: {
@@ -134,7 +148,7 @@ export async function batchLatestPaymentEntriesV1() {
                                     unlockTime,
                                     refundTime,
                                     //is converted to false
-                                    mBool(true),
+                                    mBool(false),
                                     //is converted to false
                                     mBool(false),
                                 ],

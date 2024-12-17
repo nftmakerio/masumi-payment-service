@@ -159,7 +159,7 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
                     },
                     SellingWallet: {
                         create: {
-                            walletVkey: resolvePaymentKeyHash(sellingWalletMesh.wallet.getUnusedAddresses()[0]),
+                            walletVkey: resolvePaymentKeyHash((await sellingWalletMesh.wallet.getUnusedAddresses())[0]),
                             walletSecret: {
                                 create: {
                                     secret: sellingWalletMesh.secret
@@ -181,13 +181,14 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
             );
 
             // Then create purchasing wallets with the secret IDs
+            const data = await Promise.all(purchasingWalletsMesh.map(async (pw, index) => ({
+                walletVkey: resolvePaymentKeyHash((await pw.wallet.getUnusedAddresses())[0]),
+                walletSecretId: walletSecrets[index].id,
+                note: pw.note,
+                networkHandlerId: paymentSource.id
+            })));
             await prisma.purchasingWallet.createMany({
-                data: purchasingWalletsMesh.map((pw, index) => ({
-                    walletVkey: resolvePaymentKeyHash(pw.wallet.getUnusedAddresses()[0]),
-                    walletSecretId: walletSecrets[index].id,
-                    note: pw.note,
-                    networkHandlerId: paymentSource.id
-                }))
+                data: data
             });
 
             return paymentSource

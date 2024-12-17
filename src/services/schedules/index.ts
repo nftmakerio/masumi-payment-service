@@ -10,14 +10,14 @@ async function init() {
         level: "info",
         message: "initialized cron events",
     });
-
+    await checkLatestPaymentEntries()
     cron.schedule(CONFIG.CHECK_TX_INTERVAL, async () => {
         logger.info("updating cardano payment entries")
         const start = new Date()
         await checkLatestPaymentEntries()
         logger.info("finished updating cardano payment entries in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     });
-
+    //await batchLatestPaymentEntriesV1()
     cron.schedule(CONFIG.BATCH_PAYMENT_INTERVAL, async () => {
         logger.info("batching payments")
         const start = new Date()

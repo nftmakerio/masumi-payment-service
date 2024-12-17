@@ -245,13 +245,7 @@ CREATE UNIQUE INDEX "CollectionWallet_networkHandlerId_walletAddress_key" ON "Co
 CREATE UNIQUE INDEX "PaymentRequest_checkedById_identifier_key" ON "PaymentRequest"("checkedById", "identifier");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "PaymentRequest_checkedById_txHash_key" ON "PaymentRequest"("checkedById", "txHash");
-
--- CreateIndex
 CREATE UNIQUE INDEX "PurchaseRequest_networkHandlerId_identifier_sellerWalletId_key" ON "PurchaseRequest"("networkHandlerId", "identifier", "sellerWalletId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "PurchaseRequest_networkHandlerId_txHash_key" ON "PurchaseRequest"("networkHandlerId", "txHash");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "NetworkHandler_network_addressToCheck_key" ON "NetworkHandler"("network", "addressToCheck");
