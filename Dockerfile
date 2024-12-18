@@ -2,7 +2,7 @@ FROM node:18-slim AS builder
 RUN apt-get update -y && apt-get install -y openssl
 # Build step
 WORKDIR /usr/src/app
-COPY .en[v] ./
+COPY .env* ./
 
 
 COPY package*.json ./
@@ -25,7 +25,7 @@ COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma ./prisma
 
 #optional copy env file
-COPY .en[v] ./
+COPY .env* ./
 
 EXPOSE 3001
 ENV NODE_ENV=production
