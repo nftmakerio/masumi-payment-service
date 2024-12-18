@@ -7,7 +7,7 @@ import { $Enums } from '@prisma/client';
 import { z } from 'zod';
 
 export const paymentSourceSchemaInput = z.object({
-    take: z.number().min(1).max(100),
+    take: z.number({ coerce: true }).min(1).max(100),
     cursorId: z.string().max(250).optional(),
 });
 export const paymentSourceSchemaOutput = z.object({

@@ -3,8 +3,7 @@ FROM node:18-alpine AS builder
 # Build step
 WORKDIR /usr/src/app
 
-#optional copy env file
-COPY .env .env
+COPY .env* ./.env || true
 
 COPY package*.json ./
 COPY ./src ./src
@@ -25,7 +24,7 @@ COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma ./prisma
 
 #optional copy env file
-COPY .env .env
+COPY .env* ./.env || true
 
 EXPOSE 3001
 ENV NODE_ENV=production
