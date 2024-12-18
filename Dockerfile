@@ -1,8 +1,9 @@
-FROM node:18-alpine AS builder
+FROM node:18-slim AS builder
 RUN apt-get update -y && apt-get install -y openssl
 # Build step
 WORKDIR /usr/src/app
-COPY .env* ./.env || true
+COPY .en[v] ./
+
 
 COPY package*.json ./
 COPY ./src ./src
@@ -14,7 +15,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Serve step
-FROM node:18-alpine AS runner
+FROM node:18-slim AS runner
 RUN apt-get update -y && apt-get install -y openssl
 WORKDIR /usr/src/app
 
@@ -23,10 +24,8 @@ COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma ./prisma
 
-
-
 #optional copy env file
-COPY .env* ./.env || true
+COPY .en[v] ./
 
 EXPOSE 3001
 ENV NODE_ENV=production
