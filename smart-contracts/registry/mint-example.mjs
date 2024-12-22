@@ -24,12 +24,12 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
 const paymentContractAddress =
-  'addr_test1wr3hvt2hw89l6ay85lr0f2nr80tckrnpjr808dxhq39xkssvw7mx8';
+  'addr_test1wqwryqpm70ldtryqr2fa9y72ex9e6pyq0k5z4p5260wq0zq8yrz6n';
 
 const script = {
   code: applyParamsToScript(blueprint.validators[0].compiledCode, [
@@ -87,7 +87,7 @@ tx.setMetadata(721, {
       //name can be freely chosen
       name: 'Registry Example NAME',
       api_url: 'http://localhost:3000',
-      description: 'This is a first example NFT for the registry',
+      description: 'This is a second example NFT for the registry',
       company_name: 'Example Inc.',
       capability_name: 'BetterAI',
       capability_version: '1.2.0',

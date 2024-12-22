@@ -8,7 +8,7 @@ import * as cbor from "cbor";
 
 const updateMutex = new Sema(1);
 
-export async function collectOutstandingPaymentsV1() {
+export async function initiateRefundsV1() {
 
     //const maxBatchSize = 10;
 
@@ -20,13 +20,13 @@ export async function collectOutstandingPaymentsV1() {
     try {
         const networkChecks = await prisma.networkHandler.findMany({
             where: { paymentType: "WEB3_CARDANO_V1" }, include: {
-                PaymentRequests: {
+                PurchaseRequests: {
                     where: {
-                        unlockTime: {
+                        refundRequestTime: {
                             gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "PaymentConfirmed", resultHash: { not: null }
+                        }, status: "PurchaseConfirmed", resultHash: { not: null }
                     },
-                    include: { buyerWallet: true }
+                    include: { purchaserWallet: true }
                 },
                 AdminWallets: true,
                 SellingWallet: { include: { walletSecret: true } },
@@ -49,12 +49,12 @@ export async function collectOutstandingPaymentsV1() {
             const blockchainProvider = new BlockfrostProvider(networkCheck.blockfrostApiKey, undefined);
 
 
-            const paymentRequests = networkCheck.PaymentRequests;
+            const purchaseRequests = networkCheck.PurchaseRequests;
 
-            if (paymentRequests.length == 0)
+            if (purchaseRequests.length == 0)
                 return;
             //we can only allow one transaction per wallet
-            const deDuplicatedRequests = [paymentRequests[0]]
+            const deDuplicatedRequests = [purchaseRequests[0]]
 
             await Promise.all(deDuplicatedRequests.map(async (request) => {
                 try {
@@ -113,7 +113,7 @@ export async function collectOutstandingPaymentsV1() {
                     }
 
 
-                    const buyerVerificationKeyHash = request.buyerWallet?.walletVkey;
+                    const buyerVerificationKeyHash = request.purchaserWallet?.walletVkey;
                     const sellerVerificationKeyHash = networkCheck.SellingWallet!.walletVkey;
 
                     const utxoDatum = utxo.output.plutusData;
@@ -143,7 +143,7 @@ export async function collectOutstandingPaymentsV1() {
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
-                                mBool(false),
+                                mBool(true),
                                 //is converted to false
                                 mBool(false),
                             ],
@@ -153,7 +153,7 @@ export async function collectOutstandingPaymentsV1() {
 
                     const redeemer = {
                         data: {
-                            alternative: 0,
+                            alternative: 1,
                             fields: [],
                         },
                     };
@@ -163,41 +163,18 @@ export async function collectOutstandingPaymentsV1() {
                     const invalidAfter =
                         unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[network]) + 1;
 
-                    //TODO calculate remaining assets
-                    const remainingAssets = utxo.output.amount;
-                    for (const assetKey in remainingAssets) {
-                        const assetValue = remainingAssets[assetKey];
-                        if (assetValue.unit == "lovelace") {
-                            const tmp = {
-                                unit: "lovelace",
-                                quantity: (BigInt(assetValue.quantity) - BigInt(1435230)).toString()
-                            };
-                            if (BigInt(tmp.quantity) > 0) {
-                                remainingAssets[assetKey] = tmp;
-                            } else {
-                                delete remainingAssets[assetKey];
-                            }
-                        }
-                    }
                     const unsignedTx = new Transaction({ initiator: wallet })
                         .redeemValue({
                             value: utxo,
                             script: script,
                             redeemer: redeemer,
                         })
-                        .sendLovelace(
-                            {
-                                address: networkCheck.addressToCheck,
-                                datum: datum,
-                            },
-                            '1435230',
-                        )
                         .sendAssets(
                             {
                                 address: networkCheck.addressToCheck,
                                 datum: datum,
                             },
-                            remainingAssets
+                            utxo.output.amount
                         )
                         .setChangeAddress(address)
                         .setRequiredSigners([address]);
@@ -211,8 +188,8 @@ export async function collectOutstandingPaymentsV1() {
                     //submit the transaction to the blockchain
                     const txHash = await wallet.submitTx(signedTx);
 
-                    await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.WithdrawInitiated }
+                    await prisma.purchaseRequest.update({
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated }
                     })
 
                     logger.info(`Created withdrawal transaction:
@@ -241,4 +218,4 @@ export async function collectOutstandingPaymentsV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1 }
+export const cardanoTxHandlerService = { collectOutstandingPaymentsV1: initiateRefundsV1 }

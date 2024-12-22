@@ -12,10 +12,11 @@ async function handlePurchaseCreditInit(
     contractAddress: string,
     sellerVkey: string,
     refundTime: Date,
-    unlockTime: Date
+    unlockTime: Date,
+    refundRequestTime: Date
 ) {
     try {
-        return await creditTokenRepository.handlePurchaseCreditInit(id, tokenCreditCost, network, identifier, paymentType, contractAddress, sellerVkey, refundTime, unlockTime)
+        return await creditTokenRepository.handlePurchaseCreditInit(id, tokenCreditCost, network, identifier, paymentType, contractAddress, sellerVkey, refundTime, unlockTime, refundRequestTime)
     } catch (error) {
         if (error instanceof InsufficientFundsError) {
             throw createHttpError(400, "Insufficient funds")

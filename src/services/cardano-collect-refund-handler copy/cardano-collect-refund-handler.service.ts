@@ -8,7 +8,7 @@ import * as cbor from "cbor";
 
 const updateMutex = new Sema(1);
 
-export async function collectOutstandingPaymentsV1() {
+export async function collectOutstandingRefundV1() {
 
     //const maxBatchSize = 10;
 
@@ -20,13 +20,13 @@ export async function collectOutstandingPaymentsV1() {
     try {
         const networkChecks = await prisma.networkHandler.findMany({
             where: { paymentType: "WEB3_CARDANO_V1" }, include: {
-                PaymentRequests: {
+                PurchaseRequests: {
                     where: {
-                        unlockTime: {
+                        refundRequestTime: {
                             gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "PaymentConfirmed", resultHash: { not: null }
+                        }, status: "RefundConfirmed", resultHash: { not: null }
                     },
-                    include: { buyerWallet: true }
+                    include: { purchaserWallet: true }
                 },
                 AdminWallets: true,
                 SellingWallet: { include: { walletSecret: true } },
@@ -49,7 +49,7 @@ export async function collectOutstandingPaymentsV1() {
             const blockchainProvider = new BlockfrostProvider(networkCheck.blockfrostApiKey, undefined);
 
 
-            const paymentRequests = networkCheck.PaymentRequests;
+            const paymentRequests = networkCheck.PurchaseRequests;
 
             if (paymentRequests.length == 0)
                 return;
@@ -113,7 +113,7 @@ export async function collectOutstandingPaymentsV1() {
                     }
 
 
-                    const buyerVerificationKeyHash = request.buyerWallet?.walletVkey;
+                    const buyerVerificationKeyHash = request.purchaserWallet?.walletVkey;
                     const sellerVerificationKeyHash = networkCheck.SellingWallet!.walletVkey;
 
                     const utxoDatum = utxo.output.plutusData;
@@ -131,7 +131,6 @@ export async function collectOutstandingPaymentsV1() {
                     const unlockTime = decodedDatum.value[4];
                     const refundTime = decodedDatum.value[5];
 
-                    const hashedValue = request.resultHash;
                     const datum = {
                         value: {
                             alternative: 0,
@@ -139,11 +138,11 @@ export async function collectOutstandingPaymentsV1() {
                                 buyerVerificationKeyHash,
                                 sellerVerificationKeyHash,
                                 request.identifier,
-                                hashedValue,
+                                "",
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
-                                mBool(false),
+                                mBool(true),
                                 //is converted to false
                                 mBool(false),
                             ],
@@ -153,7 +152,7 @@ export async function collectOutstandingPaymentsV1() {
 
                     const redeemer = {
                         data: {
-                            alternative: 0,
+                            alternative: 3,
                             fields: [],
                         },
                     };
@@ -163,22 +162,6 @@ export async function collectOutstandingPaymentsV1() {
                     const invalidAfter =
                         unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[network]) + 1;
 
-                    //TODO calculate remaining assets
-                    const remainingAssets = utxo.output.amount;
-                    for (const assetKey in remainingAssets) {
-                        const assetValue = remainingAssets[assetKey];
-                        if (assetValue.unit == "lovelace") {
-                            const tmp = {
-                                unit: "lovelace",
-                                quantity: (BigInt(assetValue.quantity) - BigInt(1435230)).toString()
-                            };
-                            if (BigInt(tmp.quantity) > 0) {
-                                remainingAssets[assetKey] = tmp;
-                            } else {
-                                delete remainingAssets[assetKey];
-                            }
-                        }
-                    }
                     const unsignedTx = new Transaction({ initiator: wallet })
                         .redeemValue({
                             value: utxo,
@@ -192,13 +175,7 @@ export async function collectOutstandingPaymentsV1() {
                             },
                             '1435230',
                         )
-                        .sendAssets(
-                            {
-                                address: networkCheck.addressToCheck,
-                                datum: datum,
-                            },
-                            remainingAssets
-                        )
+                        //send to remaining amount the original purchasing wallet
                         .setChangeAddress(address)
                         .setRequiredSigners([address]);
 
@@ -241,4 +218,4 @@ export async function collectOutstandingPaymentsV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1 }
+export const cardanoTxHandlerService = { collectOutstandingPaymentsV1: collectOutstandingRefundV1 }

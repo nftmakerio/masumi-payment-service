@@ -132,6 +132,7 @@ export const paymentUpdatePatch = authenticatedEndpointFactory.build({
         if (networkCheckSupported.PaymentRequests[0].status != $Enums.PaymentRequestStatus.PaymentConfirmed) {
             throw createHttpError(400, "Payment in invalid state " + networkCheckSupported.PaymentRequests[0].status)
         }
+        //TODO collect the payment
         const payment = await prisma.paymentRequest.update({
             where: { id: networkCheckSupported.PaymentRequests[0].id },
             data: {

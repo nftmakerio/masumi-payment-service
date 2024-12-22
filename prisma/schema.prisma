@@ -172,15 +172,16 @@ model PurchaseRequest {
   purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id])
   purchasingWalletId String?
 
-  amounts         RequestAmount[]
-  status          PurchasingRequestStatus
-  identifier      String
-  resultHash      String?
-  unlockTime      BigInt
-  refundTime      BigInt
-  utxo            String?
-  txHash          String?
-  potentialTxHash String?
+  amounts           RequestAmount[]
+  status            PurchasingRequestStatus
+  identifier        String
+  resultHash        String?
+  unlockTime        BigInt
+  refundTime        BigInt
+  refundRequestTime BigInt
+  utxo              String?
+  txHash            String?
+  potentialTxHash   String?
 
   errorRetries              Int?
   errorType                 PurchaseRequestErrorType?

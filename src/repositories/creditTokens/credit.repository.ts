@@ -2,7 +2,7 @@ import { prisma } from '@/utils/db';
 import { InsufficientFundsError } from '@/utils/errors/insufficient-funds-error';
 import { $Enums } from '@prisma/client';
 
-async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit: string }[], network: $Enums.Network, identifier: string, paymentType: $Enums.PaymentType, contractAddress: string, sellerVkey: string, refundTime: Date, unlockTime: Date) {
+async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit: string }[], network: $Enums.Network, identifier: string, paymentType: $Enums.PaymentType, contractAddress: string, sellerVkey: string, refundTime: Date, unlockTime: Date, refundRequestTime: Date) {
     return await prisma.$transaction(async (transaction) => {
         const result = await transaction.apiKey.findUnique({ where: { id: id }, include: { remainingUsageCredits: true } })
         if (!result) {
@@ -82,7 +82,8 @@ async function handlePurchaseCreditInit(id: string, cost: { amount: bigint, unit
                 identifier: identifier,
                 status: $Enums.PurchasingRequestStatus.PurchaseRequested,
                 refundTime: refundTime.getTime(),
-                unlockTime: unlockTime.getTime()
+                unlockTime: unlockTime.getTime(),
+                refundRequestTime: refundRequestTime.getTime()
             },
         })
 

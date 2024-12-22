@@ -8,7 +8,7 @@ import * as cbor from "cbor";
 
 const updateMutex = new Sema(1);
 
-export async function collectOutstandingPaymentsV1() {
+export async function denyRefundPaymentsV1() {
 
     //const maxBatchSize = 10;
 
@@ -24,7 +24,7 @@ export async function collectOutstandingPaymentsV1() {
                     where: {
                         unlockTime: {
                             gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "PaymentConfirmed", resultHash: { not: null }
+                        }, status: "RefundRequested", resultHash: { not: null }
                     },
                     include: { buyerWallet: true }
                 },
@@ -143,9 +143,9 @@ export async function collectOutstandingPaymentsV1() {
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
-                                mBool(false),
+                                mBool(true),
                                 //is converted to false
-                                mBool(false),
+                                mBool(true),
                             ],
                         } as Data,
                         inline: true,
@@ -153,7 +153,7 @@ export async function collectOutstandingPaymentsV1() {
 
                     const redeemer = {
                         data: {
-                            alternative: 0,
+                            alternative: 4,
                             fields: [],
                         },
                     };
@@ -163,43 +163,19 @@ export async function collectOutstandingPaymentsV1() {
                     const invalidAfter =
                         unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[network]) + 1;
 
-                    //TODO calculate remaining assets
-                    const remainingAssets = utxo.output.amount;
-                    for (const assetKey in remainingAssets) {
-                        const assetValue = remainingAssets[assetKey];
-                        if (assetValue.unit == "lovelace") {
-                            const tmp = {
-                                unit: "lovelace",
-                                quantity: (BigInt(assetValue.quantity) - BigInt(1435230)).toString()
-                            };
-                            if (BigInt(tmp.quantity) > 0) {
-                                remainingAssets[assetKey] = tmp;
-                            } else {
-                                delete remainingAssets[assetKey];
-                            }
-                        }
-                    }
                     const unsignedTx = new Transaction({ initiator: wallet })
                         .redeemValue({
                             value: utxo,
                             script: script,
                             redeemer: redeemer,
                         })
-                        .sendLovelace(
-                            {
-                                address: networkCheck.addressToCheck,
-                                datum: datum,
-                            },
-                            '1435230',
-                        )
                         .sendAssets(
                             {
                                 address: networkCheck.addressToCheck,
                                 datum: datum,
                             },
-                            remainingAssets
-                        )
-                        .setChangeAddress(address)
+                            utxo.output.amount
+                        ).setChangeAddress(address)
                         .setRequiredSigners([address]);
 
                     unsignedTx.txBuilder.invalidBefore(invalidBefore);
@@ -241,4 +217,4 @@ export async function collectOutstandingPaymentsV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1 }
+export const cardanoTxHandlerService = { collectOutstandingPaymentsV1: denyRefundPaymentsV1 }

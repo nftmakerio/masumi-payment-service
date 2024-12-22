@@ -157,6 +157,7 @@ CREATE TABLE "PurchaseRequest" (
     "resultHash" TEXT,
     "unlockTime" BIGINT NOT NULL,
     "refundTime" BIGINT NOT NULL,
+    "refundRequestTime" BIGINT NOT NULL,
     "utxo" TEXT,
     "txHash" TEXT,
     "potentialTxHash" TEXT,

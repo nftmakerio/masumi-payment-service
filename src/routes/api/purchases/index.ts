@@ -52,6 +52,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
             throw createHttpError(404, "Selling wallet not found")
         }
 
+
         const result = await prisma.purchaseRequest.findUnique({
             where: { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } }, include: {
                 sellerWallet: { select: { walletVkey: true, note: true } },
@@ -76,6 +77,7 @@ export const createPurchaseInitSchemaInput = z.object({
     paymentType: z.nativeEnum($Enums.PaymentType),
     unlockTime: ez.dateIn(),
     refundTime: ez.dateIn(),
+    refundRequestTime: ez.dateIn(),
 })
 
 export const createPurchaseInitSchemaOutput = z.object({
@@ -99,8 +101,21 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
         if (wallets._count === 0) {
             throw createHttpError(404, "No valid purchasing wallets found")
         }
+        //require at least 3 hours between unlock time and the requested refund time
+        const additionalRefundTime = 1000 * 60 * 60 * 3;
+        if (input.unlockTime < new Date(input.refundRequestTime.getTime() + additionalRefundTime)) {
+            throw createHttpError(400, "Refund request time must be after unlock time with at least 3 hours difference")
+        }
+        if (input.refundTime < input.unlockTime) {
+            throw createHttpError(400, "Refund time must be after unlock time")
+        }
+        const offset = 1000 * 60 * 15;
+        if (input.refundRequestTime < new Date(Date.now() + offset)) {
+            throw createHttpError(400, "Refund request time must be in the future")
+        }
 
-        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.unlockTime, input.refundTime);
+
+        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.unlockTime, input.refundTime, input.refundRequestTime);
         return initial
     },
 });
@@ -135,9 +150,12 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
             throw createHttpError(400, "Purchase in invalid state " + purchase.status)
         }
 
+
         const blockchainProvider = new BlockfrostProvider(
             networkCheckSupported.blockfrostApiKey,
         )
+
+
 
         const wallet = new MeshWallet({
             networkId: 0,
