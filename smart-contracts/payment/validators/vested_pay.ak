@@ -124,7 +124,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
         expect InlineDatum(maybe_new_datum) = output.datum
         expect new_datum: Datum = maybe_new_datum
         expect must_be_signed_by(self, buyer)
-        expect output_value_is_preserved(self, own_ref)
+        expect output_value_is_preserved(input.output.value, output.value)
 
         expect refund_requested == False
         //refund is not denied is implicitly only set if refund was requested before, but we do a sanity check
@@ -165,7 +165,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
         expect must_be_signed_by(self, seller)
 
         //expect the locked value to be preserved
-        expect output_value_is_preserved(self, own_ref)
+        expect output_value_is_preserved(input.output.value, output.value)
 
         expect refund_requested == True
         expect refund_denied == False
@@ -196,7 +196,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
         expect must_be_signed_by(self, buyer)
 
         //expect the locked value to be preserved
-        expect output_value_is_preserved(self, own_ref)
+        expect output_value_is_preserved(input.output.value, output.value)
 
         //we always allow to cancel the refund request otherwise we would want to ensure
         expect refund_requested == True
@@ -243,20 +243,68 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
   }
 }
 
-fn output_value_is_preserved(self: Transaction, own_ref: OutputReference) {
+fn output_value_is_preserved(input_value: Value, output_value: Value) {
+    assets.flatten(input_value)|>list.all(fn(asset) { 
+    let out_value = assets.quantity_of(output_value, asset.1st, asset.2nd)
+    out_value >= asset.3rd
+  })
+}
 
-  expect Some(input) =
-    self.inputs
-      |> find_input(own_ref)
+test output_value_is_preserved_succeeds() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 51)
+    |> assets.add("foo2", "bar", 32)
+    |> assets.add("foo2", "baz", 1)
+  let output_value: Value =
+    assets.from_lovelace(100)
+      |> assets.add("foo", "bar", 51)
+      |> assets.add("foo2", "bar", 33)
+      |> assets.add("foo2", "baz", 1)
+  output_value_is_preserved(input_value, output_value)
+}
 
-  let count_script_address = input.output.address
+test output_value_is_preserved_fails_1() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 42)
 
-  expect Some(output) =
-    self.outputs
-      |> list.filter(fn(output) { output.address == count_script_address })
-      |> list.head()
+  let output_value: Value =
+    assets.from_lovelace(100)
+      |> assets.add("foo", "bar", 4)
+      |> assets.add("foo2", "bar", 42)
+      |> assets.add("foo", "baz", 100)
+  output_value_is_preserved(input_value, output_value) == False
+}
+test output_value_is_preserved_fails_2() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 42)
 
-  output.value == input.output.value
+  let output_value: Value =
+    assets.from_lovelace(100)
+      |> assets.add("foo2", "bar", 42)
+      |> assets.add("foo", "baz", 100)
+  output_value_is_preserved(input_value, output_value) == False
+}
+test output_value_is_preserved_fails_3() {
+  let input_value: Value =
+  assets.from_lovelace(105)
+
+  let output_value: Value =
+    assets.from_lovelace(100)
+  output_value_is_preserved(input_value, output_value) == False
+}
+test output_value_is_preserved_fails_4() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 42)
+
+  let output_value: Value =
+    assets.from_lovelace(98)
+      |> assets.add("foo", "bar", 42)
+      |> assets.add("foo", "baz", 100)
+  output_value_is_preserved(input_value, output_value) == False
 }
 
 fn fee_value_is_preserved(input_value: Value, output_value: Value, fee_permille: Int) {
@@ -303,6 +351,24 @@ test fee_value_is_preserved_fails_1() {
       |> assets.add("foo", "bar", 4)
        |> assets.add("foo", "baz", 5)
         |> assets.add("foo1", "bar", 5)
+
+  fee_value_is_preserved(
+    input_value,
+    output_value,
+    100,
+  )==False
+}
+test fee_value_is_preserved_fails_4() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 50)
+   
+
+  let output_value: Value =
+    //check for correct equal behavior
+  assets.from_lovelace(10)
+    //check for failing not included
+       |> assets.add("foo", "baz", 5)
 
   fee_value_is_preserved(
     input_value,
