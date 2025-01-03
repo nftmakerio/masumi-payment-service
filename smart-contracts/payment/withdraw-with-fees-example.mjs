@@ -9,6 +9,8 @@ import {
   unixTimeToEnclosingSlot,
   mBool,
   applyParamsToScript,
+  resolveStakeKeyHash,
+  conStr,
 } from '@meshsdk/core';
 import fs from 'node:fs';
 import 'dotenv/config';
@@ -36,6 +38,7 @@ const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
 const admin1 = fs.readFileSync('wallet_3.addr').toString();
 const admin2 = fs.readFileSync('wallet_4.addr').toString();
 const admin3 = fs.readFileSync('wallet_5.addr').toString();
+
 const script = {
   code: applyParamsToScript(blueprint.validators[0].compiledCode, [
     [
@@ -43,6 +46,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -63,7 +90,7 @@ async function fetchUtxo(txHash) {
 }
 
 const utxo = await fetchUtxo(
-  '62eeeba4ebe6b6fc21dac3719e5f801852046c652f8c7c93ceebc7277375d925',
+  'd9b774774068c5f172572a596c13e54db6ce37a7133aa5dc5585f77871fe5495',
 );
 
 if (!utxo) {
@@ -88,32 +115,6 @@ if (typeof decodedDatum.value[4] !== 'number') {
 if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
-const unlockTime = decodedDatum.value[4];
-const refundTime = decodedDatum.value[5];
-
-function hash(data) {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-const hashedValue = hash('example-output-data-test');
-const datum = {
-  value: {
-    alternative: 0,
-    fields: [
-      buyerVerificationKeyHash,
-      sellerVerificationKeyHash,
-      'test',
-      hashedValue,
-      unlockTime,
-      refundTime,
-      //is converted to true
-      mBool(false),
-      //is converted to false
-      mBool(false),
-    ],
-  },
-  inline: true,
-};
 
 const redeemer = {
   data: {
@@ -135,11 +136,10 @@ const unsignedTx = new Transaction({ initiator: wallet, fetcher: koios })
   })
   .sendLovelace(
     {
-      address: resolvePlutusScriptAddress(script, 0),
-      datum: datum,
+      address: admin1,
     },
-    //more than 5% of lovelace
-    '5500000',
+    //set to 5% of lovelace
+    '2500000',
   )
   .setChangeAddress(address)
   .setRequiredSigners([address]);

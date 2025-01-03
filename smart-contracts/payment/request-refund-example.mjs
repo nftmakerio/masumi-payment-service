@@ -9,6 +9,8 @@ import {
   unixTimeToEnclosingSlot,
   mBool,
   applyParamsToScript,
+  pubKeyAddress,
+  resolveStakeKeyHash,
 } from '@meshsdk/core';
 import fs from 'node:fs';
 import 'dotenv/config';
@@ -42,6 +44,7 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
     50,
   ]),
   version: 'V3',

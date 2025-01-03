@@ -10,22 +10,23 @@ import {
   mBool,
   applyParamsToScript,
   pubKeyAddress,
-  resolveStakeKeyHash,
+  integer,
 } from '@meshsdk/core';
 import fs from 'node:fs';
 import 'dotenv/config';
-import { createHash } from 'crypto';
-
-console.log('Deny refund as example');
+import { createHash } from 'node:crypto';
+import { resolveStakeKeyHash } from '@meshsdk/core-cst';
+console.log('Submitting result as example');
 const network = 'preprod';
 const blockchainProvider = new KoiosProvider(network);
+const koios = new KoiosProvider('preprod');
 
 const wallet = new MeshWallet({
   networkId: 0,
   fetcher: blockchainProvider,
   submitter: blockchainProvider,
   key: {
-    type: 'root',
+    type: 'mnemonic',
     words: fs.readFileSync('wallet_2.sk').toString().split(' '),
   },
 });
@@ -38,6 +39,7 @@ const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
 const admin1 = fs.readFileSync('wallet_3.addr').toString();
 const admin2 = fs.readFileSync('wallet_4.addr').toString();
 const admin3 = fs.readFileSync('wallet_5.addr').toString();
+
 const script = {
   code: applyParamsToScript(blueprint.validators[0].compiledCode, [
     [
@@ -45,7 +47,29 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
-    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -53,7 +77,7 @@ const script = {
 
 const utxos = await wallet.getUtxos();
 if (utxos.length === 0) {
-  //this is if the buyer wallet is empty
+  //this is if the seller wallet is empty
   throw new Error('No UTXOs found in the wallet. Wallet is empty.');
 }
 async function fetchUtxo(txHash) {
@@ -64,8 +88,9 @@ async function fetchUtxo(txHash) {
     return utxo.input.txHash == txHash;
   });
 }
+
 const utxo = await fetchUtxo(
-  '2632262436b70b88d453c74b6a63d7af9738aedc78bfb42b70dd2e48a6499847',
+  '26b58664b360da3e12d8ae7f871c9da7b827ab0215eb4afc122848e090582450',
 );
 
 if (!utxo) {
@@ -77,22 +102,6 @@ const buyerVerificationKeyHash = resolvePaymentKeyHash(buyerAddress);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
 const sellerVerificationKeyHash = resolvePaymentKeyHash(sellerAddress);
-/*
-buyer: VerificationKeyHash,
-  seller: VerificationKeyHash,
-  referenceId: ByteArray,
-  resultHash: ByteArray,
-  unlock_time: POSIXTime,
-  refund_time: POSIXTime,
-  refund_requested: Bool,
-  refund_denied: Bool,
-*/
-
-function hash(data) {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-const hashedValue = hash('example-output-data-test');
 
 const utxoDatum = utxo.output.plutusData;
 if (!utxoDatum) {
@@ -108,6 +117,12 @@ if (typeof decodedDatum.value[5] !== 'number') {
 }
 const unlockTime = decodedDatum.value[4];
 const refundTime = decodedDatum.value[5];
+
+function hash(data) {
+  return createHash('sha256').update(data).digest('hex');
+}
+
+const hashedValue = hash('example-output-data-test');
 const datum = {
   value: {
     alternative: 0,
@@ -119,42 +134,31 @@ const datum = {
       unlockTime,
       refundTime,
       //is converted to true
-      mBool(true),
+      mBool(false),
       //is converted to false
-      mBool(true),
+      mBool(false),
     ],
   },
   inline: true,
 };
-/*
-//this will only work after the unlock time
-  Withdraw
-  //this will set the refund_requested to True and auto approved after the refund time, can only be called before the unlock time
-  RequestRefund
-  //this will cancel any refund request and unlock the funds (immediately if the unlock time is over)
-  CancelRefundRequest
-  //is implicitly allowed if the refund was requested and the refund time is over (and not denied)
-  WithdrawRefund
-  //this will set the refund_denied to True and prevent any withdrawal
-  DenyRefund
-*/
+
 const redeemer = {
   data: {
-    alternative: 4,
+    alternative: 6,
     fields: [],
   },
 };
 const invalidBefore =
   unixTimeToEnclosingSlot(Date.now() - 150000, SLOT_CONFIG_NETWORK.preprod) - 1;
-const invalidHereafter =
+
+const invalidAfter =
   unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK.preprod) + 1;
 
-const unsignedTx = new Transaction({ initiator: wallet })
+const unsignedTx = new Transaction({ initiator: wallet, fetcher: koios })
   .redeemValue({
     value: utxo,
     script: script,
     redeemer: redeemer,
-    //datum: datum,
   })
   .sendValue(
     { address: resolvePlutusScriptAddress(script, 0), datum: datum },
@@ -164,8 +168,10 @@ const unsignedTx = new Transaction({ initiator: wallet })
   .setRequiredSigners([address]);
 
 unsignedTx.txBuilder.invalidBefore(invalidBefore);
-unsignedTx.txBuilder.invalidHereafter(invalidHereafter);
+unsignedTx.txBuilder.invalidHereafter(invalidAfter);
+
 unsignedTx.setNetwork(network);
+
 const buildTransaction = await unsignedTx.build();
 const signedTx = await wallet.signTx(buildTransaction);
 

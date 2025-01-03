@@ -5,11 +5,9 @@ use aiken/primitive/bytearray
 use cardano/transaction.{
   InlineDatum, Input, OutputReference, Transaction, ValidityRange, find_input,
 }
+use cardano/address.{Address}
 use cardano/assets.{Value}
 
-//use cardano/assets.{PolicyId}
-//use aiken/collection/dict
-//use aiken/builtin.{blake2b_256}
 
 type POSIXTime =
   Int
@@ -27,9 +25,10 @@ pub type Datum {
 }
 
 pub type Action {
+  
   //this will only work after the unlock time
   Withdraw
-  //this will set the refund_requested to True and auto approved after the refund time, can only be called before the unlock time
+  //this will set the refund_requested to True and auto approved after the refund time, can only be called before the unlock_time
   RequestRefund
   //this will cancel any refund request and unlock the funds (immediately if the unlock time is over)
   CancelRefundRequest
@@ -39,11 +38,13 @@ pub type Action {
   DenyRefund
   //multi sig 2/3
   WithdrawDisputed
-  //multi sig 2/3
-  WithdrawFee
+  //submits the result hash to the contract
+  SubmitResult
 }
 
-validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
+
+
+validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_address: Address, fee_permille: Int) {
   spend(
     datum: Option<Datum>,
     redeemer: Action,
@@ -75,42 +76,17 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
     when redeemer is {
       // Seller can withdraw after unlock_time if no refund was requested
       Withdraw -> {
-
-
-
-
-        expect Some(output) =
-          self.outputs
-            |> list.filter(fn(output) { output.address == count_script_address })
-            |> list.head()
-        expect InlineDatum(maybe_new_datum) = output.datum
-        expect new_datum: Datum = maybe_new_datum
-
+       
         expect must_be_signed_by(self, seller)
-
-        expect refund_requested == False
-        expect refund_denied == False
 
         expect must_start_after(validity_range, unlock_time)
 
-        //we allow immediate withdraw if the result hash was set by dispute and a canceled refund request
-        //or {
-        //  expect must_start_after(validity_range, unlock_time)
-        //  expect bytearray.is_empty(resultHash) == False
-        //}
-        expect bytearray.is_empty(new_datum.resultHash) == False
-        //TODO: add minimum network fee check either in coins or ada
-        expect fee_value_is_preserved(input.output.value, output.value, fee_permille)
-
+        expect Some(fee_output) = self.outputs |> list.filter(fn(output) { output.address == fee_address }) |> list.head()
+        expect fee_value_is_preserved(input.output.value, fee_output.value, fee_permille)==True
 
         and {
-          new_datum.buyer == buyer,
-          new_datum.seller == seller,
-          new_datum.referenceId == referenceId,
-          new_datum.unlock_time == unlock_time,
-          new_datum.refund_time == refund_time,
-          new_datum.refund_requested == False,
-          new_datum.refund_denied == False,
+          refund_requested == False,
+          refund_denied == False,
         }
       }
 
@@ -127,11 +103,10 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
         expect output_value_is_preserved(input.output.value, output.value)
 
         expect refund_requested == False
-        //refund is not denied is implicitly only set if refund was requested before, but we do a sanity check
+        //prevent a loop after refund denied
         expect refund_denied == False
 
         expect must_end_before(validity_range, unlock_time)
-        expect bytearray.is_empty(new_datum.resultHash) == True
 
         and {
           new_datum.buyer == buyer,
@@ -144,11 +119,11 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
           new_datum.refund_denied == False,
         }
       }
-      // Seller can approve the refund request
+      // Seller can approve the refund request by letting it run into the refund time
       WithdrawRefund -> {
         expect must_be_signed_by(self, buyer)
+        expect must_start_after(validity_range, refund_time)
         and {
-          must_start_after(validity_range, refund_time),
           refund_requested == True,
           refund_denied == False,
         }
@@ -225,15 +200,31 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
         list.length(signedBy) >= 2
       }
       //multi sig 2/3 to withdraw the fee for the network (admins)
-      WithdrawFee -> {
+      SubmitResult -> {
+        expect Some(output) =
+          self.outputs
+            |> list.filter(fn(output) { output.address == count_script_address })
+            |> list.head()
+        expect InlineDatum(maybe_new_datum) = output.datum
+        expect new_datum: Datum = maybe_new_datum
+
+        expect must_be_signed_by(self, seller)
+
         expect refund_requested == False
         expect refund_denied == False
-        expect bytearray.is_empty(resultHash) == False
-        let countOfAdmins = list.length(admin_vks)
-        expect countOfAdmins == 3
-        let signedBy =
-          list.filter(admin_vks, fn(vk) { must_be_signed_by(self, vk) })
-        list.length(signedBy) >= 2
+
+        expect output_value_is_preserved(input.output.value, output.value)
+        expect bytearray.is_empty(new_datum.resultHash) == False
+
+        and {
+          new_datum.buyer == buyer,
+          new_datum.seller == seller,
+          new_datum.referenceId == referenceId,
+          new_datum.unlock_time == unlock_time,
+          new_datum.refund_time == refund_time,
+          new_datum.refund_requested == False,
+          new_datum.refund_denied == False,
+        }
       }
     }
   }
@@ -422,12 +413,6 @@ fn must_start_after(range: ValidityRange, lock_expiration_time: POSIXTime) {
   }
 }
 
-fn must_end_before(range: ValidityRange, lock_expiration_time: POSIXTime) {
-  when range.upper_bound.bound_type is {
-    Finite(tx_earliest_time) -> lock_expiration_time >= tx_earliest_time
-    _ -> False
-  }
-}
 
 test must_start_after_succeed_when_lower_bound_is_after() {
   must_start_after(interval.after(2), 1)
@@ -468,4 +453,44 @@ test must_start_after_success_if_custom_lower_bound() {
     },
     8,
   )
+}
+
+
+
+fn must_end_before(range: ValidityRange, lock_expiration_time: POSIXTime) {
+  when range.upper_bound.bound_type is {
+    Finite(tx_latest_time) -> tx_latest_time < lock_expiration_time
+    _ -> False
+  }
+}
+
+test must_end_before_succeed_when_upper_bound_is_before() {
+  must_end_before(interval.before(1), 2)
+}
+
+test must_end_before_fail_when_upper_bound_is_equal() {
+  must_end_before(interval.before(2), 2) == False
+}
+
+test must_end_before_fail_when_upper_bound_is_after() {
+  must_end_before(interval.before(2), 1) == False
+}
+test must_end_before_fail_when_upper_bound_is_not_set() {
+  must_end_before(interval.after(2), 3) == False
+}
+
+test must_end_before_fail_if_infinite() {
+  must_end_before(
+    Interval {
+      lower_bound: IntervalBound {
+        bound_type: Finite(10),
+        is_inclusive: True,
+      },
+      upper_bound: IntervalBound {
+        bound_type: PositiveInfinity,
+        is_inclusive: True,
+      },
+    },
+    3,
+  ) == False
 }

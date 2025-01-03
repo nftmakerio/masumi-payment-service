@@ -1,14 +1,22 @@
 import {
   resolvePlutusScriptAddress,
   resolvePaymentKeyHash,
+  pubKeyAddress,
+  resolveStakeKeyHash,
   KoiosProvider,
   MeshWallet,
   Transaction,
   mBool,
   applyParamsToScript,
+  integer,
+  list,
+  deserializeAddress,
+  resolveDataHash,
+  conStr0,
 } from '@meshsdk/core';
 import fs from 'node:fs';
 import 'dotenv/config';
+import { PlutusData, toPlutusData } from '@meshsdk/core-cst';
 
 console.log('Locking funds as example');
 
@@ -33,6 +41,7 @@ const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
 const admin1 = fs.readFileSync('wallet_3.addr').toString();
 const admin2 = fs.readFileSync('wallet_4.addr').toString();
 const admin3 = fs.readFileSync('wallet_5.addr').toString();
+
 const script = {
   code: applyParamsToScript(blueprint.validators[0].compiledCode, [
     [
@@ -40,6 +49,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    //yes I love meshJs
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
