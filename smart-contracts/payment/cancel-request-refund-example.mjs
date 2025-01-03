@@ -42,6 +42,7 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    50,
   ]),
   version: 'V3',
 };

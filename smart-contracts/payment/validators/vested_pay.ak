@@ -5,6 +5,7 @@ use aiken/primitive/bytearray
 use cardano/transaction.{
   InlineDatum, Input, OutputReference, Transaction, ValidityRange, find_input,
 }
+use cardano/assets.{Value}
 
 //use cardano/assets.{PolicyId}
 //use aiken/collection/dict
@@ -42,7 +43,7 @@ pub type Action {
   WithdrawFee
 }
 
-validator vested_pay(admin_vks: List<VerificationKeyHash>) {
+validator vested_pay(admin_vks: List<VerificationKeyHash>, fee_permille: Int) {
   spend(
     datum: Option<Datum>,
     redeemer: Action,
@@ -61,14 +62,22 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
     }) = datum
     let Transaction { validity_range, .. } = self
 
-    when redeemer is {
-      // Seller can withdraw after unlock_time if no refund was requested
-      Withdraw -> {
-        expect Some(input) =
+            expect Some(input) =
           self.inputs
             |> find_input(own_ref)
 
         let count_script_address = input.output.address
+
+        let inputs = self.inputs |> list.filter(fn(input) { input.output.address == count_script_address })
+        //ensure there is only one input utxo from our script, to prevent double spending
+        expect list.length(inputs) == 1
+
+    when redeemer is {
+      // Seller can withdraw after unlock_time if no refund was requested
+      Withdraw -> {
+
+
+
 
         expect Some(output) =
           self.outputs
@@ -91,6 +100,8 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
         //}
         expect bytearray.is_empty(new_datum.resultHash) == False
         //TODO: add minimum network fee check either in coins or ada
+        expect fee_value_is_preserved(input.output.value, output.value, fee_permille)
+
 
         and {
           new_datum.buyer == buyer,
@@ -104,11 +115,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
       }
 
       RequestRefund -> {
-        expect Some(input) =
-          self.inputs
-            |> find_input(own_ref)
-
-        let count_script_address = input.output.address
+        
 
         expect Some(output) =
           self.outputs
@@ -147,12 +154,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
         }
       }
       DenyRefund -> {
-        expect Some(input) =
-          self.inputs
-            |> find_input(own_ref)
-
-        let count_script_address = input.output.address
-
+        
         expect Some(output) =
           self.outputs
             |> list.filter(fn(output) { output.address == count_script_address })
@@ -183,11 +185,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
       }
       //The buyer can cancel the refund request, if the vesting period is over, this will immediately give the seller the option to withdraw any funds
       CancelRefundRequest -> {
-        expect Some(input) =
-          self.inputs
-            |> find_input(own_ref)
-
-        let count_script_address = input.output.address
+        
 
         expect Some(output) =
           self.outputs
@@ -246,6 +244,7 @@ validator vested_pay(admin_vks: List<VerificationKeyHash>) {
 }
 
 fn output_value_is_preserved(self: Transaction, own_ref: OutputReference) {
+
   expect Some(input) =
     self.inputs
       |> find_input(own_ref)
@@ -258,6 +257,92 @@ fn output_value_is_preserved(self: Transaction, own_ref: OutputReference) {
       |> list.head()
 
   output.value == input.output.value
+}
+
+fn fee_value_is_preserved(input_value: Value, output_value: Value, fee_permille: Int) {
+  //ignore if the output contains more assets than the input 
+  assets.flatten(input_value)|>list.all(fn(asset) { 
+    let fee_amount = (asset.3rd * fee_permille) / 1000 //cutoff to round down
+    let out_value = assets.quantity_of(output_value, asset.1st, asset.2nd)
+    out_value >= fee_amount
+  })
+}
+
+test fee_value_is_preserved_succeeds() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 42)
+    |> assets.add("foo2", "bar", 32)
+    //correctly round down and ignore 0
+    |> assets.add("foo2", "baz", 1)
+  let output_value: Value =
+    //check for correct equal behavior
+  assets.from_lovelace(10)
+    //check for correct rounding behavior
+      |> assets.add("foo", "bar", 4)
+      //ignore additional assets
+      |> assets.add("foo", "baz", 4)
+      //allow bigger output value
+      |> assets.add("foo2", "bar", 4)
+  fee_value_is_preserved(
+    input_value,
+    output_value,
+    100,
+  )
+}
+test fee_value_is_preserved_fails_1() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 50)
+   
+
+  let output_value: Value =
+    //check for correct equal behavior
+  assets.from_lovelace(10)
+    //check for failing down
+      |> assets.add("foo", "bar", 4)
+       |> assets.add("foo", "baz", 5)
+        |> assets.add("foo1", "bar", 5)
+
+  fee_value_is_preserved(
+    input_value,
+    output_value,
+    100,
+  )==False
+}
+test fee_value_is_preserved_fails_2() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 50)
+
+  let output_value: Value =
+    //check for correct equal behavior
+  assets.from_lovelace(10)
+    //check for failing down
+      |> assets.add("foo", "bar", 4)
+
+  fee_value_is_preserved(
+    input_value,
+    output_value,
+    100,
+  )==False
+}
+test fee_value_is_preserved_fails_3() {
+  let input_value: Value =
+  assets.from_lovelace(100)
+    |> assets.add("foo", "bar", 50)
+
+  let output_value: Value =
+    //check for correct equal behavior
+  assets.from_lovelace(9)
+    //check for failing down
+      |> assets.add("foo", "bar", 60)
+
+  fee_value_is_preserved(
+    input_value,
+    output_value,
+    100,
+  )==False
 }
 
 fn must_be_signed_by(transaction: Transaction, vk: VerificationKeyHash) {

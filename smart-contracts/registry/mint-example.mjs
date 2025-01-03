@@ -84,14 +84,15 @@ tx.txBuilder
 tx.setMetadata(721, {
   [policyId]: {
     [assetName]: {
+      tags: [['test', '.de']],
+      image: 'abc.de',
       //name can be freely chosen
       name: 'Registry Example NAME',
       api_url: 'http://localhost:3000',
-      description: 'This is a second example NFT for the registry',
+      description: 'This is an other valid example NFT for the registry',
       company_name: 'Example Inc.',
-      capability_name: 'BetterAI',
-      capability_version: '1.2.0',
-      capability_description: 'This is what NEW BetterAI can do',
+      capability: { name: 'BetterAI', version: '1.3.4' },
+      requests_per_hour: '15.3',
     },
   },
 });

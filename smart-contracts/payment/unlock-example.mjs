@@ -16,6 +16,7 @@ import { createHash } from 'node:crypto';
 console.log('Withdrawing funds as example');
 const network = 'preprod';
 const blockchainProvider = new KoiosProvider(network);
+const koios = new KoiosProvider('preprod');
 
 const wallet = new MeshWallet({
   networkId: 0,
@@ -42,6 +43,7 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    50,
   ]),
   version: 'V3',
 };
@@ -61,7 +63,7 @@ async function fetchUtxo(txHash) {
 }
 
 const utxo = await fetchUtxo(
-  '0ad20e6a7b08a9f542e7d12f592c805baaa9a3c6f387a20de9ba9034e2c78a8b',
+  '62eeeba4ebe6b6fc21dac3719e5f801852046c652f8c7c93ceebc7277375d925',
 );
 
 if (!utxo) {
@@ -125,7 +127,7 @@ const invalidBefore =
 const invalidAfter =
   unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK.preprod) + 1;
 
-const unsignedTx = new Transaction({ initiator: wallet })
+const unsignedTx = new Transaction({ initiator: wallet, fetcher: koios })
   .redeemValue({
     value: utxo,
     script: script,
@@ -136,7 +138,8 @@ const unsignedTx = new Transaction({ initiator: wallet })
       address: resolvePlutusScriptAddress(script, 0),
       datum: datum,
     },
-    '1435230',
+    //more than 5% of lovelace
+    '5500000',
   )
   .setChangeAddress(address)
   .setRequiredSigners([address]);

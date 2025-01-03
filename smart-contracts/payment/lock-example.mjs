@@ -40,6 +40,7 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    50,
   ]),
   version: 'V3',
 };
@@ -66,9 +67,9 @@ buyer: VerificationKeyHash,
   refund_denied: Bool,
 */
 //1 minute unlock period
-const unlockTime = Date.now() + 1000 * 60 * 30;
+const unlockTime = 0; //Date.now() + 1000 * 60; // * 30;
 //1 hour refund dispute period
-const refundTime = Date.now() + 1000 * 60 * 60; //* 24 * 30;
+const refundTime = 0; //Date.now() + 1000 * 60; //* 60; //* 24 * 30;
 const datum = {
   value: {
     alternative: 0,
@@ -77,9 +78,9 @@ const datum = {
       sellerVerificationKeyHash,
       'test',
       '',
-      //unlock time is 7 days from now
+      //unlock time after specified time
       unlockTime,
-      //refund time is 30 days from now
+      //refund time after specified time
       refundTime,
       //is converted to false
       mBool(false),
