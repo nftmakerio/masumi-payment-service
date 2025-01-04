@@ -1,74 +1,381 @@
-# Masumi registry smart contract
+# Masumi Payment Contract
 
-Minting validators can be found in the `validators` folder, and supporting functions in the `lib` folder using `.ak` as a file extension.
+## How Does It Work?
 
-## Building
+Let's break down the process using a practical example. Imagine you want to use an AI service to analyze some data:
 
-Make sure to install aiken and have it available in your path
-[Install Aiken](https://aiken-lang.org/installation-instructions#installation-instructions).
+```mermaid
+graph TD
+    %% Off-Chain Process
+    subgraph OffChain["Off-Chain Process"]
+        START(["Start"])
+        QUEUE["In Queue"]
+        AWAIT["Awaiting Payment"]
+        PROCESS["Processing"]
+        STATUS{"Status Check"}
+        INPUT["Request User Input"]
+        COMPLETE["Job Complete"]
+    end
 
-Now just run:
+    subgraph OnChain["On-Chain Smart Contract"]
+        C_START(("Start"))
+        LOCKED["Locked"]
+        RESULT["Result Submitted"]
+        REFUND_REQ["Refund Requested"]
+        DISPUTE["Disputed"]
+        REFUNDED["Funds Released to Winner"]
+        FUNDS_BUYER["Funds Withdrawn by Buyer"]
+        FUNDS_SELLER["Funds Withdrawn by Seller"]
+        C_END(("End"))
+    end
 
-```sh
-aiken build
+    START -- "Buyer: Submit Job Request" --> QUEUE
+    QUEUE -- "Agent: Return Job ID" --> AWAIT
+    AWAIT -- "Agent: Payment Detected" --> PROCESS
+    PROCESS -- "Buyer: Query Status" --> STATUS
+    STATUS -- "Agent: Need Input" --> INPUT
+    INPUT -- "Buyer: Provide Input" --> PROCESS
+    STATUS -- "Agent: Working" --> PROCESS
+    STATUS -- "Agent: Complete" --> COMPLETE
+    C_START --> LOCKED
+    LOCKED -- "Agent: Submit Result" --> RESULT
+    RESULT -- "Seller: Withdraw After Unlock Time" --> FUNDS_SELLER
+    LOCKED -- "Buyer: Request Refund Before Unlock Time" --> REFUND_REQ
+    REFUND_REQ -- "Buyer: Cancel Request" --> LOCKED
+    REFUND_REQ -- "Seller: Deny Refund" --> DISPUTE
+    REFUND_REQ -- "Auto: After Refund Time" --> FUNDS_BUYER
+    DISPUTE -- "Admin: Withdraw and Send to Winner" --> REFUNDED
+    FUNDS_SELLER --> C_END
+    FUNDS_BUYER --> C_END
+    REFUNDED --> C_END
+    AWAIT -- "Buyer: Lock Funds" --> LOCKED
+    COMPLETE -- "Agent: Submit Result" --> RESULT
+    ```
+
+### The Basic Flow
+
+1. **Starting a Job**
+   First, you tell the service what you want done. You'll get two important things back:
+   - A job ID (think of it as your receipt number)
+   - Payment details (where to send the money and how much)
+
+   ```bash
+   # Here's how you might start a job:
+   curl -X POST https://api.example.com/v1/jobs \
+     -d '{
+       "prompt": "Analyze this dataset",
+       "secret": "your-secret-key"    # Keep this safe - you'll need it later!
+     }'
+   ```
+
+2. **Making Payment**
+   When you pay, the money goes into a special smart contract. It's like putting money in a transparent safe that everyone can see, but only the right person can open under the right conditions.
+
+   ```typescript
+   // This is what gets stored with your payment
+   const paymentInfo = {
+     buyer: "your-address",           // Who's paying
+     seller: "service-address",       // Who's doing the work
+     jobId: "your-encrypted-job-id",  // Which job this is for
+     resultHash: "",                  // Will be filled when work is done
+     unlockTime: 0,                   // When seller can take the money
+     refundTime: 0,                   // When refunds auto-approve
+     refundRequested: false,          // Has buyer asked for money back
+     refundDenied: false             // Has seller said no to refund
+   };
+   ```
+
+3. **During Processing**
+   While your job is running, you can check its status anytime:
+   ```bash
+   # Check how your job is doing
+   curl https://api.example.com/v1/jobs/your-job-id \
+     -H "X-Job-Secret: your-secret"
+   ```
+
+### Getting Results
+
+When your job is complete, there's a carefully designed process to ensure everyone is protected:
+
+1. **Receiving Your Results**
+   First, you'll get your results by checking the job status:
+
+   ```bash
+   # Check if your job is done
+   curl https://api.example.com/v1/jobs/your-job-id \
+     -H "X-Job-Secret: your-secret"
+
+   # You'll get back something like this when it's complete:
+   {
+     "status": "complete",
+     "result": {
+       "data": "Your processed results here",
+       "hash": "0x7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069"
+     }
+   }
+   ```
+
+2. **Result Verification**
+   The service proves they did the work by putting a fingerprint (hash) of your results on the blockchain:
+
+   ```typescript
+   // First, the service creates a hash of your results
+   function hash(data) {
+     return createHash('sha256').update(data).digest('hex');
+   }
+
+   const resultHash = hash("your-actual-results");
+
+   // Then they submit this to the smart contract
+   const submitResult = {
+     redeemer: {
+       data: {
+         alternative: 6,   // SubmitResult action
+         fields: []
+       }
+     },
+     datum: {
+       value: {
+         alternative: 0,
+         fields: [
+           buyerAddress,
+           sellerAddress,
+           jobId,
+           resultHash,     // This proves what you received is real
+           unlockTime,
+           refundTime,
+           false,         // No refund requested
+           false          // No refund denied
+         ]
+       }
+     }
+   };
+
+   // Submit the transaction
+   const tx = new Transaction({ initiator: wallet })
+     .redeemValue({
+       value: utxo,
+       script: script,
+       redeemer: submitResult.redeemer
+     })
+     .sendValue(
+       { address: scriptAddress, datum: submitResult.datum },
+       utxo
+     );
+   ```
+
+3. **Payment Release**
+   After submitting the result, the service can withdraw their payment (minus the protocol fee):
+
+   ```typescript
+   // Service withdraws payment
+   const withdraw = {
+     redeemer: {
+       data: {
+         alternative: 0,    // Withdraw action
+         fields: []
+       }
+     }
+   };
+
+   // Build the withdrawal transaction
+   const tx = new Transaction({ initiator: wallet })
+     .redeemValue({
+       value: utxo,
+       script: script,
+       redeemer: withdraw
+     })
+     .sendLovelace(
+       { address: adminAddress },
+       '2500000'           // 5% fee for a 50 ADA job
+     )
+     .setChangeAddress(sellerAddress);  // Rest goes to seller
+   ```
+
+### Requesting a Refund
+
+Sometimes things don't go as planned. Here's how the refund process works:
+
+1. **Submitting a Refund Request**
+   You can request a refund if you're not satisfied (must be before unlock time):
+
+   ```typescript
+   // First, prepare the refund request
+   const requestRefund = {
+     redeemer: {
+       data: {
+         alternative: 1,    // RequestRefund action
+         fields: []
+       }
+     },
+     // Update the datum to show refund is requested
+     datum: {
+       value: {
+         alternative: 0,
+         fields: [
+           buyerAddress,
+           sellerAddress,
+           jobId,
+           resultHash,
+           unlockTime,
+           currentTime + (3 * 24 * 60 * 60 * 1000),  // 3 days from now
+           true,           // Refund is now requested
+           false           // Not denied yet
+         ]
+       }
+     }
+   };
+
+   // Submit the refund request
+   const tx = new Transaction({ initiator: wallet })
+     .redeemValue({
+       value: utxo,
+       script: script,
+       redeemer: requestRefund.redeemer
+     })
+     .sendValue(
+       { address: scriptAddress, datum: requestRefund.datum },
+       utxo
+     );
+   ```
+
+2. **What Happens Next?**
+   After requesting a refund, three things can happen:
+
+   a) **Auto-Approval** (after 3 days of no response):
+   ```typescript
+   // Check if refund is auto-approved
+   const isAutoApproved = currentTime > refundTime && 
+                         datum.refundRequested && 
+                         !datum.refundDenied;
+
+   // If approved, you need to withdraw manually
+   const withdrawRefund = {
+     redeemer: {
+       data: {
+         alternative: 3,    // WithdrawRefund action
+         fields: []
+       }
+     }
+   };
+
+   // Submit withdrawal transaction
+   const tx = new Transaction({ initiator: wallet })
+     .redeemValue({
+       value: utxo,
+       script: script,
+       redeemer: withdrawRefund
+     })
+     .sendValue(
+       { address: buyerAddress },  // Full amount back to buyer
+       utxo
+     );
+   ```
+
+   b) **Seller Denies Refund**:
+   ```typescript
+   // Seller can deny the refund
+   const denyRefund = {
+     redeemer: {
+       data: {
+         alternative: 4,    // DenyRefund action
+         fields: []
+       }
+     },
+     datum: {
+       value: {
+         // Previous values stay the same, but:
+         refundDenied: true  // Now refund is denied
+       }
+     }
+   };
+   ```
+
+   c) **You Cancel the Request**:
+   ```typescript
+   // You can cancel your refund request
+   const cancelRefund = {
+     redeemer: {
+       data: {
+         alternative: 2,    // CancelRefundRequest action
+         fields: []
+       }
+     },
+     datum: {
+       value: {
+         // Previous values stay the same, but:
+         refundRequested: false  // Remove the refund request
+       }
+     }
+   };
+   ```
+
+3. **If Disputed**
+   When a refund is denied, it goes to admin resolution:
+
+   ```typescript
+   // Admins can resolve dispute (needs 2/3 signatures)
+   const resolveDispute = {
+     redeemer: {
+       data: {
+         alternative: 5,    // WithdrawDisputed action
+         fields: []
+       }
+     }
+   };
+
+   // Transaction must be signed by at least 2 admins
+   const tx = new Transaction({ initiator: wallet })
+     .redeemValue({
+       value: utxo,
+       script: script,
+       redeemer: resolveDispute
+     })
+     .sendValue(
+       { address: winnerAddress },  // Funds go to whoever admins decide
+       utxo
+     )
+     .setRequiredSigners([admin1, admin2]);  // Need 2/3 admin signatures
+   ```
+
+## For Developers
+
+### Smart Contract Actions
+
+The contract supports these actions:
+
+```typescript
+const Actions = {
+    Withdraw: 0,           // Seller takes payment (minus 5% fee)
+    RequestRefund: 1,      // Buyer wants money back
+    CancelRefundRequest: 2,// Buyer changes their mind
+    WithdrawRefund: 3,     // Buyer takes approved refund
+    DenyRefund: 4,         // Seller says no to refund
+    WithdrawDisputed: 5,   // Admins resolve argument
+    SubmitResult: 6        // Service submits work proof
+};
 ```
 
-To generate the smart contracts
+## Important Tips
 
-## Running various scripts
+1. **Always Keep Your Job Secret Safe**
+   - You need it to check status
+   - It proves you own the job
+   - Never share it with others
 
-To run the scripts you also need to install (Node.js)[https://nodejs.org/en/download/package-manager] and install the dependencies via `npm install`.
+2. **Watch Your Timing**
+   - Request refunds before unlock time
+   - Withdraw refunds after approval
+   - Remember to manually withdraw approved refunds
 
-Afterwards you can run various scripts:
+3. **Check Your Results**
+   - Verify the result hash matches what you received
+   - Make sure you got what you paid for
+   - Keep result data for verification
 
-```sh
-npm run generate-wallet
-```
+4. **Understand the Fees**
+   - Successful jobs: 5% fee to admins
+   - Refunds: No fees
+   - Disputes: No extra fees
 
-To generate a testnet wallet.
-
-The address will be found in the `wallet.addr` and `wallet.sk` (private key) file. You can top-up some test ADA (here)[https://docs.cardano.org/cardano-testnets/tools/faucet/]
-
-The following commands will require the `BLOCKFROST_API_KEY` environment variable to be set. Make sure to register an account on [Blockfrost](https://blockfrost.io/) and get your key for either the preview or preprod network and use it consistently (cardano has multiple testnets).
-
-```sh
-npm run mint
-```
-
-To mint an example registry asset. The metadata can be configured in the `mint-example.mjs` file.
-
-```sh
-npm run defrag
-```
-
-To defrag the wallet (if there are no split up utxos containing only lovelace)
-
-## Testing
-
-You can add tests in any module using the `test` keyword. For example:
-
-```aiken
-test addition() {
-  1 + 1 == 2
-}
-```
-
-To run all tests, simply do:
-
-```sh
-aiken check
-```
-
-## Documentation
-
-If you're writing a library, you might want to generate an HTML documentation for it.
-
-Use:
-
-```sh
-aiken docs
-```
-
-## Resources
-
-Find more on the [Aiken's user manual](https://aiken-lang.org).
+Remember: Just because a refund is approved (either automatically or through dispute resolution) doesn't mean the money is automatically sent to you. You must manually submit a WithdrawRefund transaction to get your funds back. Think of it like having a refund approval slip that you still need to take to the cashier!
