@@ -4,53 +4,86 @@
 
 Let's break down the process using a practical example. Imagine you want to use an AI service to analyze some data:
 
+
 ```mermaid
-graph TD
-    %% Off-Chain Process
-    subgraph OffChain["Off-Chain Process"]
-        START(["Start"])
-        QUEUE["In Queue"]
-        AWAIT["Awaiting Payment"]
-        PROCESS["Processing"]
-        STATUS{"Status Check"}
-        INPUT["Request User Input"]
-        COMPLETE["Job Complete"]
+flowchart TD
+    subgraph OffChain[Off-Chain Process]
+        START(Start)
+        QUEUE[In Queue]
+        AWAIT[Awaiting Payment]
+        PROCESS[Processing]
+        STATUS{Status Check}
+        INPUT[Request User Input]
+        COMPLETE[Job Complete]
     end
 
-    subgraph OnChain["On-Chain Smart Contract"]
-        C_START(("Start"))
-        LOCKED["Locked"]
-        RESULT["Result Submitted"]
-        REFUND_REQ["Refund Requested"]
-        DISPUTE["Disputed"]
-        REFUNDED["Funds Released to Winner"]
-        FUNDS_BUYER["Funds Withdrawn by Buyer"]
-        FUNDS_SELLER["Funds Withdrawn by Seller"]
-        C_END(("End"))
+    subgraph OnChain[On-Chain Smart Contract]
+        C_START((Start))
+        LOCKED[Funds Locked]
+        RESULT[Result Submitted]
+        REFUND_REQ[Refund Requested]
+        DISPUTE[Disputed]
+        REFUNDED[Funds Released to Winner]
+        FUNDS_BUYER[Buyer Withdrawn]
+        FUNDS_SELLER[Seller Withdrawn]
+        C_END((End))
     end
 
-    START -- "Buyer: Submit Job Request" --> QUEUE
-    QUEUE -- "Agent: Return Job ID" --> AWAIT
-    AWAIT -- "Agent: Payment Detected" --> PROCESS
-    PROCESS -- "Buyer: Query Status" --> STATUS
-    STATUS -- "Agent: Need Input" --> INPUT
-    INPUT -- "Buyer: Provide Input" --> PROCESS
-    STATUS -- "Agent: Working" --> PROCESS
-    STATUS -- "Agent: Complete" --> COMPLETE
+    START --> |Buyer: Submit Job Request| QUEUE
+    QUEUE --> |Agent: Return Job ID| AWAIT
+    AWAIT --> |Agent: Payment Detected| PROCESS
+    PROCESS --> |Buyer: Query Status| STATUS
+    STATUS --> |Agent: Need Input| INPUT
+    INPUT --> |Buyer: Provide Input| PROCESS
+    STATUS --> |Agent: Working| PROCESS
+    STATUS --> |Agent: Complete| COMPLETE
     C_START --> LOCKED
-    LOCKED -- "Agent: Submit Result" --> RESULT
-    RESULT -- "Seller: Withdraw After Unlock Time" --> FUNDS_SELLER
-    LOCKED -- "Buyer: Request Refund Before Unlock Time" --> REFUND_REQ
-    REFUND_REQ -- "Buyer: Cancel Request" --> LOCKED
-    REFUND_REQ -- "Seller: Deny Refund" --> DISPUTE
-    REFUND_REQ -- "Auto: After Refund Time" --> FUNDS_BUYER
-    DISPUTE -- "Admin: Withdraw and Send to Winner" --> REFUNDED
+    LOCKED --> |Agent: Submit Result| RESULT
+    RESULT --> |Seller: Withdraw After Unlock| FUNDS_SELLER
+    LOCKED --> |Buyer: Request Refund| REFUND_REQ
+    REFUND_REQ --> |Buyer: Cancel Request| LOCKED
+    REFUND_REQ --> |Seller: Deny Refund| DISPUTE
+    REFUND_REQ --> |Auto: After Refund Time| FUNDS_BUYER
+    DISPUTE --> |Admin: Withdraw and Distribute| REFUNDED
     FUNDS_SELLER --> C_END
     FUNDS_BUYER --> C_END
     REFUNDED --> C_END
-    AWAIT -- "Buyer: Lock Funds" --> LOCKED
-    COMPLETE -- "Agent: Submit Result" --> RESULT
-    ```
+    AWAIT --> |Buyer: Lock Funds| LOCKED
+    COMPLETE --> |Agent: Submit Result| RESULT
+```
+
+### Understanding the Flow
+
+The protocol involves three main actors:
+1. **Buyer**: Requests services and provides payment
+2. **Agent/Service**: Processes jobs and delivers results
+3. **Seller**: Receives payment for completed services
+
+Each action in the diagram is labeled with who performs it. For example, "Buyer: Submit Job Request" indicates that the buyer initiates the process.
+
+The flow has several key phases:
+
+1. **Job Initiation**: 
+   - Buyer submits a request
+   - System provides a job ID
+   - Buyer locks funds in the smart contract
+
+2. **Processing**:
+   - Agent processes the job
+   - May request additional input if needed
+   - Updates status throughout
+
+3. **Completion**:
+   - Agent submits results
+   - Seller can withdraw funds after unlock period
+   - 5% fee goes to admin address
+
+4. **Refund Handling**:
+   - Buyer can request refund before unlock time
+   - Automatic approval after refund time if not denied
+   - Disputes resolved by admin panel (2/3 multisig)
+
+
 
 ### The Basic Flow
 
