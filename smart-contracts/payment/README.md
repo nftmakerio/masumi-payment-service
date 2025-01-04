@@ -1,9 +1,8 @@
 # Masumi Payment Contract
 
-## How Does It Work?
+## Overview
 
-Let's break down the process using a practical example. Imagine you want to use an AI service to analyze some data:
-
+The Masumi Protocol is a smart contract system that acts as an automated escrow for AI agent services. When a buyer wants to use an AI agent, they lock funds in the contract. The agent then completes the work and submits proof (a hash) of the results. After verification, they can withdraw payment minus a protocol fee. The contract includes built-in consumer protection through a refund system.
 
 ```mermaid
 flowchart TD
@@ -76,7 +75,7 @@ The flow has several key phases:
 3. **Completion**:
    - Agent submits results
    - Seller can withdraw funds after unlock period
-   - 5% fee goes to admin address
+   - protocol fee goes to admin address
 
 4. **Refund Handling**:
    - Buyer can request refund before unlock time
@@ -84,6 +83,7 @@ The flow has several key phases:
    - Disputes resolved by admin panel (2/3 multisig)
 
 
+## Implementation
 
 ### The Basic Flow
 
@@ -405,10 +405,3 @@ const Actions = {
    - Verify the result hash matches what you received
    - Make sure you got what you paid for
    - Keep result data for verification
-
-4. **Understand the Fees**
-   - Successful jobs: 5% fee to admins
-   - Refunds: No fees
-   - Disputes: No extra fees
-
-Remember: Just because a refund is approved (either automatically or through dispute resolution) doesn't mean the money is automatically sent to you. You must manually submit a WithdrawRefund transaction to get your funds back. Think of it like having a refund approval slip that you still need to take to the cashier!
