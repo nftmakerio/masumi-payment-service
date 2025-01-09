@@ -1,7 +1,7 @@
 import { $Enums } from "@prisma/client";
 import { Sema } from "async-sema";
 import { prisma } from '@/utils/db';
-import { BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, unixTimeToEnclosingSlot } from "@meshsdk/core";
+import { BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, unixTimeToEnclosingSlot } from "@meshsdk/core";
 import { decrypt } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
 import * as cbor from "cbor";
@@ -18,22 +18,40 @@ export async function denyRefundPaymentsV1() {
         return await updateMutex.acquire();
 
     try {
-        const networkChecks = await prisma.networkHandler.findMany({
-            where: { paymentType: "WEB3_CARDANO_V1" }, include: {
-                PaymentRequests: {
-                    where: {
-                        unlockTime: {
-                            gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "RefundRequested", resultHash: { not: null }
+        const networkChecksWithWalletLocked = await prisma.$transaction(async (prisma) => {
+            const networkChecks = await prisma.networkHandler.findMany({
+                where: {
+                    paymentType: "WEB3_CARDANO_V1", SellingWallet: {
+                        pendingTransaction: null
+                    }
+                }, include: {
+                    PaymentRequests: {
+                        where: {
+                            unlockTime: {
+                                gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
+
+                            }
+                            , status: "RefundRequested", resultHash: { not: null },
+                            errorType: null,
+                        },
+                        include: { buyerWallet: true }
                     },
-                    include: { buyerWallet: true }
-                },
-                AdminWallets: true,
-                SellingWallet: { include: { walletSecret: true } },
-                CollectionWallet: true
+                    AdminWallets: true,
+                    SellingWallet: { include: { walletSecret: true } },
+                    FeeReceiverNetworkWallet: true,
+                    CollectionWallet: true
+                }
+            })
+            const sellingWalletIds = networkChecks.map(x => x.SellingWallet?.id).filter(x => x != null) as string[];
+            for (const sellingWalletId of sellingWalletIds) {
+                await prisma.sellingWallet.update({
+                    where: { id: sellingWalletId },
+                    data: { pendingTransaction: { create: { hash: null } } }
+                })
             }
-        })
-        await Promise.all(networkChecks.map(async (networkCheck) => {
+            return networkChecks;
+        }, { isolationLevel: "Serializable" });
+        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
             if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
                 return;
@@ -84,16 +102,41 @@ export async function denyRefundPaymentsV1() {
                     const admin1 = sortedAdminWallets[0].walletAddress;
                     const admin2 = sortedAdminWallets[1].walletAddress;
                     const admin3 = sortedAdminWallets[2].walletAddress;
-                    const script = {
+                    const script: PlutusScript = {
                         code: applyParamsToScript(blueprint.validators[0].compiledCode, [
                             [
                                 resolvePaymentKeyHash(admin1),
                                 resolvePaymentKeyHash(admin2),
                                 resolvePaymentKeyHash(admin3),
                             ],
+                            //yes I love meshJs
+                            {
+                                alternative: 0,
+                                fields: [
+                                    {
+                                        alternative: 0,
+                                        fields: [resolvePaymentKeyHash(admin1)],
+                                    },
+                                    {
+                                        alternative: 0,
+                                        fields: [
+                                            {
+                                                alternative: 0,
+                                                fields: [
+                                                    {
+                                                        alternative: 0,
+                                                        fields: [resolveStakeKeyHash(networkCheck.FeeReceiverNetworkWallet.walletAddress)],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            networkCheck.FeePermille
                         ]),
-                        version: 'V3',
-                    } as PlutusScript;
+                        version: "V3"
+                    };
 
                     const utxos = await wallet.getUtxos();
                     if (utxos.length === 0) {
@@ -128,8 +171,9 @@ export async function denyRefundPaymentsV1() {
                     if (typeof decodedDatum.value[5] !== 'number') {
                         throw new Error('Invalid datum at position 5');
                     }
-                    const unlockTime = decodedDatum.value[4];
-                    const refundTime = decodedDatum.value[5];
+                    const submitResultTime = decodedDatum.value[4];
+                    const unlockTime = decodedDatum.value[5];
+                    const refundTime = decodedDatum.value[6];
 
                     const hashedValue = request.resultHash;
                     const datum = {
@@ -140,6 +184,7 @@ export async function denyRefundPaymentsV1() {
                                 sellerVerificationKeyHash,
                                 request.identifier,
                                 hashedValue,
+                                submitResultTime,
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
@@ -188,7 +233,7 @@ export async function denyRefundPaymentsV1() {
                     const txHash = await wallet.submitTx(signedTx);
 
                     await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.WithdrawInitiated }
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.RefundDeniedInitiated }
                     })
 
                     logger.info(`Created withdrawal transaction:
@@ -202,10 +247,23 @@ export async function denyRefundPaymentsV1() {
                   Address: ${resolvePlutusScriptAddress(script, 0)}
               `);
                 } catch (error) {
-                    logger.error(`Error creating withdrawal transaction: ${error}`);
-                    await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { status: $Enums.PaymentRequestStatus.Error }
-                    })
+                    logger.error(`Error creating refund denied transaction: ${error}`);
+                    if (request.errorRetries == null || request.errorRetries < networkCheck.maxRefundDenyRetries) {
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id }, data: { errorRetries: { increment: 1 } }
+                        })
+                    } else {
+                        const errorMessage = "Error creating refund denied transaction: " + (error instanceof Error ? error.message :
+                            (typeof error === 'object' && error ? error.toString() : "Unknown Error"));
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id },
+                            data: {
+                                errorType: "UNKNOWN",
+                                errorRequiresManualReview: true,
+                                errorNote: errorMessage
+                            }
+                        })
+                    }
                 }
             }))
         }))
@@ -217,4 +275,4 @@ export async function denyRefundPaymentsV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1: denyRefundPaymentsV1 }
+export const cardanoDenyRefundHandlerService = { denyRefundPaymentsV1 }

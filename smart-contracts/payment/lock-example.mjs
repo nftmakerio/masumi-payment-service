@@ -99,10 +99,11 @@ buyer: VerificationKeyHash,
   refund_requested: Bool,
   refund_denied: Bool,
 */
+const submitResultTime = 0;
 //1 minute unlock period
-const unlockTime = 0; //Date.now() + 1000 * 60; // * 30;
+const unlockTime = 20; //Date.now() + 1000 * 60; // * 30;
 //1 hour refund dispute period
-const refundTime = 0; //Date.now() + 1000 * 60; //* 60; //* 24 * 30;
+const refundTime = 50; //Date.now() + 1000 * 60; //* 60; //* 24 * 30;
 const datum = {
   value: {
     alternative: 0,
@@ -111,6 +112,7 @@ const datum = {
       sellerVerificationKeyHash,
       'test',
       '',
+      submitResultTime,
       //unlock time after specified time
       unlockTime,
       //refund time after specified time

@@ -47,6 +47,7 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
+    //yes I love meshJs
     {
       alternative: 0,
       fields: [
@@ -115,14 +116,11 @@ if (typeof decodedDatum.value[4] !== 'number') {
 if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
-const unlockTime = decodedDatum.value[4];
-const refundTime = decodedDatum.value[5];
+const hash = decodedDatum.value[3];
+const submitResultTime = decodedDatum.value[4];
+const unlockTime = decodedDatum.value[5];
+const refundTime = decodedDatum.value[6];
 
-function hash(data) {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-const hashedValue = hash('example-output-data-test');
 const datum = {
   value: {
     alternative: 0,
@@ -130,7 +128,8 @@ const datum = {
       buyerVerificationKeyHash,
       sellerVerificationKeyHash,
       'test',
-      hashedValue,
+      hash.toString('hex'),
+      submitResultTime,
       unlockTime,
       refundTime,
       //is converted to true

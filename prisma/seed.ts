@@ -66,6 +66,13 @@ export const seed = async (prisma: PrismaClient) => {
           registryIdentifier: registryContractIdentifier,
           paymentType: PaymentType.WEB3_CARDANO_V1,
           isSyncing: true,
+          FeeReceiverNetworkWallet: {
+            create: {
+              walletAddress: adminWallet1Address,
+              order: 1,
+            },
+          },
+          FeePermille: 50,
           AdminWallets: {
             create: [
               { walletAddress: adminWallet1Address, order: 1 },

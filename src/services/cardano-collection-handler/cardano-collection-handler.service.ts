@@ -1,7 +1,7 @@
 import { $Enums } from "@prisma/client";
 import { Sema } from "async-sema";
 import { prisma } from '@/utils/db';
-import { BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, unixTimeToEnclosingSlot } from "@meshsdk/core";
+import { Asset, BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, unixTimeToEnclosingSlot } from "@meshsdk/core";
 import { decrypt } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
 import * as cbor from "cbor";
@@ -18,22 +18,40 @@ export async function collectOutstandingPaymentsV1() {
         return await updateMutex.acquire();
 
     try {
-        const networkChecks = await prisma.networkHandler.findMany({
-            where: { paymentType: "WEB3_CARDANO_V1" }, include: {
-                PaymentRequests: {
-                    where: {
-                        unlockTime: {
-                            gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "PaymentConfirmed", resultHash: { not: null }
+        const networkChecksWithWalletLocked = await prisma.$transaction(async (prisma) => {
+            const networkChecks = await prisma.networkHandler.findMany({
+                where: {
+                    paymentType: "WEB3_CARDANO_V1", SellingWallet: {
+                        pendingTransaction: null
+                    }
+                }, include: {
+                    PaymentRequests: {
+                        where: {
+                            unlockTime: {
+                                gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
+
+                            }
+                            , status: "CompletedConfirmed", resultHash: { not: null },
+                            errorType: null,
+                        },
+                        include: { buyerWallet: true }
                     },
-                    include: { buyerWallet: true }
-                },
-                AdminWallets: true,
-                SellingWallet: { include: { walletSecret: true } },
-                CollectionWallet: true
+                    AdminWallets: true,
+                    SellingWallet: { include: { walletSecret: true } },
+                    FeeReceiverNetworkWallet: true,
+                    CollectionWallet: true
+                }
+            })
+            const sellingWalletIds = networkChecks.map(x => x.SellingWallet?.id).filter(x => x != null) as string[];
+            for (const sellingWalletId of sellingWalletIds) {
+                await prisma.sellingWallet.update({
+                    where: { id: sellingWalletId },
+                    data: { pendingTransaction: { create: { hash: null } } }
+                })
             }
-        })
-        await Promise.all(networkChecks.map(async (networkCheck) => {
+            return networkChecks;
+        }, { isolationLevel: "Serializable" });
+        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
             if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
                 return;
@@ -84,16 +102,41 @@ export async function collectOutstandingPaymentsV1() {
                     const admin1 = sortedAdminWallets[0].walletAddress;
                     const admin2 = sortedAdminWallets[1].walletAddress;
                     const admin3 = sortedAdminWallets[2].walletAddress;
-                    const script = {
+                    const script: PlutusScript = {
                         code: applyParamsToScript(blueprint.validators[0].compiledCode, [
                             [
                                 resolvePaymentKeyHash(admin1),
                                 resolvePaymentKeyHash(admin2),
                                 resolvePaymentKeyHash(admin3),
                             ],
+                            //yes I love meshJs
+                            {
+                                alternative: 0,
+                                fields: [
+                                    {
+                                        alternative: 0,
+                                        fields: [resolvePaymentKeyHash(admin1)],
+                                    },
+                                    {
+                                        alternative: 0,
+                                        fields: [
+                                            {
+                                                alternative: 0,
+                                                fields: [
+                                                    {
+                                                        alternative: 0,
+                                                        fields: [resolveStakeKeyHash(networkCheck.FeeReceiverNetworkWallet.walletAddress)],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            networkCheck.FeePermille
                         ]),
-                        version: 'V3',
-                    } as PlutusScript;
+                        version: "V3"
+                    };
 
                     const utxos = await wallet.getUtxos();
                     if (utxos.length === 0) {
@@ -128,8 +171,9 @@ export async function collectOutstandingPaymentsV1() {
                     if (typeof decodedDatum.value[5] !== 'number') {
                         throw new Error('Invalid datum at position 5');
                     }
-                    const unlockTime = decodedDatum.value[4];
-                    const refundTime = decodedDatum.value[5];
+                    const submitResultTime = decodedDatum.value[4];
+                    const unlockTime = decodedDatum.value[5];
+                    const refundTime = decodedDatum.value[6];
 
                     const hashedValue = request.resultHash;
                     const datum = {
@@ -140,6 +184,7 @@ export async function collectOutstandingPaymentsV1() {
                                 sellerVerificationKeyHash,
                                 request.identifier,
                                 hashedValue,
+                                submitResultTime,
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
@@ -164,19 +209,34 @@ export async function collectOutstandingPaymentsV1() {
                         unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[network]) + 1;
 
                     //TODO calculate remaining assets
-                    const remainingAssets = utxo.output.amount;
-                    for (const assetKey in remainingAssets) {
-                        const assetValue = remainingAssets[assetKey];
+                    const remainingAssets: { [key: string]: Asset } = {};
+                    const feeAssets: { [key: string]: Asset } = {};
+                    for (const assetValue of utxo.output.amount) {
+                        const assetKey = assetValue.unit;
+                        let minFee = 0;
                         if (assetValue.unit == "lovelace") {
-                            const tmp = {
-                                unit: "lovelace",
-                                quantity: (BigInt(assetValue.quantity) - BigInt(1435230)).toString()
-                            };
-                            if (BigInt(tmp.quantity) > 0) {
-                                remainingAssets[assetKey] = tmp;
-                            } else {
-                                delete remainingAssets[assetKey];
-                            }
+                            minFee = 1435230;
+                        }
+                        const value = BigInt(assetValue.quantity);
+                        const feeValue = BigInt(Math.max(minFee, (Number(value) * networkCheck.FeePermille) / 1000));
+                        const remainingValue = value - feeValue;
+                        const remainingValueAsset: Asset = {
+                            unit: assetValue.unit,
+                            quantity: remainingValue.toString()
+                        };
+                        if (BigInt(remainingValueAsset.quantity) > 0) {
+                            remainingAssets[assetKey] = remainingValueAsset;
+                        } else {
+                            delete remainingAssets[assetKey];
+                        }
+                        const feeValueAsset: Asset = {
+                            unit: assetValue.unit,
+                            quantity: feeValue.toString()
+                        };
+                        if (BigInt(feeValueAsset.quantity) > 0) {
+                            feeAssets[assetKey] = feeValueAsset;
+                        } else {
+                            delete feeAssets[assetKey];
                         }
                     }
                     const unsignedTx = new Transaction({ initiator: wallet })
@@ -185,19 +245,19 @@ export async function collectOutstandingPaymentsV1() {
                             script: script,
                             redeemer: redeemer,
                         })
-                        .sendLovelace(
+                        .sendAssets(
                             {
-                                address: networkCheck.addressToCheck,
+                                address: networkCheck.FeeReceiverNetworkWallet.walletAddress,
                                 datum: datum,
                             },
-                            '1435230',
+                            Object.values(feeAssets)
                         )
                         .sendAssets(
                             {
                                 address: networkCheck.addressToCheck,
                                 datum: datum,
                             },
-                            remainingAssets
+                            Object.values(remainingAssets)
                         )
                         .setChangeAddress(address)
                         .setRequiredSigners([address]);
@@ -212,7 +272,10 @@ export async function collectOutstandingPaymentsV1() {
                     const txHash = await wallet.submitTx(signedTx);
 
                     await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.WithdrawInitiated }
+                        where: { id: request.id }, data: {
+                            potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.CompletedInitiated
+                            , checkedBy: { update: { SellingWallet: { update: { pendingTransaction: { update: { hash: txHash } } } } } }
+                        }
                     })
 
                     logger.info(`Created withdrawal transaction:
@@ -226,10 +289,23 @@ export async function collectOutstandingPaymentsV1() {
                   Address: ${resolvePlutusScriptAddress(script, 0)}
               `);
                 } catch (error) {
-                    logger.error(`Error creating withdrawal transaction: ${error}`);
-                    await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { status: $Enums.PaymentRequestStatus.Error }
-                    })
+                    logger.error(`Error creating collection transaction: ${error}`);
+                    if (request.errorRetries == null || request.errorRetries < networkCheck.maxCollectionRetries) {
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id }, data: { errorRetries: { increment: 1 } }
+                        })
+                    } else {
+                        const errorMessage = "Error creating refund transaction: " + (error instanceof Error ? error.message :
+                            (typeof error === 'object' && error ? error.toString() : "Unknown Error"));
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id },
+                            data: {
+                                errorType: "UNKNOWN",
+                                errorRequiresManualReview: true,
+                                errorNote: errorMessage
+                            }
+                        })
+                    }
                 }
             }))
         }))
@@ -241,4 +317,4 @@ export async function collectOutstandingPaymentsV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1 }
+export const cardanoCollectionHandlerService = { collectOutstandingPaymentsV1 }

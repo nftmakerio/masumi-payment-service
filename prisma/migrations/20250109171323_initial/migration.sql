@@ -14,10 +14,10 @@ CREATE TYPE "PurchaseRequestErrorType" AS ENUM ('NETWORK_ERROR', 'INSUFFICIENT_F
 CREATE TYPE "PaymentType" AS ENUM ('WEB3_CARDANO_V1');
 
 -- CreateEnum
-CREATE TYPE "PaymentRequestStatus" AS ENUM ('PaymentRequested', 'PaymentConfirmed', 'PaymentInvalid', 'ResultGenerated', 'WithdrawInitiated', 'WithdrawConfirmed', 'RefundRequested', 'Refunded', 'RefundRequestCanceled', 'RefundDeniedInitiated', 'RefundDeniedConfirmed', 'FeesWithdrawn', 'DisputedWithdrawn', 'Error');
+CREATE TYPE "PaymentRequestStatus" AS ENUM ('PaymentRequested', 'PaymentConfirmed', 'PaymentInvalid', 'ResultGenerated', 'CompletedInitiated', 'CompletedConfirmed', 'Denied', 'RefundRequested', 'Refunded', 'RefundRequestCanceled', 'RefundDeniedInitiated', 'RefundDeniedConfirmed', 'WithdrawnInitiated', 'WithdrawnConfirmed', 'DisputedWithdrawn');
 
 -- CreateEnum
-CREATE TYPE "PurchasingRequestStatus" AS ENUM ('PurchaseRequested', 'PurchaseInitiated', 'PurchaseConfirmed', 'Withdrawn', 'RefundRequestInitiated', 'RefundRequestConfirmed', 'RefundInitiated', 'RefundConfirmed', 'RefundRequestCanceledInitiated', 'RefundRequestCanceledConfirmed', 'RefundDenied', 'FeesWithdrawn', 'DisputedWithdrawn', 'Error');
+CREATE TYPE "PurchasingRequestStatus" AS ENUM ('PurchaseRequested', 'PurchaseInitiated', 'PurchaseConfirmed', 'Completed', 'RefundRequestInitiated', 'RefundRequestConfirmed', 'RefundInitiated', 'RefundConfirmed', 'RefundRequestCanceledInitiated', 'RefundRequestCanceledConfirmed', 'RefundDenied', 'Withdrawn', 'DisputedWithdrawn');
 
 -- CreateEnum
 CREATE TYPE "Network" AS ENUM ('PREVIEW', 'PREPROD', 'MAINNET');
@@ -54,6 +54,7 @@ CREATE TABLE "SellingWallet" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "walletVkey" TEXT NOT NULL,
     "walletSecretId" TEXT NOT NULL,
+    "pendingTransactionId" TEXT,
     "networkHandlerId" TEXT NOT NULL,
     "note" TEXT,
 
@@ -67,10 +68,22 @@ CREATE TABLE "PurchasingWallet" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "walletVkey" TEXT NOT NULL,
     "walletSecretId" TEXT NOT NULL,
+    "pendingTransactionId" TEXT,
     "networkHandlerId" TEXT NOT NULL,
     "note" TEXT,
 
     CONSTRAINT "PurchasingWallet_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Transaction" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "hash" TEXT,
+    "lastCheckedAt" TIMESTAMP(3),
+
+    CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -130,12 +143,13 @@ CREATE TABLE "PaymentRequest" (
     "status" "PaymentRequestStatus" NOT NULL,
     "identifier" TEXT NOT NULL,
     "resultHash" TEXT,
+    "submitResultTime" BIGINT NOT NULL,
     "unlockTime" BIGINT NOT NULL,
     "refundTime" BIGINT NOT NULL,
     "utxo" TEXT,
     "txHash" TEXT,
     "potentialTxHash" TEXT,
-    "errorRetries" INTEGER,
+    "errorRetries" INTEGER NOT NULL DEFAULT 0,
     "errorType" "PaymentRequestErrorType",
     "errorNote" TEXT,
     "errorRequiresManualReview" BOOLEAN,
@@ -155,13 +169,13 @@ CREATE TABLE "PurchaseRequest" (
     "status" "PurchasingRequestStatus" NOT NULL,
     "identifier" TEXT NOT NULL,
     "resultHash" TEXT,
+    "submitResultTime" BIGINT NOT NULL,
     "unlockTime" BIGINT NOT NULL,
     "refundTime" BIGINT NOT NULL,
-    "refundRequestTime" BIGINT NOT NULL,
     "utxo" TEXT,
     "txHash" TEXT,
     "potentialTxHash" TEXT,
-    "errorRetries" INTEGER,
+    "errorRetries" INTEGER NOT NULL DEFAULT 0,
     "errorType" "PurchaseRequestErrorType",
     "errorNote" TEXT,
     "errorRequiresManualReview" BOOLEAN,
@@ -197,8 +211,16 @@ CREATE TABLE "NetworkHandler" (
     "scriptJSON" TEXT NOT NULL,
     "registryJSON" TEXT NOT NULL,
     "registryIdentifier" TEXT NOT NULL,
+    "adminWalletId" TEXT NOT NULL,
+    "FeePermille" INTEGER NOT NULL DEFAULT 50,
     "paymentType" "PaymentType" NOT NULL,
     "isSyncing" BOOLEAN NOT NULL DEFAULT false,
+    "maxCollectRefundRetries" INTEGER NOT NULL DEFAULT 3,
+    "maxCollectPaymentRetries" INTEGER NOT NULL DEFAULT 3,
+    "maxCollectionRetries" INTEGER NOT NULL DEFAULT 3,
+    "maxRefundRetries" INTEGER NOT NULL DEFAULT 3,
+    "maxPaymentRetries" INTEGER NOT NULL DEFAULT 3,
+    "maxRefundDenyRetries" INTEGER NOT NULL DEFAULT 3,
 
     CONSTRAINT "NetworkHandler_pkey" PRIMARY KEY ("id")
 );
@@ -209,7 +231,7 @@ CREATE TABLE "AdminWallet" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "walletAddress" TEXT NOT NULL,
-    "networkHandlerId" TEXT NOT NULL,
+    "networkHandlerAdminId" TEXT,
     "order" INTEGER NOT NULL,
 
     CONSTRAINT "AdminWallet_pkey" PRIMARY KEY ("id")
@@ -258,10 +280,16 @@ ALTER TABLE "UsageAmount" ADD CONSTRAINT "UsageAmount_apiKeyId_fkey" FOREIGN KEY
 ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_walletSecretId_fkey" FOREIGN KEY ("walletSecretId") REFERENCES "WalletSecret"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_pendingTransactionId_fkey" FOREIGN KEY ("pendingTransactionId") REFERENCES "Transaction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_walletSecretId_fkey" FOREIGN KEY ("walletSecretId") REFERENCES "WalletSecret"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_pendingTransactionId_fkey" FOREIGN KEY ("pendingTransactionId") REFERENCES "Transaction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -300,4 +328,7 @@ ALTER TABLE "RequestAmount" ADD CONSTRAINT "RequestAmount_paymentRequestId_fkey"
 ALTER TABLE "RequestAmount" ADD CONSTRAINT "RequestAmount_purchaseRequestId_fkey" FOREIGN KEY ("purchaseRequestId") REFERENCES "PurchaseRequest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "AdminWallet" ADD CONSTRAINT "AdminWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "NetworkHandler" ADD CONSTRAINT "NetworkHandler_adminWalletId_fkey" FOREIGN KEY ("adminWalletId") REFERENCES "AdminWallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AdminWallet" ADD CONSTRAINT "AdminWallet_networkHandlerAdminId_fkey" FOREIGN KEY ("networkHandlerAdminId") REFERENCES "NetworkHandler"("id") ON DELETE SET NULL ON UPDATE CASCADE;

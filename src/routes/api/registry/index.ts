@@ -53,7 +53,7 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             },
         });
 
-        const address = wallet.getUsedAddresses()[0];
+        const address = (await wallet.getUsedAddresses())[0];
 
         const blueprint = JSON.parse(networkCheckSupported.registryJSON);
 
@@ -182,7 +182,7 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
             },
         });
 
-        const address = wallet.getUsedAddresses()[0];
+        const address = (await wallet.getUsedAddresses())[0];
 
         const blueprint = JSON.parse(networkCheckSupported.registryJSON);
 
@@ -203,7 +203,6 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
 
         const redeemer = {
             data: { alternative: 1, fields: [] },
-            tag: 'BURN',
         };
         const policyId = deserializePlutusScript(script.code, script.version)
             .hash()

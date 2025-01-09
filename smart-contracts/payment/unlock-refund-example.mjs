@@ -45,7 +45,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
-    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
+    //yes I love meshJs
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -66,7 +89,7 @@ async function fetchUtxo(txHash) {
 }
 
 const utxo = await fetchUtxo(
-  '9510f0ca339deebe72efd8673ac20dae6bc741bd8f67e524b37f4cb941377eeb',
+  '6580e5a94562323d82a63421936f9271896416d5fe5225d755c6c89703e6e512',
 );
 
 if (!utxo) {
@@ -91,32 +114,6 @@ if (typeof decodedDatum.value[4] !== 'number') {
 if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
-const unlockTime = decodedDatum.value[4];
-const refundTime = decodedDatum.value[5];
-
-function hash(data) {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-const hashedValue = hash('example-output-data-test');
-const datum = {
-  value: {
-    alternative: 0,
-    fields: [
-      buyerVerificationKeyHash,
-      sellerVerificationKeyHash,
-      'test',
-      hashedValue,
-      unlockTime,
-      refundTime,
-      //is converted to true
-      mBool(false),
-      //is converted to false
-      mBool(false),
-    ],
-  },
-  inline: true,
-};
 
 const redeemer = {
   data: {
@@ -130,13 +127,16 @@ const invalidBefore =
 const invalidAfter =
   unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK.preprod) + 1;
 
-const unsignedTx = new Transaction({ initiator: wallet })
+const unsignedTx = new Transaction({
+  initiator: wallet,
+  fetcher: blockchainProvider,
+})
   .redeemValue({
     value: utxo,
     script: script,
     redeemer: redeemer,
   })
-  .sendValue({ address: wallet.getUnusedAddresses()[0] }, utxo)
+  .sendValue({ address: (await wallet.getUnusedAddresses())[0] }, utxo)
   .setChangeAddress(address)
   .setRequiredSigners([address]);
 

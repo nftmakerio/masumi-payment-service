@@ -77,9 +77,13 @@ export const paymentSourceCreateSchemaInput = z.object({
     registryJSON: z.string().max(100000),
     addressToCheck: z.string().max(250),
     registryIdentifier: z.string().max(250),
+    FeePermille: z.number().min(0).max(1000),
     AdminWallets: z.array(z.object({
         walletAddress: z.string().max(250),
     })).max(20),
+    FeeReceiverNetworkWallet: z.object({
+        walletAddress: z.string().max(250),
+    }),
     CollectionWallet: z.object({
         walletAddress: z.string().max(250),
         note: z.string().max(250),
@@ -152,6 +156,13 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
                                 walletAddress: aw.walletAddress,
                                 order: index
                             }))
+                        }
+                    },
+                    FeePermille: input.FeePermille,
+                    FeeReceiverNetworkWallet: {
+                        create: {
+                            walletAddress: input.FeeReceiverNetworkWallet.walletAddress,
+                            order: 0
                         }
                     },
                     CollectionWallet: {

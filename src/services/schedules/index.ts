@@ -1,11 +1,12 @@
 import cron from "node-cron";
-import { checkLatestPaymentEntries } from "@/services/cardano-tx-handler/cardano-tx-handler.service";
+import { checkLatestTransactions } from "@/services/cardano-tx-handler/cardano-tx-handler.service";
 import { CONFIG } from "@/utils/config";
 import { logger } from '@/utils/logger';
 import { batchLatestPaymentEntriesV1 } from "@/services/cardano-payment-batcher/cardano-payment-batcher.service";
 import { collectOutstandingPaymentsV1 } from "@/services/cardano-collection-handler/cardano-collection-handler.service";
-import { initiateRefundsV1 } from "../cardano-refund-handler/cardano-collection-refund.service";
+import { collectRefundV1 } from "../cardano-refund-handler/cardano-collection-refund.service";
 import { denyRefundPaymentsV1 } from "../cardano-deny-refund-handler/cardano-deny-refund-handler.service";
+import { updateWalletTransactionHashHandlerService } from "../update-wallet-transaction-hash-handler/update-wallet-transaction-hash-handler.service";
 
 async function init() {
     logger.log({
@@ -16,7 +17,7 @@ async function init() {
     cron.schedule(CONFIG.CHECK_TX_INTERVAL, async () => {
         logger.info("updating cardano payment entries")
         const start = new Date()
-        await checkLatestPaymentEntries()
+        await checkLatestTransactions()
         logger.info("finished updating cardano payment entries in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     });
     //await batchLatestPaymentEntriesV1()
@@ -36,14 +37,14 @@ async function init() {
     cron.schedule(CONFIG.CHECK_COLLECT_REFUND_INTERVAL, async () => {
         logger.info("checking for payments to collect and refund")
         const start = new Date()
-        await initiateRefundsV1()
+        await collectRefundV1()
         logger.info("finished checking payments to collect in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     })
 
     cron.schedule(CONFIG.CHECK_REFUND_INTERVAL, async () => {
         logger.info("checking for payments to refund")
         const start = new Date()
-        await initiateRefundsV1()
+        await collectRefundV1()
         logger.info("finished checking payments to refund in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     })
 
@@ -52,6 +53,12 @@ async function init() {
         const start = new Date()
         await denyRefundPaymentsV1()
         logger.info("finished checking payments to deny in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
+    })
+    cron.schedule(CONFIG.CHECK_WALLET_TRANSACTION_HASH_INTERVAL, async () => {
+        logger.info("checking for wallet transaction hash")
+        const start = new Date()
+        await updateWalletTransactionHashHandlerService.updateWalletTransactionHash()
+        logger.info("finished checking wallet transaction hash in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     })
 }
 export default init;

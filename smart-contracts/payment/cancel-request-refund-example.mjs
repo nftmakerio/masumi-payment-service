@@ -44,7 +44,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
-    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
+    //yes I love meshJs
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -77,16 +100,7 @@ const buyerVerificationKeyHash = resolvePaymentKeyHash(buyer);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
 const sellerVerificationKeyHash = resolvePaymentKeyHash(sellerAddress);
-/*
-buyer: VerificationKeyHash,
-  seller: VerificationKeyHash,
-  referenceId: ByteArray,
-  resultHash: ByteArray,
-  unlock_time: POSIXTime,
-  refund_time: POSIXTime,
-  refund_requested: Bool,
-  refund_denied: Bool,
-*/
+
 const utxoDatum = utxo.output.plutusData;
 if (!utxoDatum) {
   throw new Error('No datum found in UTXO');
@@ -100,8 +114,9 @@ if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
 const hash = decodedDatum.value[3];
-const unlockTime = decodedDatum.value[4];
-const refundTime = decodedDatum.value[5];
+const submitResultTime = decodedDatum.value[4];
+const unlockTime = decodedDatum.value[5];
+const refundTime = decodedDatum.value[6];
 
 const datum = {
   value: {
@@ -111,6 +126,7 @@ const datum = {
       sellerVerificationKeyHash,
       'test',
       hash.toString('hex'),
+      submitResultTime,
       unlockTime,
       refundTime,
       //is converted to true

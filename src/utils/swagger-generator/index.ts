@@ -329,6 +329,7 @@ export function generateOpenAPI() {
                 amounts: [{ amount: 1000000, unit: "unit" }],
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
                 unlockTime: "2024-12-01T23:00:00.000Z",
+                submitResultTime: "2024-12-01T22:00:00.000Z",
                 refundTime: "2024-12-02T23:00:00.000Z",
               }
             })
@@ -510,6 +511,7 @@ export function generateOpenAPI() {
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
                 unlockTime: "2024-12-01T23:00:00.000Z",
                 refundTime: "2024-12-02T23:00:00.000Z",
+                submitResultTime: "2024-12-01T22:00:00.000Z",
               }
             })
           }
@@ -750,6 +752,8 @@ export function generateOpenAPI() {
                 registryJSON: "{}",
                 registryIdentifier: "registry_identifier",
                 AdminWallets: [{ walletAddress: "wallet_address" }],
+                FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
+                FeePermille: 50,
                 CollectionWallet: { walletAddress: "wallet_address", note: "note" },
                 PurchasingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }],
                 SellingWallet: { walletMnemonic: "wallet mnemonic", note: "note" }

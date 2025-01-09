@@ -1,2 +1,2 @@
-export { cardanoTxHandlerService as cardanoRegistryService } from "./cardano-collection-handler.service";
+export { cardanoCollectionHandlerService } from "./cardano-collection-handler.service";
 
