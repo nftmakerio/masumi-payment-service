@@ -10,7 +10,7 @@ import { Data } from 'lucid-cardano';
 
 
 const updateMutex = new Sema(1);
-export async function checkLatestPaymentEntries() {
+export async function checkLatestTransactions() {
 
 
     const acquiredMutex = await updateMutex.tryAcquire();
@@ -24,6 +24,17 @@ export async function checkLatestPaymentEntries() {
             const networkChecks = await prisma.networkHandler.findMany({
                 where: {
                     paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
+                    OR: [
+                        { isSyncing: false },
+                        {
+                            isSyncing: true, updatedAt: {
+                                lte: new Date(Date.now() -
+                                    //3 minutes
+                                    1000 * 60 * 3
+                                )
+                            }
+                        }
+                    ]
                     //isSyncing: false
                 },
                 include: {
@@ -32,8 +43,11 @@ export async function checkLatestPaymentEntries() {
                 }
             })
 
-            if (networkChecks.length == 0)
+            if (networkChecks.length == 0) {
+                logger.warn("No available network handlers found, skipping update. It could be that an other instance is already updating")
                 return null;
+            }
+
 
             await prisma.networkHandler.updateMany({
                 where: { id: { in: networkChecks.map(x => x.id) } },
@@ -44,7 +58,7 @@ export async function checkLatestPaymentEntries() {
         if (networkChecks == null)
             return;
         try {
-            await Promise.all(networkChecks.map(async (networkCheck) => {
+            const results = await Promise.allSettled(networkChecks.map(async (networkCheck) => {
                 let latestPage = networkCheck.page;
                 let latestIdentifier = networkCheck.latestIdentifier;
                 const blockfrost = new BlockFrostAPI({
@@ -55,280 +69,286 @@ export async function checkLatestPaymentEntries() {
                 let latestTx = await blockfrost.addressesTransactions(networkCheck.addressToCheck, { count: 25, page: networkCheck.page })
 
                 while (latestTx.length > 0) {
-                    try {
-                        const foundTxIndex = latestTx.findIndex(tx => tx.tx_hash == latestIdentifier)
-                        if (foundTxIndex == latestTx.length - 1)
-                            break;
-                        if (foundTxIndex != -1)
-                            latestTx = latestTx.slice(foundTxIndex)
 
-                        const txData = await Promise.all(latestTx.map(async (tx) => {
-                            try {
-                                const cbor = await blockfrost.txsCbor(tx.tx_hash)
-                                const utxos = await blockfrost.txsUtxos(tx.tx_hash)
-                                const transaction = Transaction.from_bytes(Buffer.from(cbor.cbor, "hex"))
-                                return { tx: tx, utxos: utxos, transaction: transaction }
-                            } catch (error) {
-                                //Todo handle error transactions
-                                logger.error("error getting tx metadata", { error: error, tx: tx })
-                                return null;
+                    const foundTxIndex = latestTx.findIndex(tx => tx.tx_hash == latestIdentifier)
+                    //we already handled this transaction
+                    if (foundTxIndex == latestTx.length - 1)
+                        break;
+                    if (foundTxIndex != -1)
+                        latestTx = latestTx.slice(foundTxIndex)
+
+                    const txData = await Promise.all(latestTx.map(async (tx) => {
+                        try {
+                            const cbor = await blockfrost.txsCbor(tx.tx_hash)
+                            const utxos = await blockfrost.txsUtxos(tx.tx_hash)
+                            const transaction = Transaction.from_bytes(Buffer.from(cbor.cbor, "hex"))
+                            return { tx: tx, utxos: utxos, transaction: transaction }
+                        } catch (error) {
+                            //Todo handle error transactions
+                            logger.warn("Error getting tx metadata, ignoring tx", { error: error, tx: tx.tx_hash })
+                            return { tx, utxos: null, transaction: null };
+                        }
+                    }))
+
+                    const filteredTxData = txData.filter(x => x.utxos != null && x.transaction != null)
+
+                    for (const tx of filteredTxData) {
+
+                        const utxos = tx.utxos
+                        const inputs = utxos.inputs;
+                        const outputs = utxos.outputs;
+
+                        const valueInputs = inputs.filter((x) => { return x.address == networkCheck.addressToCheck })
+                        const valueOutputs = outputs.filter((x) => { return x.address == networkCheck.addressToCheck })
+
+                        const redeemers = tx.transaction.witness_set().redeemers();
+
+                        if (redeemers == null) {
+                            //payment transaction
+                            if (valueInputs.length != 0) {
+                                //invalid transaction
+                                continue;
                             }
-                        }))
 
-                        const filteredTxData = txData.filter(x => x != null)
-
-                        for (const tx of filteredTxData) {
-
-                            const utxos = tx.utxos
-                            const inputs = utxos.inputs;
-                            const outputs = utxos.outputs;
-
-                            const valueInputs = inputs.filter((x) => { return x.address == networkCheck.addressToCheck })
-                            const valueOutputs = outputs.filter((x) => { return x.address == networkCheck.addressToCheck })
-
-                            const redeemers = tx.transaction.witness_set().redeemers();
-
-                            if (redeemers == null) {
-                                //payment transaction
-                                if (valueInputs.length != 0) {
+                            for (const output of valueOutputs) {
+                                const outputDatum = output.inline_datum
+                                if (outputDatum == null) {
                                     //invalid transaction
                                     continue;
                                 }
+                                const decodedOutputDatum: unknown = Data.from(outputDatum);
+                                const decodedNewContract = decodeV1ContractDatum(decodedOutputDatum)
+                                if (decodedNewContract == null) {
+                                    //invalid transaction
+                                    continue;
+                                }
+                                await prisma.$transaction(async (prisma) => {
 
-                                for (const output of valueOutputs) {
-                                    const outputDatum = output.inline_datum
-                                    if (outputDatum == null) {
-                                        //invalid transaction
-                                        continue;
+                                    const databaseEntry = await prisma.purchaseRequest.findMany({
+                                        where: {
+                                            identifier: decodedNewContract.referenceId,
+                                            networkHandlerId: networkCheck.id,
+                                            status: $Enums.PurchasingRequestStatus.PurchaseInitiated,
+                                        },
+
+                                    })
+                                    if (databaseEntry.length == 0) {
+                                        //transaction is not registered with us or duplicated (therefore invalid)
+                                        return;
                                     }
-                                    const decodedOutputDatum: unknown = Data.from(outputDatum);
-                                    const decodedNewContract = decodeV1ContractDatum(decodedOutputDatum)
-                                    if (decodedNewContract == null) {
-                                        //invalid transaction
-                                        continue;
+                                    if (databaseEntry.length > 1) {
+                                        //this should not be possible as uniqueness constraints are present on the database
+                                        for (const entry of databaseEntry) {
+                                            await prisma.purchaseRequest.update({
+                                                where: { id: entry.id },
+                                                data: { errorRequiresManualReview: true, errorNote: "Duplicate purchase transaction", errorType: $Enums.PaymentRequestErrorType.UNKNOWN }
+                                            })
+                                        }
+                                        return;
                                     }
-                                    await prisma.$transaction(async (prisma) => {
+                                    await prisma.purchaseRequest.update({
+                                        where: { id: databaseEntry[0].id },
+                                        data: { status: $Enums.PurchasingRequestStatus.PurchaseConfirmed, txHash: tx.tx.tx_hash, utxo: tx.utxos.hash, potentialTxHash: null }
+                                    })
 
-                                        const databaseEntry = await prisma.purchaseRequest.findMany({
-                                            where: {
-                                                identifier: decodedNewContract.referenceId,
-                                                networkHandlerId: networkCheck.id,
-                                                status: $Enums.PurchasingRequestStatus.PurchaseInitiated,
-                                            },
+                                }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 10000, maxWait: 10000 })
+                                await prisma.$transaction(async (prisma) => {
 
-                                        })
-                                        if (databaseEntry.length == 0) {
-                                            //transaction is not registered with us or duplicated (therefore invalid)
-                                            return;
+                                    const databaseEntry = await prisma.paymentRequest.findMany({
+                                        where: {
+                                            identifier: decodedNewContract.referenceId,
+                                            checkedById: networkCheck.id,
+                                            status: $Enums.PaymentRequestStatus.PaymentRequested,
+
+                                        },
+                                        include: {
+                                            amounts: true
                                         }
-                                        if (databaseEntry.length > 1) {
-                                            //this should not be possible as uniqueness constraints are present on the database
-                                            for (const entry of databaseEntry) {
-                                                await prisma.purchaseRequest.update({
-                                                    where: { id: entry.id },
-                                                    data: { status: $Enums.PurchasingRequestStatus.Error, errorNote: "Duplicate purchase transaction", errorType: $Enums.PaymentRequestErrorType.UNKNOWN }
-                                                })
-                                            }
-                                            return;
+                                    })
+                                    if (databaseEntry.length == 0) {
+                                        //transaction is not registered with us or duplicated (therefore invalid)
+                                        return;
+                                    }
+
+                                    if (databaseEntry.length > 1) {
+                                        //this should not be possible as uniqueness constraints are present on the database
+                                        for (const entry of databaseEntry) {
+
+                                            await prisma.paymentRequest.update({
+                                                where: { id: entry.id },
+                                                data: {
+                                                    errorRequiresManualReview: true,
+                                                    errorNote: "Duplicate payment transaction",
+                                                    errorType: $Enums.PaymentRequestErrorType.UNKNOWN
+                                                }
+                                            })
                                         }
-                                        await prisma.purchaseRequest.update({
-                                            where: { id: databaseEntry[0].id },
-                                            data: { status: $Enums.PurchasingRequestStatus.PurchaseConfirmed, txHash: tx.tx.tx_hash, utxo: tx.utxos.hash, potentialTxHash: null }
-                                        })
+                                        return;
+                                    }
 
-                                    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 10000, maxWait: 10000 })
-                                    await prisma.$transaction(async (prisma) => {
+                                    const valueMatches = databaseEntry[0].amounts.every((x) => {
+                                        const existingAmount = output.amount.find((y) => y.unit == x.unit)
+                                        if (existingAmount == null)
+                                            return false;
+                                        //convert to string to avoid large number issues
+                                        return x.amount.toString() == existingAmount.quantity
+                                    })
 
-                                        const databaseEntry = await prisma.paymentRequest.findMany({
-                                            where: {
-                                                identifier: decodedNewContract.referenceId,
-                                                checkedById: networkCheck.id,
-                                                status: $Enums.PaymentRequestStatus.PaymentRequested,
+                                    let newStatus: $Enums.PaymentRequestStatus = $Enums.PaymentRequestStatus.PaymentInvalid;
+                                    if (valueMatches == true) {
+                                        newStatus = $Enums.PaymentRequestStatus.PaymentConfirmed
+                                    }
 
-                                            },
-                                            include: {
-                                                amounts: true
-                                            }
-                                        })
-                                        if (databaseEntry.length == 0) {
-                                            //transaction is not registered with us or duplicated (therefore invalid)
-                                            return;
-                                        }
-
-                                        if (databaseEntry.length > 1) {
-                                            //this should not be possible as uniqueness constraints are present on the database
-                                            for (const entry of databaseEntry) {
-
-                                                await prisma.paymentRequest.update({
-                                                    where: { id: entry.id },
-                                                    data: {
-                                                        status: $Enums.PaymentRequestStatus.Error,
-                                                        errorNote: "Duplicate payment transaction",
-                                                        errorType: $Enums.PaymentRequestErrorType.UNKNOWN
-                                                    }
-                                                })
-                                            }
-                                            return;
-                                        }
-
-                                        const valueMatches = databaseEntry[0].amounts.every((x) => {
-                                            const existingAmount = output.amount.find((y) => y.unit == x.unit)
-                                            if (existingAmount == null)
-                                                return false;
-                                            //convert to string to avoid large number issues
-                                            return x.amount.toString() == existingAmount.quantity
-                                        })
-
-                                        let newStatus: $Enums.PaymentRequestStatus = $Enums.PaymentRequestStatus.PaymentInvalid;
-                                        if (valueMatches == true) {
-                                            newStatus = $Enums.PaymentRequestStatus.PaymentConfirmed
-                                        }
-
-                                        await prisma.paymentRequest.update({
-                                            where: { id: databaseEntry[0].id },
-                                            data: {
-                                                status: newStatus,
-                                                txHash: tx.tx.tx_hash,
-                                                utxo: tx.utxos.hash,
-                                                potentialTxHash: null,
-                                                buyerWallet: {
-                                                    connectOrCreate: {
-                                                        where: { networkHandlerId_walletVkey: { networkHandlerId: networkCheck.id, walletVkey: decodedNewContract.buyer } },
-                                                        create: { walletVkey: decodedNewContract.buyer, networkHandler: { connect: { id: networkCheck.id } } }
-                                                    }
+                                    await prisma.paymentRequest.update({
+                                        where: { id: databaseEntry[0].id },
+                                        data: {
+                                            status: newStatus,
+                                            txHash: tx.tx.tx_hash,
+                                            utxo: tx.utxos.hash,
+                                            potentialTxHash: null,
+                                            buyerWallet: {
+                                                connectOrCreate: {
+                                                    where: { networkHandlerId_walletVkey: { networkHandlerId: networkCheck.id, walletVkey: decodedNewContract.buyer } },
+                                                    create: { walletVkey: decodedNewContract.buyer, networkHandler: { connect: { id: networkCheck.id } } }
                                                 }
                                             }
-                                        })
-                                    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 100000, maxWait: 10000 }
-                                    )
-
-                                }
-                                await prisma.networkHandler.update({
-                                    where: { id: networkCheck.id },
-                                    data: { latestIdentifier: tx.tx.tx_hash, page: latestPage }
-                                })
-                                latestIdentifier = tx.tx.tx_hash;
-                            } else {
-
-                                if (redeemers.len() != 1) {
-                                    //invalid transaction
-                                    continue;
-                                }
-
-                                const redeemer = redeemers.get(0)
-                                /*
-                                    Withdraw
-                                    RequestRefund
-                                    CancelRefundRequest
-                                    WithdrawRefund
-                                    DenyRefund
-                                    WithdrawDisputed
-                                    WithdrawFee
-                                */
-
-                                const redeemerVersion = JSON.parse(redeemer.data().to_json(PlutusDatumSchema.BasicConversions))[
-                                    "constructor"
-                                ]
-
-                                let newStatus: $Enums.PaymentRequestStatus;
-                                let newPurchasingStatus: $Enums.PurchasingRequestStatus;
-
-                                if (redeemerVersion == 0) {
-                                    //Withdraw
-                                    newStatus = $Enums.PaymentRequestStatus.WithdrawConfirmed
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.Withdrawn
-                                }
-                                else if (redeemerVersion == 1) {
-                                    //RequestRefund
-                                    newStatus = $Enums.PaymentRequestStatus.RefundRequested
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestConfirmed
-                                }
-                                else if (redeemerVersion == 2) {
-                                    //CancelRefundRequest
-                                    newStatus = $Enums.PaymentRequestStatus.RefundRequestCanceled
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestCanceledConfirmed
-                                }
-                                else if (redeemerVersion == 3) {
-                                    //WithdrawRefund
-                                    newStatus = $Enums.PaymentRequestStatus.Refunded
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundConfirmed
-                                }
-                                else if (redeemerVersion == 4) {
-                                    //DenyRefund
-                                    newStatus = $Enums.PaymentRequestStatus.RefundDeniedConfirmed
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundDenied
-                                }
-                                else if (redeemerVersion == 5) {
-                                    //WithdrawDisputed
-                                    newStatus = $Enums.PaymentRequestStatus.DisputedWithdrawn
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.DisputedWithdrawn
-                                }
-                                else if (redeemerVersion == 6) {
-                                    //WithdrawFee
-                                    newStatus = $Enums.PaymentRequestStatus.FeesWithdrawn
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.FeesWithdrawn
-                                }
-                                else {
-                                    //invalid transaction  
-                                    //TODO handle unknown redeemer 
-                                    continue;
-                                }
-
-                                const inputDatum = inputs[0].inline_datum
-                                if (inputDatum == null) {
-                                    //invalid transaction
-                                    continue;
-                                }
-
-                                const decodedInputDatum: unknown = Data.from(inputDatum);
-                                const decodedOldContract = decodeV1ContractDatum(decodedInputDatum)
-                                if (decodedOldContract == null) {
-                                    //invalid transaction
-                                    continue;
-                                }
-                                await Promise.all([
-                                    handlePaymentTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId),
-                                    handlePurchasingTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newPurchasingStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId)
-                                ])
+                                        }
+                                    })
+                                }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 100000, maxWait: 10000 }
+                                )
 
                             }
-                            const lastTx = filteredTxData[filteredTxData.length - 1];
                             await prisma.networkHandler.update({
                                 where: { id: networkCheck.id },
-                                data: { latestIdentifier: lastTx.tx.tx_hash, page: latestPage }
+                                data: { latestIdentifier: tx.tx.tx_hash, page: latestPage }
                             })
-                            latestIdentifier = lastTx.tx.tx_hash;
-                        }
-
-                    }
-                    catch (error) {
-                        logger.error("error updating database", { error: error, networkCheck: networkCheck.id })
-                        return null;
-                    } finally {
-                        if (latestTx.length >= 25) {
-
-                            latestPage++;
-                            latestTx = await blockfrost.addressesTransactions(networkCheck.addressToCheck, { count: 25, page: latestPage })
-
+                            latestIdentifier = tx.tx.tx_hash;
                         } else {
-                            latestTx = []
+
+                            if (redeemers.len() != 1) {
+                                //invalid transaction
+                                continue;
+                            }
+
+                            const redeemer = redeemers.get(0)
+                            /*
+                                Withdraw
+                                RequestRefund
+                                CancelRefundRequest
+                                WithdrawRefund
+                                DenyRefund
+                                WithdrawDisputed
+                                WithdrawFee
+                            */
+
+                            const redeemerVersion = JSON.parse(redeemer.data().to_json(PlutusDatumSchema.BasicConversions))[
+                                "constructor"
+                            ]
+
+                            let newStatus: $Enums.PaymentRequestStatus;
+                            let newPurchasingStatus: $Enums.PurchasingRequestStatus;
+
+                            if (redeemerVersion == 0) {
+                                //Withdraw
+                                newStatus = $Enums.PaymentRequestStatus.WithdrawnConfirmed
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.Withdrawn
+                            }
+                            else if (redeemerVersion == 1) {
+                                //RequestRefund
+                                newStatus = $Enums.PaymentRequestStatus.RefundRequested
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestConfirmed
+                            }
+                            else if (redeemerVersion == 2) {
+                                //CancelRefundRequest
+                                newStatus = $Enums.PaymentRequestStatus.RefundRequestCanceled
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestCanceledConfirmed
+                            }
+                            else if (redeemerVersion == 3) {
+                                //WithdrawRefund
+                                newStatus = $Enums.PaymentRequestStatus.Refunded
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundConfirmed
+                            }
+                            else if (redeemerVersion == 4) {
+                                //DenyRefund
+                                newStatus = $Enums.PaymentRequestStatus.RefundDeniedConfirmed
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundDenied
+                            }
+                            else if (redeemerVersion == 5) {
+                                //WithdrawDisputed
+                                newStatus = $Enums.PaymentRequestStatus.DisputedWithdrawn
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.DisputedWithdrawn
+                            }
+                            else if (redeemerVersion == 6) {
+                                //WithdrawFee
+                                newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
+                            }
+                            else {
+                                //invalid transaction  
+                                //TODO handle unknown redeemer 
+                                continue;
+                            }
+
+                            const inputDatum = inputs[0].inline_datum
+                            if (inputDatum == null) {
+                                //invalid transaction
+                                continue;
+                            }
+
+                            const decodedInputDatum: unknown = Data.from(inputDatum);
+                            const decodedOldContract = decodeV1ContractDatum(decodedInputDatum)
+                            if (decodedOldContract == null) {
+                                //invalid transaction
+                                continue;
+                            }
+                            await Promise.all([
+                                handlePaymentTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId),
+                                handlePurchasingTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newPurchasingStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId)
+                            ])
+
                         }
+                        await prisma.networkHandler.update({
+                            where: { id: networkCheck.id },
+                            data: { latestIdentifier: tx.tx.tx_hash, page: latestPage }
+                        })
+                        latestIdentifier = tx.tx.tx_hash;
                     }
+
+
+                    //update to the final utxo and tx hash
+                    await prisma.networkHandler.update({
+                        where: { id: networkCheck.id },
+                        data: { latestIdentifier: latestTx[latestTx.length - 1].tx_hash, page: latestPage }
+                    })
+
+
+                    if (latestTx.length >= 25) {
+
+                        latestPage++;
+                        latestTx = await blockfrost.addressesTransactions(networkCheck.addressToCheck, { count: 25, page: latestPage })
+
+                    } else {
+                        latestTx = []
+                    }
+
+
                 }
 
             }))
 
+            const failedResults = results.filter(x => x.status == "rejected")
+            if (failedResults.length > 0) {
+                logger.error("Error updating tx data", { error: failedResults, networkChecks: networkChecks })
+            }
         }
         finally {
             try {
-
-
                 await prisma.networkHandler.updateMany({
                     where: { id: { in: networkChecks.map(x => x.id) } },
                     data: { isSyncing: false }
                 })
             } catch (error) {
-                logger.error("error updating network checks", { error: error, networkChecks: networkChecks })
+                logger.error("Error updating network checks syncing status", { error: error, networkChecks: networkChecks })
                 //TODO very bad, maybe add a retry mechanism?
             }
         }
@@ -465,4 +485,4 @@ function mBoolToBool(value: any) {
     return null;
 }
 
-export const cardanoTxHandlerService = { checkLatestPaymentEntries }
+export const cardanoTxHandlerService = { checkLatestTransactions }

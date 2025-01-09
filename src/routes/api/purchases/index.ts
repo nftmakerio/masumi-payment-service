@@ -8,7 +8,7 @@ import * as cbor from "cbor"
 
 import { tokenCreditService } from '@/services/token-credit';
 import { ez } from 'express-zod-api';
-import { applyParamsToScript, BlockfrostProvider, mBool, MeshWallet, PlutusScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from '@meshsdk/core';
+import { applyParamsToScript, BlockfrostProvider, mBool, MeshWallet, PlutusScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from '@meshsdk/core';
 import { decrypt } from '@/utils/encryption';
 export const queryPurchaseRequestSchemaInput = z.object({
     identifier: z.string().max(250),
@@ -77,7 +77,7 @@ export const createPurchaseInitSchemaInput = z.object({
     paymentType: z.nativeEnum($Enums.PaymentType),
     unlockTime: ez.dateIn(),
     refundTime: ez.dateIn(),
-    refundRequestTime: ez.dateIn(),
+    submitResultTime: ez.dateIn(),
 })
 
 export const createPurchaseInitSchemaOutput = z.object({
@@ -101,21 +101,21 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
         if (wallets._count === 0) {
             throw createHttpError(404, "No valid purchasing wallets found")
         }
-        //require at least 3 hours between unlock time and the requested refund time
+        //require at least 3 hours between unlock time and the submit result time
         const additionalRefundTime = 1000 * 60 * 60 * 3;
-        if (input.unlockTime < new Date(input.refundRequestTime.getTime() + additionalRefundTime)) {
+        if (input.unlockTime < new Date(input.refundTime.getTime() + additionalRefundTime)) {
             throw createHttpError(400, "Refund request time must be after unlock time with at least 3 hours difference")
         }
-        if (input.refundTime < input.unlockTime) {
-            throw createHttpError(400, "Refund time must be after unlock time")
+        if (input.submitResultTime.getTime() > Date.now()) {
+            throw createHttpError(400, "Submit result time must be in the future")
         }
         const offset = 1000 * 60 * 15;
-        if (input.refundRequestTime < new Date(Date.now() + offset)) {
-            throw createHttpError(400, "Refund request time must be in the future")
+        if (input.submitResultTime < new Date(input.unlockTime.getTime() + offset)) {
+            throw createHttpError(400, "Submit result time must be after unlock time with at least 15 minutes difference")
         }
 
 
-        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.unlockTime, input.refundTime, input.refundRequestTime);
+        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.refundRequestTime, input.unlockTime, input.refundTime);
         return initial
     },
 });
@@ -138,7 +138,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
     output: refundPurchaseSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Creating purchase", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { AdminWallets: true, PurchaseRequests: { where: { identifier: input.identifier }, include: { sellerWallet: true, purchaserWallet: { include: { walletSecret: true } } } } } })
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { FeeReceiverNetworkWallet: true, AdminWallets: true, PurchaseRequests: { where: { identifier: input.identifier }, include: { sellerWallet: true, purchaserWallet: { include: { walletSecret: true } } } } } })
         if (networkCheckSupported == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
@@ -180,16 +180,41 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
         const admin1 = sortedAdminWallets[0];
         const admin2 = sortedAdminWallets[1];
         const admin3 = sortedAdminWallets[2];
-        const script = {
+        const script: PlutusScript = {
             code: applyParamsToScript(blueprint.validators[0].compiledCode, [
                 [
                     resolvePaymentKeyHash(admin1.walletAddress),
                     resolvePaymentKeyHash(admin2.walletAddress),
                     resolvePaymentKeyHash(admin3.walletAddress),
                 ],
+                //yes I love meshJs
+                {
+                    alternative: 0,
+                    fields: [
+                        {
+                            alternative: 0,
+                            fields: [resolvePaymentKeyHash(admin1.walletAddress)],
+                        },
+                        {
+                            alternative: 0,
+                            fields: [
+                                {
+                                    alternative: 0,
+                                    fields: [
+                                        {
+                                            alternative: 0,
+                                            fields: [resolveStakeKeyHash(networkCheckSupported.FeeReceiverNetworkWallet.walletAddress)],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                networkCheckSupported.FeePermille,
             ]),
-            version: 'V3',
-        } as PlutusScript;
+            version: "V3"
+        };
 
         const utxos = await wallet.getUtxos();
         if (utxos.length === 0) {
@@ -219,16 +244,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
         const buyerVerificationKeyHash = purchase.purchaserWallet?.walletVkey;
         if (!buyerVerificationKeyHash)
             throw createHttpError(404, "purchasing wallet not found")
-        /*
-        buyer: VerificationKeyHash,
-          seller: VerificationKeyHash,
-          referenceId: ByteArray,
-          resultHash: ByteArray,
-          unlock_time: POSIXTime,
-          refund_time: POSIXTime,
-          refund_requested: Bool,
-          refund_denied: Bool,
-        */
+
         const utxoDatum = utxo.output.plutusData;
         if (!utxoDatum) {
             throw new Error('No datum found in UTXO');
@@ -242,9 +258,9 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
         if (typeof decodedDatum.value[5] !== 'number') {
             throw new Error('Invalid datum at position 5');
         }
-
-        const unlockTime = decodedDatum.value[4];
-        const refundTime = decodedDatum.value[5];
+        const submitResultTime = decodedDatum.value[4];
+        const unlockTime = decodedDatum.value[5];
+        const refundTime = decodedDatum.value[6];
         const datum = {
             value: {
                 alternative: 0,
@@ -253,6 +269,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
                     sellerVerificationKeyHash,
                     purchase.identifier,
                     '',
+                    submitResultTime,
                     unlockTime,
                     refundTime,
                     //is converted to true
@@ -265,7 +282,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
         };
         const redeemer = {
             data: {
-                alternative: 1,
+                alternative: 4,
                 fields: [],
             },
         };

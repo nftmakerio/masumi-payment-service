@@ -21,8 +21,49 @@ export async function batchLatestPaymentEntriesV1() {
         return await updateMutex.acquire();
 
     try {
-        const networkChecks = await prisma.networkHandler.findMany({ where: { paymentType: "WEB3_CARDANO_V1" }, include: { PurchaseRequests: { where: { status: $Enums.PurchasingRequestStatus.PurchaseRequested }, include: { amounts: { select: { amount: true, unit: true } }, sellerWallet: { select: { walletVkey: true } } } }, PurchasingWallets: { include: { walletSecret: true } } } })
-        await Promise.all(networkChecks.map(async (networkCheck) => {
+        const networkChecksWithWalletLocked = await prisma.$transaction(async (prisma) => {
+            const networkChecks = await prisma.networkHandler.findMany({
+                where: {
+                    paymentType: "WEB3_CARDANO_V1",
+                    PurchasingWallets: { some: { pendingTransaction: null } }
+                }, include: {
+                    PurchaseRequests: {
+                        where: { status: $Enums.PurchasingRequestStatus.PurchaseRequested, errorType: null, },
+                        include: {
+                            amounts: {
+                                select: {
+                                    amount: true, unit: true
+                                }
+                            }, sellerWallet: {
+                                select: {
+                                    walletVkey: true
+                                }
+                            }
+                        }
+                    },
+                    PurchasingWallets: { include: { walletSecret: true } }
+                }
+            })
+            const purchasingWalletIds: string[] = []
+            for (const networkCheck of networkChecks) {
+                for (const purchasingWallet of networkCheck.PurchasingWallets) {
+                    if (purchasingWallet.id) {
+                        purchasingWalletIds.push(purchasingWallet.id)
+                    } else {
+                        logger.warn("No purchaser wallet found for purchase request", { purchasingWallet: purchasingWallet })
+                    }
+                }
+            }
+            for (const purchasingWalletId of purchasingWalletIds) {
+                await prisma.purchasingWallet.update({
+                    where: { id: purchasingWalletId },
+                    data: { pendingTransaction: { create: { hash: null } } }
+                })
+            }
+            return networkChecks;
+        }, { isolationLevel: "Serializable" });
+
+        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
             if (!network)
                 throw new Error("Invalid network")
@@ -58,7 +99,7 @@ export async function batchLatestPaymentEntriesV1() {
                 }
             }))
             const paymentRequestsRemaining = [...paymentRequests];
-            const walletPairings: { wallet: MeshWallet, scriptAddress: string, batchedRequests: { amounts: { unit: string, amount: bigint }[], identifier: string, resultHash: string | null, id: string, sellerWallet: { walletVkey: string }, refundTime: bigint, unlockTime: bigint }[] }[] = [];
+            const walletPairings: { wallet: MeshWallet, scriptAddress: string, batchedRequests: { submitResultTime: bigint, amounts: { unit: string, amount: bigint }[], identifier: string, resultHash: string | null, id: string, sellerWallet: { walletVkey: string }, refundTime: bigint, unlockTime: bigint }[] }[] = [];
             let maxBatchSizeReached = false;
             //TODO: greedy search?
             for (const walletData of walletAmounts) {
@@ -111,8 +152,9 @@ export async function batchLatestPaymentEntriesV1() {
                     //TODO create tx
                     await prisma.purchaseRequest.update({
                         where: { id: paymentRequest.id }, data: {
-                            status: $Enums.PurchasingRequestStatus.Error,
-                            errorRequiresManualReview: true, errorNote: "Not enough funds in wallets", errorType: $Enums.PurchaseRequestErrorType.INSUFFICIENT_FUNDS
+                            errorType: "INSUFFICIENT_FUNDS",
+                            errorRequiresManualReview: true,
+                            errorNote: "Not enough funds in wallets",
                         }
                     })
                 }))
@@ -126,8 +168,9 @@ export async function batchLatestPaymentEntriesV1() {
                     for (const paymentRequest of batchedRequests) {
                         const buyerVerificationKeyHash = resolvePaymentKeyHash(wallet.getUsedAddress().toBech32())
                         const sellerVerificationKeyHash = paymentRequest.sellerWallet.walletVkey;
-                        const unlockTime = parseInt(paymentRequest.unlockTime.toString());
-                        const refundTime = parseInt(paymentRequest.refundTime.toString());
+                        const submitResultTime = paymentRequest.submitResultTime
+                        const unlockTime = paymentRequest.unlockTime
+                        const refundTime = paymentRequest.refundTime
                         const correctedPaymentAmounts = paymentRequest.amounts;
                         const lovelaceIndex = correctedPaymentAmounts.findIndex((amount) => amount.unit.toLowerCase() == "lovelace");
                         if (lovelaceIndex != -1) {
@@ -145,6 +188,7 @@ export async function batchLatestPaymentEntriesV1() {
                                     sellerVerificationKeyHash,
                                     paymentRequest.identifier,
                                     paymentRequest.resultHash ?? '',
+                                    submitResultTime,
                                     unlockTime,
                                     refundTime,
                                     //is converted to false
@@ -174,10 +218,17 @@ export async function batchLatestPaymentEntriesV1() {
                         await prisma.purchaseRequest.updateMany({ where: { id: { in: batchedRequests.map((request) => request.id) } }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.PurchaseInitiated } })
                     } catch (error) {
                         //TODO handle this error
-                        logger.error(error);
+                        logger.error("Error updating payment status, retrying ", error);
+                        const failedRequests = await Promise.allSettled(batchedRequests.map(async (request) => {
+                            await prisma.purchaseRequest.update({ where: { id: request.id }, data: { status: $Enums.PurchasingRequestStatus.PurchaseInitiated } })
+                        }))
+                        const retriedFailedRequests = failedRequests.filter(x => x.status != "fulfilled")
+                        if (retriedFailedRequests.length > 0) {
+                            logger.error("Error updating payment status while retrying ", error, retriedFailedRequests);
+                        }
                     }
                 } catch (error) {
-                    logger.error(error);
+                    logger.error("Error batching payments", error);
                 }
             }))
 
@@ -189,4 +240,4 @@ export async function batchLatestPaymentEntriesV1() {
     }
 }
 
-export const cardanoTxHandlerService = { batchLatestPaymentEntriesV1 }
+export const cardanoPaymentBatcherService = { batchLatestPaymentEntriesV1 }

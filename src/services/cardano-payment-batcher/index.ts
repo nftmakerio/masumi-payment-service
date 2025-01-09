@@ -1,2 +1,2 @@
-export { cardanoTxHandlerService as cardanoRegistryService } from "./cardano-payment-batcher.service";
+export { cardanoPaymentBatcherService } from "./cardano-payment-batcher.service";
 

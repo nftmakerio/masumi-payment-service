@@ -1,16 +1,15 @@
 import { $Enums } from "@prisma/client";
 import { Sema } from "async-sema";
 import { prisma } from '@/utils/db';
-import { BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, unixTimeToEnclosingSlot } from "@meshsdk/core";
+import { BlockfrostProvider, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, unixTimeToEnclosingSlot } from "@meshsdk/core";
 import { decrypt } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
 import * as cbor from "cbor";
 
 const updateMutex = new Sema(1);
 
-export async function collectOutstandingRefundV1() {
+export async function initiateTimeoutRefundsV1() {
 
-    //const maxBatchSize = 10;
 
     const acquiredMutex = await updateMutex.tryAcquire();
     //if we are already performing an update, we wait for it to finish and return
@@ -18,22 +17,47 @@ export async function collectOutstandingRefundV1() {
         return await updateMutex.acquire();
 
     try {
-        const networkChecks = await prisma.networkHandler.findMany({
-            where: { paymentType: "WEB3_CARDANO_V1" }, include: {
-                PurchaseRequests: {
-                    where: {
-                        refundRequestTime: {
-                            gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-                        }, status: "RefundConfirmed", resultHash: { not: null }
+        const networkChecksWithWalletLocked = await prisma.$transaction(async (prisma) => {
+            const networkChecks = await prisma.networkHandler.findMany({
+                where: {
+                    paymentType: "WEB3_CARDANO_V1",
+                }, include: {
+                    PurchaseRequests: {
+                        where: {
+                            submitResultTime: {
+                                lte: Date.now() + 1000 * 60 * 25 //add 25 minutes for block time
+                            }, status: "PurchaseConfirmed", resultHash: null,
+                            errorType: null,
+                            purchaserWallet: { pendingTransaction: null }
+                        },
+                        include: { purchaserWallet: true }
                     },
-                    include: { purchaserWallet: true }
-                },
-                AdminWallets: true,
-                SellingWallet: { include: { walletSecret: true } },
-                CollectionWallet: true
+                    AdminWallets: true,
+                    SellingWallet: { include: { walletSecret: true } },
+                    FeeReceiverNetworkWallet: true,
+                    CollectionWallet: true
+                }
+            })
+            const purchaserWalletIds: string[] = []
+            for (const networkCheck of networkChecks) {
+                for (const purchaseRequest of networkCheck.PurchaseRequests) {
+                    if (purchaseRequest.purchaserWallet?.id) {
+                        purchaserWalletIds.push(purchaseRequest.purchaserWallet?.id)
+                    } else {
+                        logger.warn("No purchaser wallet found for purchase request", { purchaseRequest: purchaseRequest })
+                    }
+                }
             }
-        })
-        await Promise.all(networkChecks.map(async (networkCheck) => {
+            for (const purchaserWalletId of purchaserWalletIds) {
+                await prisma.purchasingWallet.update({
+                    where: { id: purchaserWalletId },
+                    data: { pendingTransaction: { create: { hash: null } } }
+                })
+            }
+            return networkChecks;
+        }, { isolationLevel: "Serializable" });
+
+        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
             if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
                 return;
@@ -49,12 +73,12 @@ export async function collectOutstandingRefundV1() {
             const blockchainProvider = new BlockfrostProvider(networkCheck.blockfrostApiKey, undefined);
 
 
-            const paymentRequests = networkCheck.PurchaseRequests;
+            const purchaseRequests = networkCheck.PurchaseRequests;
 
-            if (paymentRequests.length == 0)
+            if (purchaseRequests.length == 0)
                 return;
             //we can only allow one transaction per wallet
-            const deDuplicatedRequests = [paymentRequests[0]]
+            const deDuplicatedRequests = [purchaseRequests[0]]
 
             await Promise.all(deDuplicatedRequests.map(async (request) => {
                 try {
@@ -84,16 +108,41 @@ export async function collectOutstandingRefundV1() {
                     const admin1 = sortedAdminWallets[0].walletAddress;
                     const admin2 = sortedAdminWallets[1].walletAddress;
                     const admin3 = sortedAdminWallets[2].walletAddress;
-                    const script = {
+                    const script: PlutusScript = {
                         code: applyParamsToScript(blueprint.validators[0].compiledCode, [
                             [
                                 resolvePaymentKeyHash(admin1),
                                 resolvePaymentKeyHash(admin2),
                                 resolvePaymentKeyHash(admin3),
                             ],
+                            //yes I love meshJs
+                            {
+                                alternative: 0,
+                                fields: [
+                                    {
+                                        alternative: 0,
+                                        fields: [resolvePaymentKeyHash(admin1)],
+                                    },
+                                    {
+                                        alternative: 0,
+                                        fields: [
+                                            {
+                                                alternative: 0,
+                                                fields: [
+                                                    {
+                                                        alternative: 0,
+                                                        fields: [resolveStakeKeyHash(networkCheck.FeeReceiverNetworkWallet.walletAddress)],
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            networkCheck.FeePermille
                         ]),
-                        version: 'V3',
-                    } as PlutusScript;
+                        version: "V3"
+                    };
 
                     const utxos = await wallet.getUtxos();
                     if (utxos.length === 0) {
@@ -113,9 +162,6 @@ export async function collectOutstandingRefundV1() {
                     }
 
 
-                    const buyerVerificationKeyHash = request.purchaserWallet?.walletVkey;
-                    const sellerVerificationKeyHash = networkCheck.SellingWallet!.walletVkey;
-
                     const utxoDatum = utxo.output.plutusData;
                     if (!utxoDatum) {
                         throw new Error('No datum found in UTXO');
@@ -128,27 +174,6 @@ export async function collectOutstandingRefundV1() {
                     if (typeof decodedDatum.value[5] !== 'number') {
                         throw new Error('Invalid datum at position 5');
                     }
-                    const unlockTime = decodedDatum.value[4];
-                    const refundTime = decodedDatum.value[5];
-
-                    const datum = {
-                        value: {
-                            alternative: 0,
-                            fields: [
-                                buyerVerificationKeyHash,
-                                sellerVerificationKeyHash,
-                                request.identifier,
-                                "",
-                                unlockTime,
-                                refundTime,
-                                //is converted to false
-                                mBool(true),
-                                //is converted to false
-                                mBool(false),
-                            ],
-                        } as Data,
-                        inline: true,
-                    };
 
                     const redeemer = {
                         data: {
@@ -168,14 +193,12 @@ export async function collectOutstandingRefundV1() {
                             script: script,
                             redeemer: redeemer,
                         })
-                        .sendLovelace(
+                        .sendAssets(
                             {
-                                address: networkCheck.addressToCheck,
-                                datum: datum,
+                                address: address,
                             },
-                            '1435230',
+                            utxo.output.amount
                         )
-                        //send to remaining amount the original purchasing wallet
                         .setChangeAddress(address)
                         .setRequiredSigners([address]);
 
@@ -188,8 +211,8 @@ export async function collectOutstandingRefundV1() {
                     //submit the transaction to the blockchain
                     const txHash = await wallet.submitTx(signedTx);
 
-                    await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.WithdrawInitiated }
+                    await prisma.purchaseRequest.update({
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated }
                     })
 
                     logger.info(`Created withdrawal transaction:
@@ -203,10 +226,23 @@ export async function collectOutstandingRefundV1() {
                   Address: ${resolvePlutusScriptAddress(script, 0)}
               `);
                 } catch (error) {
-                    logger.error(`Error creating withdrawal transaction: ${error}`);
-                    await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { status: $Enums.PaymentRequestStatus.Error }
-                    })
+                    logger.error(`Error creating refund transaction: ${error}`);
+                    if (request.errorRetries == null || request.errorRetries < networkCheck.maxRefundRetries) {
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id }, data: { errorRetries: { increment: 1 } }
+                        })
+                    } else {
+                        const errorMessage = "Error creating refund transaction: " + (error instanceof Error ? error.message :
+                            (typeof error === 'object' && error ? error.toString() : "Unknown Error"));
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id },
+                            data: {
+                                errorType: "UNKNOWN",
+                                errorRequiresManualReview: true,
+                                errorNote: errorMessage
+                            }
+                        })
+                    }
                 }
             }))
         }))
@@ -218,4 +254,4 @@ export async function collectOutstandingRefundV1() {
     }
 }
 
-export const cardanoTxHandlerService = { collectOutstandingPaymentsV1: collectOutstandingRefundV1 }
+export const cardanoRefundHandlerService = { initiateRefundsV1: initiateTimeoutRefundsV1 }

@@ -65,6 +65,7 @@ export const createPaymentsSchemaInput = z.object({
     amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7),
     paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
+    submitResultTime: ez.dateIn(),
     unlockTime: ez.dateIn(),
     refundTime: ez.dateIn(),
 })
@@ -93,6 +94,7 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
                 checkedBy: { connect: { id: networkCheckSupported.id } },
                 amounts: { createMany: { data: input.amounts.map(amount => ({ amount: amount.amount, unit: amount.unit })) } },
                 status: $Enums.PaymentRequestStatus.PaymentRequested,
+                submitResultTime: input.submitResultTime.getTime(),
                 unlockTime: input.unlockTime.getTime(),
                 refundTime: input.refundTime.getTime(),
             }

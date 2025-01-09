@@ -56,6 +56,9 @@ model SellingWallet {
   walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
   walletSecretId String
 
+  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id])
+  pendingTransactionId String?
+
   networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
   networkHandlerId String         @unique
 
@@ -70,12 +73,26 @@ model PurchasingWallet {
   walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
   walletSecretId String
 
+  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id])
+  pendingTransactionId String?
+
   networkHandler   NetworkHandler    @relation(fields: [networkHandlerId], references: [id])
   networkHandlerId String
   note             String?
   PurchaseRequest  PurchaseRequest[]
 
   @@unique([networkHandlerId, walletVkey])
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  hash             String? //null if not yet send out
+  lastCheckedAt    DateTime?
+  SellingWallet    SellingWallet[]
+  PurchasingWallet PurchasingWallet[]
 }
 
 model WalletSecret {
@@ -140,17 +157,18 @@ model PaymentRequest {
   buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id])
   buyerWalletId String?
 
-  amounts         RequestAmount[]
-  status          PaymentRequestStatus
-  identifier      String
-  resultHash      String?
-  unlockTime      BigInt
-  refundTime      BigInt
-  utxo            String?
-  txHash          String?
-  potentialTxHash String?
+  amounts          RequestAmount[]
+  status           PaymentRequestStatus
+  identifier       String
+  resultHash       String?
+  submitResultTime BigInt
+  unlockTime       BigInt
+  refundTime       BigInt
+  utxo             String?
+  txHash           String?
+  potentialTxHash  String?
 
-  errorRetries              Int?
+  errorRetries              Int                      @default(0)
   errorType                 PaymentRequestErrorType?
   errorNote                 String?
   errorRequiresManualReview Boolean?
@@ -172,18 +190,19 @@ model PurchaseRequest {
   purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id])
   purchasingWalletId String?
 
-  amounts           RequestAmount[]
-  status            PurchasingRequestStatus
-  identifier        String
-  resultHash        String?
-  unlockTime        BigInt
-  refundTime        BigInt
-  refundRequestTime BigInt
-  utxo              String?
-  txHash            String?
-  potentialTxHash   String?
+  amounts          RequestAmount[]
+  status           PurchasingRequestStatus
+  identifier       String
+  resultHash       String?
+  submitResultTime BigInt
+  unlockTime       BigInt
+  refundTime       BigInt
 
-  errorRetries              Int?
+  utxo            String?
+  txHash          String?
+  potentialTxHash String?
+
+  errorRetries              Int                       @default(0)
   errorType                 PurchaseRequestErrorType?
   errorNote                 String?
   errorRequiresManualReview Boolean?
@@ -231,8 +250,10 @@ enum PaymentRequestStatus {
 
   ResultGenerated
 
-  WithdrawInitiated
-  WithdrawConfirmed
+  CompletedInitiated
+  CompletedConfirmed
+
+  Denied
 
   RefundRequested
 
@@ -243,11 +264,10 @@ enum PaymentRequestStatus {
   RefundDeniedInitiated
   RefundDeniedConfirmed
 
-  FeesWithdrawn
+  WithdrawnInitiated
+  WithdrawnConfirmed
 
   DisputedWithdrawn
-
-  Error
 }
 
 enum PurchasingRequestStatus {
@@ -256,7 +276,7 @@ enum PurchasingRequestStatus {
   PurchaseInitiated
   PurchaseConfirmed
 
-  Withdrawn
+  Completed
 
   RefundRequestInitiated
   RefundRequestConfirmed
@@ -269,11 +289,9 @@ enum PurchasingRequestStatus {
 
   RefundDenied
 
-  FeesWithdrawn
+  Withdrawn
 
   DisputedWithdrawn
-
-  Error
 }
 
 model NetworkHandler {
@@ -281,17 +299,20 @@ model NetworkHandler {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  network            Network
-  lastCheckedAt      DateTime?
-  page               Int               @default(1)
-  blockfrostApiKey   String
-  latestIdentifier   String?
-  addressToCheck     String
-  scriptJSON         String
-  registryJSON       String
-  registryIdentifier String
-  AdminWallets       AdminWallet[]
-  CollectionWallet   CollectionWallet?
+  network                  Network
+  lastCheckedAt            DateTime?
+  page                     Int               @default(1)
+  blockfrostApiKey         String
+  latestIdentifier         String?
+  addressToCheck           String
+  scriptJSON               String
+  registryJSON             String
+  registryIdentifier       String
+  AdminWallets             AdminWallet[]     @relation("AdminWallets")
+  FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id])
+  adminWalletId            String
+  FeePermille              Int               @default(50)
+  CollectionWallet         CollectionWallet?
 
   PurchasingWallets PurchasingWallet[]
   paymentType       PaymentType
@@ -305,17 +326,26 @@ model NetworkHandler {
   SellerWallets SellerWallet[]
   SellingWallet SellingWallet?
 
+  maxCollectRefundRetries  Int @default(3)
+  maxCollectPaymentRetries Int @default(3)
+  maxCollectionRetries     Int @default(3)
+  maxRefundRetries         Int @default(3)
+  maxPaymentRetries        Int @default(3)
+  maxRefundDenyRetries     Int @default(3)
+
   @@unique([network, addressToCheck])
 }
 
 model AdminWallet {
-  id               String         @id @default(cuid())
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  walletAddress    String
-  NetworkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
-  networkHandlerId String
-  order            Int
+  id                    String          @id @default(cuid())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  walletAddress         String
+  NetworkHandlerAdmin   NetworkHandler? @relation("AdminWallets", fields: [networkHandlerAdminId], references: [id])
+  networkHandlerAdminId String?
+  order                 Int
+
+  NetworkHandlerFeeReceiver NetworkHandler[] @relation("FeeReceiverNetworkWallet")
 }
 
 enum Network {

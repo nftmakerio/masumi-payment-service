@@ -45,7 +45,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
-    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
+    //yes I love meshJs
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -77,22 +100,6 @@ const buyerVerificationKeyHash = resolvePaymentKeyHash(buyerAddress);
 
 const sellerAddress = fs.readFileSync('wallet_2.addr').toString();
 const sellerVerificationKeyHash = resolvePaymentKeyHash(sellerAddress);
-/*
-buyer: VerificationKeyHash,
-  seller: VerificationKeyHash,
-  referenceId: ByteArray,
-  resultHash: ByteArray,
-  unlock_time: POSIXTime,
-  refund_time: POSIXTime,
-  refund_requested: Bool,
-  refund_denied: Bool,
-*/
-
-function hash(data) {
-  return createHash('sha256').update(data).digest('hex');
-}
-
-const hashedValue = hash('example-output-data-test');
 
 const utxoDatum = utxo.output.plutusData;
 if (!utxoDatum) {
@@ -106,8 +113,10 @@ if (typeof decodedDatum.value[4] !== 'number') {
 if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
-const unlockTime = decodedDatum.value[4];
-const refundTime = decodedDatum.value[5];
+const hash = decodedDatum.value[3];
+const submitResultTime = decodedDatum.value[4];
+const unlockTime = decodedDatum.value[5];
+const refundTime = decodedDatum.value[6];
 const datum = {
   value: {
     alternative: 0,
@@ -115,7 +124,8 @@ const datum = {
       buyerVerificationKeyHash,
       sellerVerificationKeyHash,
       'test',
-      hashedValue,
+      hash.toString('hex'),
+      submitResultTime,
       unlockTime,
       refundTime,
       //is converted to true

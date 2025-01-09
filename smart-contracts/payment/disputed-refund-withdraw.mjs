@@ -58,7 +58,30 @@ const script = {
       resolvePaymentKeyHash(admin2),
       resolvePaymentKeyHash(admin3),
     ],
-    pubKeyAddress(resolvePaymentKeyHash(admin1), resolveStakeKeyHash(admin1)),
+    //yes I love meshJs
+    {
+      alternative: 0,
+      fields: [
+        {
+          alternative: 0,
+          fields: [resolvePaymentKeyHash(admin1)],
+        },
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [resolveStakeKeyHash(admin1)],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
     50,
   ]),
   version: 'V3',
@@ -91,17 +114,6 @@ const utxo = await fetchUtxo(
 if (!utxo) {
   throw new Error('UTXO not found');
 }
-
-/*
-buyer: VerificationKeyHash,
-  seller: VerificationKeyHash,
-  referenceId: ByteArray,
-  resultHash: ByteArray,
-  unlock_time: POSIXTime,
-  refund_time: POSIXTime,
-  refund_requested: Bool,
-  refund_denied: Bool,
-*/
 
 const redeemer = {
   data: {
