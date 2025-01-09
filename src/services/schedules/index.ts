@@ -7,6 +7,7 @@ import { collectOutstandingPaymentsV1 } from "@/services/cardano-collection-hand
 import { collectRefundV1 } from "../cardano-refund-handler/cardano-collection-refund.service";
 import { denyRefundPaymentsV1 } from "../cardano-deny-refund-handler/cardano-deny-refund-handler.service";
 import { updateWalletTransactionHashHandlerService } from "../update-wallet-transaction-hash-handler/update-wallet-transaction-hash-handler.service";
+import { collectTimeoutRefundsV1 } from "../cardano-collect-timeout-refund-handler/cardano-collect-timeout-refund-handler.service";
 
 async function init() {
     logger.log({
@@ -45,6 +46,7 @@ async function init() {
         logger.info("checking for payments to refund")
         const start = new Date()
         await collectRefundV1()
+        await collectTimeoutRefundsV1()
         logger.info("finished checking payments to refund in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     })
 

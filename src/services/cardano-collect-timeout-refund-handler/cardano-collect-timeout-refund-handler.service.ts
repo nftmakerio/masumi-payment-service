@@ -8,7 +8,7 @@ import * as cbor from "cbor";
 
 const updateMutex = new Sema(1);
 
-export async function initiateTimeoutRefundsV1() {
+export async function collectTimeoutRefundsV1() {
 
 
     const acquiredMutex = await updateMutex.tryAcquire();
@@ -254,4 +254,4 @@ export async function initiateTimeoutRefundsV1() {
     }
 }
 
-export const cardanoRefundHandlerService = { initiateRefundsV1: initiateTimeoutRefundsV1 }
+export const cardanoRefundHandlerService = { collectTimeoutRefundsV1 }
