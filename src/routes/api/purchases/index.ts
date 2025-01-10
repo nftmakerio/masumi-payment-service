@@ -56,7 +56,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
 
         const result = await prisma.purchaseRequest.findMany({
             where: {},
-            cursor: { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } },
+            cursor: input.cursorIdentifier ? { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } } : undefined,
             take: input.limit,
             include: {
                 sellerWallet: { select: { walletVkey: true, note: true } },
@@ -297,12 +297,13 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
             unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[networkType]) + 1;
         //console.log(utxo);
 
-        const unsignedTx = new Transaction({ initiator: wallet })
+        const unsignedTx = new Transaction({ initiator: wallet }).setMetadata(674, {
+            msg: ["Masumi", "RequestRefund"],
+        })
             .redeemValue({
                 value: utxo,
                 script: script,
                 redeemer: redeemer,
-                //datum: datum,
             })
             .sendValue(
                 { address: resolvePlutusScriptAddress(script, 0), datum: datum },

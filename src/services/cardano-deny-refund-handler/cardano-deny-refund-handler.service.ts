@@ -208,7 +208,9 @@ export async function denyRefundPaymentsV1() {
                     const invalidAfter =
                         unixTimeToEnclosingSlot(Date.now() + 150000, SLOT_CONFIG_NETWORK[network]) + 1;
 
-                    const unsignedTx = new Transaction({ initiator: wallet })
+                    const unsignedTx = new Transaction({ initiator: wallet }).setMetadata(674, {
+                        msg: ["Masumi", "DenyRefund"],
+                    })
                         .redeemValue({
                             value: utxo,
                             script: script,

@@ -91,7 +91,7 @@ async function fetchUtxo(txHash) {
 }
 
 const utxo = await fetchUtxo(
-  '26b58664b360da3e12d8ae7f871c9da7b827ab0215eb4afc122848e090582450',
+  '269445855f4dfd2b228caba7c705fdb4af30ea6938674a6571d97ebd5022467a',
 );
 
 if (!utxo) {
@@ -116,7 +116,7 @@ if (typeof decodedDatum.value[4] !== 'number') {
 if (typeof decodedDatum.value[5] !== 'number') {
   throw new Error('Invalid datum at position 5');
 }
-const hash = decodedDatum.value[3];
+const hash = 'abc_hash_of_the_result2';
 const submitResultTime = decodedDatum.value[4];
 const unlockTime = decodedDatum.value[5];
 const refundTime = decodedDatum.value[6];
@@ -127,8 +127,8 @@ const datum = {
     fields: [
       buyerVerificationKeyHash,
       sellerVerificationKeyHash,
-      'test',
-      hash.toString('hex'),
+      'test_1238091298389124991297247921793h214bfubasfjklnasvjnsacoinasoidnoiadsnoaiusfniuasdnbiuanwdiu12312ono1i2u4niou12n4iuon21oi4n213321io123n123',
+      hash,
       submitResultTime,
       unlockTime,
       refundTime,

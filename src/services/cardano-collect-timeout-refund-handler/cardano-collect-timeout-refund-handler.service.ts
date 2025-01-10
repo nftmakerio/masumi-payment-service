@@ -192,6 +192,8 @@ export async function collectTimeoutRefundsV1() {
                             value: utxo,
                             script: script,
                             redeemer: redeemer,
+                        }).setMetadata(674, {
+                            msg: ["Masumi", "RefundCollectionAfterTimeout"],
                         })
                         .sendAssets(
                             {

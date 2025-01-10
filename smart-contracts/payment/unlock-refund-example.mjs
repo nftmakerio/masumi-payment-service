@@ -89,7 +89,7 @@ async function fetchUtxo(txHash) {
 }
 
 const utxo = await fetchUtxo(
-  '6580e5a94562323d82a63421936f9271896416d5fe5225d755c6c89703e6e512',
+  '7a1f7b5e29911158970d3896a8fbb9103a0e3c535045ad8c960a9cefc1f208e7',
 );
 
 if (!utxo) {

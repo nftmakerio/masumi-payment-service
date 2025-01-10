@@ -90,7 +90,9 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             .hash()
             .toString();
 
-        const tx = new Transaction({ initiator: wallet }).setTxInputs([
+        const tx = new Transaction({ initiator: wallet }).setMetadata(674, {
+            msg: ["Masumi", "RegisterAgent"],
+        }).setTxInputs([
             //ensure our first utxo hash (serializedOutput) is used as first input
             firstUtxo,
             ...utxos.slice(1),
@@ -207,7 +209,9 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
         const policyId = deserializePlutusScript(script.code, script.version)
             .hash()
             .toString();
-        const tx = new Transaction({ initiator: wallet }).setTxInputs(utxos);
+        const tx = new Transaction({ initiator: wallet }).setMetadata(674, {
+            msg: ["Masumi", "DeregisterAgent"],
+        }).setTxInputs(utxos);
 
         tx.isCollateralNeeded = true;
 

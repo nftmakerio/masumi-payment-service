@@ -12,6 +12,8 @@ import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, queryPur
 import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput } from '@/routes/api/payment-source';
 import { registerAgentSchemaInput, registerAgentSchemaOutput, unregisterAgentSchemaInput, unregisterAgentSchemaOutput } from '@/routes/api/registry';
 import { getAPIKeyStatusSchemaOutput, } from '@/routes/api/api-key-status';
+import { getWalletSchemaInput, getWalletSchemaOutput } from '@/routes/api/wallet';
+import { getBlockfrostKeysSchemaInput, getBlockfrostKeysSchemaOutput } from '@/routes/api/blockfrost-keys';
 
 extendZodWithOpenApi(z);
 
@@ -67,6 +69,80 @@ export function generateOpenAPI() {
                   permission: $Enums.Permission.ADMIN,
                   usageLimited: true,
                   remainingUsageCredits: [{ unit: "unit", amount: 1000000 }],
+                }
+              }
+            }),
+          },
+        },
+      },
+    },
+  });
+  /********************* BLOCKFROST KEYS *****************************/
+  registry.registerPath({
+    method: 'get',
+    path: '/blockfrost-keys/',
+    description: 'Gets blockfrost keys',
+    summary: 'REQUIRES API KEY Authentication (+ADMIN)',
+    tags: ['blockfrost-keys',],
+    security: [{ [apiKeyAuth.name]: [] }],
+    request: {
+      query: getBlockfrostKeysSchemaInput.openapi({
+        example: {
+          cursorId: "unique-cuid-v2",
+          limit: 50,
+        }
+      })
+    },
+    responses: {
+      200: {
+        description: 'Blockfrost keys',
+        content: {
+          'application/json': {
+            schema: getBlockfrostKeysSchemaOutput.openapi({
+              example: {
+                blockfrostKeys: [{ network: $Enums.Network.PREPROD, id: "unique-cuid-v2", blockfrostApiKey: "blockfrost_api_key", createdAt: new Date(), updatedAt: new Date() }]
+              }
+            }),
+          },
+        },
+      },
+    },
+  });
+
+  /********************* WALLET *****************************/
+  registry.registerPath({
+    method: 'get',
+    path: '/wallet/',
+    description: 'Gets wallet status',
+    summary: 'REQUIRES API KEY Authentication (+ADMIN)',
+    tags: ['wallet',],
+    security: [{ [apiKeyAuth.name]: [] }],
+    request: {
+      query: getWalletSchemaInput.openapi({
+        example: {
+          id: "unique-cuid-v2-of-entry-to-delete",
+          includeSecret: true,
+          walletType: "Selling",
+        }
+      })
+    },
+    responses: {
+      200: {
+        description: 'Wallet status',
+        content: {
+          'application/json': {
+            schema: z.object({ status: z.string(), data: getWalletSchemaOutput }).openapi({
+              example: {
+                status: "success",
+                data: {
+                  walletVkey: "walletVkey",
+                  note: "note",
+                  pendingTransaction: null,
+                  walletSecret: {
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    secret: "decoded_secret",
+                  }
                 }
               }
             }),
@@ -360,6 +436,7 @@ export function generateOpenAPI() {
           'application/json': {
             schema: createPaymentsSchemaInput.openapi({
               example: {
+                agentIdentifier: "agent_identifier",
                 network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
                 contractAddress: "address",
@@ -385,7 +462,7 @@ export function generateOpenAPI() {
                 status: "success",
                 data: {
                   id: "unique-cuid-v2-auto-generated",
-                  identifier: "identifier",
+                  identifier: "agentIdentifier_unique-cuid-v2-auto-generated",
                   createdAt: new Date(),
                   updatedAt: new Date(),
                   status: $Enums.PaymentRequestStatus.PaymentRequested,

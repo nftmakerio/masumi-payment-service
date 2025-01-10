@@ -99,18 +99,18 @@ buyer: VerificationKeyHash,
   refund_requested: Bool,
   refund_denied: Bool,
 */
-const submitResultTime = 0;
+const submitResultTime = Date.now() + 1000 * 60 * 60 * 24 * 30;
 //1 minute unlock period
-const unlockTime = 20; //Date.now() + 1000 * 60; // * 30;
+const unlockTime = Date.now() + 1000 * 60 * 60 * 24 * 30 * 2; // * 30;
 //1 hour refund dispute period
-const refundTime = 50; //Date.now() + 1000 * 60; //* 60; //* 24 * 30;
+const refundTime = Date.now() + 1000 * 60 * 60 * 24 * 30 * 3; //* 60; //* 24 * 30;
 const datum = {
   value: {
     alternative: 0,
     fields: [
       buyerVerificationKeyHash,
       sellerVerificationKeyHash,
-      'test',
+      'test_1238091298389124991297247921793h214bfubasfjklnasvjnsacoinasoidnoiadsnoaiusfniuasdnbiuanwdiu12312ono1i2u4niou12n4iuon21oi4n213321io123n123',
       '',
       submitResultTime,
       //unlock time after specified time

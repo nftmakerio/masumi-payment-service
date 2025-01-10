@@ -239,7 +239,9 @@ export async function collectOutstandingPaymentsV1() {
                             delete feeAssets[assetKey];
                         }
                     }
-                    const unsignedTx = new Transaction({ initiator: wallet })
+                    const unsignedTx = new Transaction({ initiator: wallet }).setMetadata(674, {
+                        msg: ["Masumi", "Completed"],
+                    })
                         .redeemValue({
                             value: utxo,
                             script: script,

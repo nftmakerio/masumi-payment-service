@@ -30,7 +30,7 @@ export const queryAPIKeyEndpointGet = adminAuthenticatedEndpointFactory.build({
     input: getAPIKeySchemaInput,
     output: getAPIKeySchemaOutput,
     handler: async ({ input, }) => {
-        const result = await prisma.apiKey.findMany({ where: {}, cursor: { apiKey: input.cursorApiKey }, take: input.limit, include: { remainingUsageCredits: true } })
+        const result = await prisma.apiKey.findMany({ where: {}, cursor: input.cursorApiKey ? { apiKey: input.cursorApiKey } : undefined, take: input.limit, include: { remainingUsageCredits: true } })
         return { apiKeys: result.map((data) => { return { ...data, remainingUsageCredits: data.remainingUsageCredits.map((usageCredit) => ({ unit: usageCredit.unit, amount: parseInt(usageCredit.amount.toString()) })) } }) }
     },
 });

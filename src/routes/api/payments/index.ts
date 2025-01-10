@@ -5,6 +5,8 @@ import { prisma } from '@/utils/db';
 import createHttpError from 'http-errors';
 import { ez } from 'express-zod-api';
 import cuid2 from '@paralleldrive/cuid2';
+import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import { resolvePaymentKeyHash } from '@meshsdk/core';
 
 
 export const queryPaymentsSchemaInput = z.object({
@@ -73,6 +75,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
 export const createPaymentsSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
     sellerVkey: z.string().max(250),
+    agentIdentifier: z.string().min(15).max(250),
     amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7),
     paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
@@ -99,9 +102,21 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
         if (networkCheckSupported == null || networkCheckSupported.SellingWallet == null || networkCheckSupported.CollectionWallet == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
+
+        const provider = new BlockFrostAPI({
+            projectId: networkCheckSupported.blockfrostApiKey
+        })
+        const assetInWallet = await provider.assetsAddresses(networkCheckSupported.registryIdentifier + input.agentIdentifier, { order: "desc", count: 1 })
+        if (assetInWallet.length == 0) {
+            throw createHttpError(404, "Agent identifier not found")
+        }
+        const sellingWalletVkey = networkCheckSupported.SellingWallet.walletVkey
+        if (resolvePaymentKeyHash(assetInWallet[0].address) != sellingWalletVkey) {
+            throw createHttpError(404, "Agent identifier not found in wallet")
+        }
         const payment = await prisma.paymentRequest.create({
             data: {
-                identifier: cuid2.createId(),
+                identifier: input.agentIdentifier + "_" + cuid2.createId(),
                 checkedBy: { connect: { id: networkCheckSupported.id } },
                 amounts: { createMany: { data: input.amounts.map(amount => ({ amount: amount.amount, unit: amount.unit })) } },
                 status: $Enums.PaymentRequestStatus.PaymentRequested,

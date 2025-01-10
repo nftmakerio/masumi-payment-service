@@ -164,7 +164,9 @@ export async function batchLatestPaymentEntriesV1() {
                     const wallet = walletPairing.wallet;
                     const batchedRequests = walletPairing.batchedRequests;
                     //batch payments
-                    const unsignedTx = await new Transaction({ initiator: wallet })
+                    const unsignedTx = await new Transaction({ initiator: wallet, }).setMetadata(674, {
+                        msg: ["Masumi", "PaymentBatched"],
+                    })
                     for (const paymentRequest of batchedRequests) {
                         const buyerVerificationKeyHash = resolvePaymentKeyHash(wallet.getUsedAddress().toBech32())
                         const sellerVerificationKeyHash = paymentRequest.sellerWallet.walletVkey;
