@@ -7,7 +7,7 @@ import { $Enums } from '@prisma/client';
 import { z } from 'zod';
 
 export const paymentSourceSchemaInput = z.object({
-    take: z.number({ coerce: true }).min(1).max(100),
+    take: z.number({ coerce: true }).min(1).max(100).default(10),
     cursorId: z.string().max(250).optional(),
 });
 export const paymentSourceSchemaOutput = z.object({
@@ -26,8 +26,8 @@ export const paymentSourceSchemaOutput = z.object({
         scriptJSON: z.string(),
         registryJSON: z.string(),
         AdminWallets: z.array(z.object({
-            id: z.string(),
             walletAddress: z.string().max(250),
+            order: z.number(),
         })),
         CollectionWallet: z.object({
             id: z.string(),
@@ -44,6 +44,10 @@ export const paymentSourceSchemaOutput = z.object({
             walletVkey: z.string().max(250),
             note: z.string().nullable(),
         }).nullable(),
+        FeeReceiverNetworkWallet: z.object({
+            walletAddress: z.string().max(250),
+        }).nullable(),
+        FeePermille: z.number().min(0).max(1000),
     })),
 });
 
@@ -59,10 +63,11 @@ export const paymentSourceEndpointGet = adminAuthenticatedEndpointFactory.build(
             },
             cursor: input.cursorId ? { id: input.cursorId } : undefined,
             include: {
-                AdminWallets: true,
+                AdminWallets: { orderBy: { order: "desc" } },
                 CollectionWallet: true,
                 PurchasingWallets: true,
-                SellingWallet: true
+                SellingWallet: true,
+                FeeReceiverNetworkWallet: true,
             }
         })
         return { paymentSources: paymentSources }

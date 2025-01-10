@@ -7,23 +7,22 @@ import createHttpError from 'http-errors';
 
 
 export const getAPIKeySchemaInput = z.object({
-    id: z.string().max(550).optional(),
-    apiKey: z.string().max(550).optional()
+    limit: z.number({ coerce: true }).min(1).max(100).default(10),
+    cursorApiKey: z.string().max(550).optional()
 })
 
 
 export const getAPIKeySchemaOutput = z.object({
-
-    id: z.string(),
-    apiKey: z.string(),
-    permission: z.nativeEnum(Permission),
-    usageLimited: z.boolean(),
-    remainingUsageCredits: z.array(z.object({
-        unit: z.string().max(150),
-        amount: z.number({ coerce: true }).int().min(0).max(1000000)
-    })),
-    status: z.nativeEnum(APIKeyStatus),
-
+    apiKeys: z.array(z.object({
+        apiKey: z.string(),
+        permission: z.nativeEnum(Permission),
+        usageLimited: z.boolean(),
+        remainingUsageCredits: z.array(z.object({
+            unit: z.string().max(150),
+            amount: z.number({ coerce: true }).int().min(0).max(100000000)
+        })),
+        status: z.nativeEnum(APIKeyStatus),
+    }))
 });
 
 export const queryAPIKeyEndpointGet = adminAuthenticatedEndpointFactory.build({
@@ -31,17 +30,8 @@ export const queryAPIKeyEndpointGet = adminAuthenticatedEndpointFactory.build({
     input: getAPIKeySchemaInput,
     output: getAPIKeySchemaOutput,
     handler: async ({ input, }) => {
-        let data = null;
-        if (input.id) {
-            data = await prisma.apiKey.findUnique({ where: { id: input.id }, include: { remainingUsageCredits: true } })
-        } else {
-            data = await prisma.apiKey.findUnique({ where: { apiKey: input.apiKey }, include: { remainingUsageCredits: true } })
-        }
-        if (!data)
-            throw createHttpError(404, "Not found")
-
-        data = { ...data, remainingUsageCredits: data.remainingUsageCredits.map((usageCredit) => ({ unit: usageCredit.unit, amount: parseInt(usageCredit.amount.toString()) })) }
-        return data
+        const result = await prisma.apiKey.findMany({ where: {}, cursor: { apiKey: input.cursorApiKey }, take: input.limit, include: { remainingUsageCredits: true } })
+        return { apiKeys: result.map((data) => { return { ...data, remainingUsageCredits: data.remainingUsageCredits.map((usageCredit) => ({ unit: usageCredit.unit, amount: parseInt(usageCredit.amount.toString()) })) } }) }
     },
 });
 

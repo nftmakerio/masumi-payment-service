@@ -5,6 +5,7 @@ import { createPurchaseInitPost, queryPurchaseRequestGet, refundPurchasePatch } 
 import { paymentInitPost, paymentUpdatePatch, queryPaymentEntryGet } from "./payments";
 import { registerAgentPost, unregisterAgentDelete } from "./registry";
 import { paymentSourceEndpointDelete, paymentSourceEndpointGet, paymentSourceEndpointPost } from "./payment-source";
+import { queryAPIKeyStatusEndpointGet } from "./api-key-status";
 
 export const apiRouter: Routing = {
     v1: {
@@ -22,6 +23,9 @@ export const apiRouter: Routing = {
         "registry": new DependsOnMethod({
             post: registerAgentPost,
             delete: unregisterAgentDelete
+        }),
+        "api-key-status": new DependsOnMethod({
+            get: queryAPIKeyStatusEndpointGet,
         }),
         "api-key": new DependsOnMethod({
             get: queryCentralizedRegistrySourceGet,

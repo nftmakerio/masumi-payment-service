@@ -8,28 +8,30 @@ import cuid2 from '@paralleldrive/cuid2';
 
 
 export const queryPaymentsSchemaInput = z.object({
-    identifier: z.string().max(250),
+    limit: z.number({ coerce: true }).min(1).max(100).default(10),
+    cursorIdentifier: z.string().max(250).optional(),
     network: z.nativeEnum($Enums.Network),
     paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
 })
 
 export const queryRegistrySchemaOutput = z.object({
-    id: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
-    status: z.nativeEnum($Enums.PaymentRequestStatus),
-    txHash: z.string().nullable(),
-    utxo: z.string().nullable(),
-    errorType: z.nativeEnum($Enums.PaymentRequestErrorType).nullable(),
-    errorNote: z.string().nullable(),
-    errorRequiresManualReview: z.boolean().nullable(),
-    identifier: z.string().max(250),
-    sellingWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
-    collectionWallet: z.object({ id: z.string(), walletAddress: z.string(), note: z.string().nullable() }).nullable(),
-    buyerWallet: z.object({ walletVkey: z.string(), }).nullable(),
-    amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
-    checkedBy: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }),
+    payments: z.array(z.object({
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        status: z.nativeEnum($Enums.PaymentRequestStatus),
+        txHash: z.string().nullable(),
+        utxo: z.string().nullable(),
+        errorType: z.nativeEnum($Enums.PaymentRequestErrorType).nullable(),
+        errorNote: z.string().nullable(),
+        errorRequiresManualReview: z.boolean().nullable(),
+        identifier: z.string().max(250),
+        sellingWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
+        collectionWallet: z.object({ id: z.string(), walletAddress: z.string(), note: z.string().nullable() }).nullable(),
+        buyerWallet: z.object({ walletVkey: z.string(), }).nullable(),
+        amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
+        checkedBy: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }),
+    }))
 });
 
 export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
@@ -44,8 +46,17 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
             throw createHttpError(404, "Network handler not found")
         }
 
-        const result = await prisma.paymentRequest.findUnique({
-            where: { checkedById_identifier: { checkedById: networkHandler.id, identifier: input.identifier } }, include: {
+        const result = await prisma.paymentRequest.findMany({
+            where: {},
+            orderBy: { createdAt: "desc" },
+            cursor: input.cursorIdentifier ? {
+                checkedById_identifier: {
+                    checkedById: networkHandler.id,
+                    identifier: input.cursorIdentifier
+                }
+            } : undefined,
+            take: input.limit,
+            include: {
                 buyerWallet: true,
                 checkedBy: true,
                 amounts: true
@@ -54,7 +65,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
         if (result == null) {
             throw createHttpError(404, "Payment not found")
         }
-        return { ...result, sellingWallet: networkHandler.SellingWallet, collectionWallet: networkHandler.CollectionWallet, amounts: result.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) }
+        return { payments: result.map((data) => { return { ...data, sellingWallet: networkHandler.SellingWallet, collectionWallet: networkHandler.CollectionWallet, amounts: data.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) } }) }
     },
 });
 

@@ -11,7 +11,8 @@ import { ez } from 'express-zod-api';
 import { applyParamsToScript, BlockfrostProvider, mBool, MeshWallet, PlutusScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from '@meshsdk/core';
 import { decrypt } from '@/utils/encryption';
 export const queryPurchaseRequestSchemaInput = z.object({
-    identifier: z.string().max(250),
+    limit: z.number({ coerce: true }).min(1).max(100).default(10),
+    cursorIdentifier: z.string().max(250).optional(),
     network: z.nativeEnum($Enums.Network),
     sellingWalletVkey: z.string().max(250),
     paymentType: z.nativeEnum($Enums.PaymentType),
@@ -19,21 +20,21 @@ export const queryPurchaseRequestSchemaInput = z.object({
 })
 
 export const queryPurchaseRequestSchemaOutput = z.object({
-    id: z.string(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
-    status: z.nativeEnum($Enums.PurchasingRequestStatus),
-    txHash: z.string().nullable(),
-    utxo: z.string().nullable(),
-    errorType: z.nativeEnum($Enums.PurchaseRequestErrorType).nullable(),
-    errorNote: z.string().nullable(),
-    errorRequiresManualReview: z.boolean().nullable(),
-    identifier: z.string().max(250),
-
-    purchaserWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
-    sellerWallet: z.object({ walletVkey: z.string(), note: z.string().nullable() }).nullable(),
-    amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
-    networkHandler: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }).nullable(),
+    purchases: z.array(z.object({
+        createdAt: z.date(),
+        updatedAt: z.date(),
+        status: z.nativeEnum($Enums.PurchasingRequestStatus),
+        txHash: z.string().nullable(),
+        utxo: z.string().nullable(),
+        errorType: z.nativeEnum($Enums.PurchaseRequestErrorType).nullable(),
+        errorNote: z.string().nullable(),
+        errorRequiresManualReview: z.boolean().nullable(),
+        identifier: z.string().max(250),
+        purchaserWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
+        sellerWallet: z.object({ walletVkey: z.string(), note: z.string().nullable() }).nullable(),
+        amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
+        networkHandler: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }).nullable(),
+    }))
 });
 
 export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
@@ -53,8 +54,11 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
         }
 
 
-        const result = await prisma.purchaseRequest.findUnique({
-            where: { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } }, include: {
+        const result = await prisma.purchaseRequest.findMany({
+            where: {},
+            cursor: { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } },
+            take: input.limit,
+            include: {
                 sellerWallet: { select: { walletVkey: true, note: true } },
                 purchaserWallet: { select: { id: true, walletVkey: true, note: true } },
                 networkHandler: true,
@@ -64,7 +68,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
         if (result == null) {
             throw createHttpError(404, "Purchase not found")
         }
-        return { ...result, amounts: result.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) }
+        return { purchases: result.map(purchase => ({ ...purchase, amounts: purchase.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) })) }
     },
 });
 

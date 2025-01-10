@@ -11,12 +11,13 @@ import { createPaymentSchemaOutput, createPaymentsSchemaInput, queryPaymentsSche
 import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, queryPurchaseRequestSchemaInput, queryPurchaseRequestSchemaOutput, refundPurchaseSchemaInput, refundPurchaseSchemaOutput } from '@/routes/api/purchases';
 import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput } from '@/routes/api/payment-source';
 import { registerAgentSchemaInput, registerAgentSchemaOutput, unregisterAgentSchemaInput, unregisterAgentSchemaOutput } from '@/routes/api/registry';
+import { getAPIKeyStatusSchemaOutput, } from '@/routes/api/api-key-status';
 
 extendZodWithOpenApi(z);
 
 const registry = new OpenAPIRegistry();
 export function generateOpenAPI() {
-
+  /********************* HEALTH *****************************/
   registry.registerPath({
     method: 'get',
     path: '/health/',
@@ -34,7 +35,9 @@ export function generateOpenAPI() {
     },
   });
 
-  /********************* API KEYS *****************************/
+
+
+
   const apiKeyAuth = registry.registerComponent('securitySchemes', 'API-Key', {
     type: 'apiKey',
     in: 'header',
@@ -42,6 +45,37 @@ export function generateOpenAPI() {
     description: 'API key authentication via header (token)',
   });
 
+  /********************* KEY STATUS *****************************/
+  registry.registerPath({
+    method: 'get',
+    path: '/api-key-status/',
+    description: 'Gets api key status',
+    summary: 'REQUIRES API KEY Authentication (+READ)',
+    tags: ['api-key-status',],
+    security: [{ [apiKeyAuth.name]: [] }],
+    responses: {
+      200: {
+        description: 'API key status',
+        content: {
+          'application/json': {
+            schema: z.object({ status: z.string(), data: getAPIKeyStatusSchemaOutput }).openapi({
+              example: {
+                status: "success",
+                data: {
+                  status: "ACTIVE",
+                  apiKey: "masumi-payment-api-key-secret",
+                  permission: $Enums.Permission.ADMIN,
+                  usageLimited: true,
+                  remainingUsageCredits: [{ unit: "unit", amount: 1000000 }],
+                }
+              }
+            }),
+          },
+        },
+      },
+    },
+  });
+  /********************* API KEYS *****************************/
   registry.registerPath({
     method: 'get',
     path: '/api-key/',
@@ -51,8 +85,8 @@ export function generateOpenAPI() {
     request: {
       query: getAPIKeySchemaInput.openapi({
         example: {
-          id: "id_or_apiKey_unique-cuid-v2-of-entry-to-search",
-          apiKey: "id_or_apiKey_api-key-to-search",
+          limit: 10,
+          cursorApiKey: "identifier",
         }
       })
     },
@@ -65,12 +99,13 @@ export function generateOpenAPI() {
             schema: z.object({ status: z.string(), data: getAPIKeySchemaOutput }).openapi({
               example: {
                 data: {
-                  id: "unique-cuid-v2-auto-generated",
-                  apiKey: "masumi-payment-api-key-secret",
-                  permission: "ADMIN",
-                  usageLimited: true,
-                  remainingUsageCredits: [{ unit: "unit", amount: 1000000 }],
-                  status: "ACTIVE"
+                  apiKeys: [{
+                    apiKey: "masumi-payment-api-key-secret",
+                    permission: "ADMIN",
+                    usageLimited: true,
+                    remainingUsageCredits: [{ unit: "unit", amount: 1000000 }],
+                    status: "ACTIVE"
+                  }]
                 }, status: "success"
               }
             }),
@@ -262,7 +297,8 @@ export function generateOpenAPI() {
       query: queryPaymentsSchemaInput.openapi({
         example: {
           paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
-          identifier: "identifier",
+          limit: 10,
+          cursorIdentifier: "identifier",
           network: $Enums.Network.PREPROD,
           contractAddress: "addr_abcd1234567890"
         }
@@ -277,21 +313,22 @@ export function generateOpenAPI() {
             schema: z.object({ status: z.string(), data: queryPaymentsSchemaOutput }).openapi({
               example: {
                 data: {
-                  id: "unique-cuid-v2-auto-generated",
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                  status: $Enums.PaymentRequestStatus.PaymentRequested,
-                  txHash: "tx_hash",
-                  utxo: "utxo",
-                  errorType: $Enums.PaymentRequestErrorType.NETWORK_ERROR,
-                  errorNote: "error_note",
-                  errorRequiresManualReview: false,
-                  identifier: "identifier",
-                  sellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
-                  collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
-                  buyerWallet: { walletVkey: "wallet_vkey" },
-                  amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
-                  checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
+                  payments: [{
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    status: $Enums.PaymentRequestStatus.PaymentRequested,
+                    txHash: "tx_hash",
+                    utxo: "utxo",
+                    errorType: $Enums.PaymentRequestErrorType.NETWORK_ERROR,
+                    errorNote: "error_note",
+                    errorRequiresManualReview: false,
+                    identifier: "identifier",
+                    sellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                    collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
+                    buyerWallet: { walletVkey: "wallet_vkey" },
+                    amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
+                    checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
+                  }]
                 }, status: "success"
               }
             }),
@@ -437,11 +474,12 @@ export function generateOpenAPI() {
     request: {
       query: queryPurchaseRequestSchemaInput.openapi({
         example: {
-          paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
-          identifier: "identifier",
+          limit: 10,
+          cursorIdentifier: "identifier",
           network: $Enums.Network.PREPROD,
           contractAddress: "addr_abcd1234567890",
-          sellingWalletVkey: "wallet_vkey"
+          sellingWalletVkey: "wallet_vkey",
+          paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
         }
       })
     },
@@ -455,24 +493,22 @@ export function generateOpenAPI() {
               example: {
                 status: "success",
                 data: {
-                  id: "unique-cuid-v2-auto-generated",
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                  status: $Enums.PurchasingRequestStatus.PurchaseRequested,
-                  txHash: "tx_hash",
-                  utxo: "utxo",
-                  errorType: $Enums.PurchaseRequestErrorType.NETWORK_ERROR,
-                  errorNote: "error_note",
-                  errorRequiresManualReview: false,
-                  identifier: "identifier",
-
-                  amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
-                  networkHandler: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
-
-                  purchaserWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
-                  sellerWallet: { walletVkey: "wallet_vkey", note: "note" },
-
-                },
+                  purchases: [{
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    status: $Enums.PurchasingRequestStatus.PurchaseRequested,
+                    txHash: "tx_hash",
+                    utxo: "utxo",
+                    errorType: $Enums.PurchaseRequestErrorType.NETWORK_ERROR,
+                    errorNote: "error_note",
+                    errorRequiresManualReview: false,
+                    identifier: "identifier",
+                    amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
+                    networkHandler: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
+                    purchaserWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                    sellerWallet: { walletVkey: "wallet_vkey", note: "note" },
+                  }],
+                }
               }
             }),
           },
@@ -681,7 +717,7 @@ export function generateOpenAPI() {
   registry.registerPath({
     method: 'get',
     path: '/payment-source/',
-    description: 'Gets the payment source status. It needs to be created first with a POST request.',
+    description: 'Gets the payment sources including the status.',
     summary: 'REQUIRES API KEY Authentication (+ADMIN)',
     tags: ['payment-source',],
     security: [{ [apiKeyAuth.name]: [] }],
@@ -716,10 +752,15 @@ export function generateOpenAPI() {
                     registryIdentifier: null,
                     scriptJSON: "{}",
                     registryJSON: "{}",
-                    AdminWallets: [{ id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address" }],
+                    AdminWallets: [{
+                      walletAddress: "wallet_address",
+                      order: 0
+                    }],
                     CollectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
                     PurchasingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
-                    SellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }
+                    SellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                    FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
+                    FeePermille: 50,
                   }]
                 }
               }
