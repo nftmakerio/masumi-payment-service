@@ -23,7 +23,6 @@ export async function updateWalletTransactionHash() {
                     hash: { not: null, },
                     //if the transaction has been checked in the last 30 seconds, we skip it
                     lastCheckedAt: { lte: new Date(Date.now() - 1000 * 30) }
-
                 }
             },
             include: { pendingTransaction: true, networkHandler: true },
