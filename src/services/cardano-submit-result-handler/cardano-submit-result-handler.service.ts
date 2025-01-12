@@ -31,7 +31,7 @@ export async function submitResultV1() {
                                 gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
 
                             }
-                            , status: "PaymentConfirmed",
+                            , status: { in: ["PaymentConfirmed", "RefundRequested"] },
                             resultHash: { not: null },
                             errorType: null,
                         },

@@ -229,17 +229,20 @@ export async function checkLatestTransactions() {
                                 //invalid transaction
                                 continue;
                             }
+                            const inputDatum = inputs[0].inline_datum
+                            if (inputDatum == null) {
+                                //invalid transaction
+                                continue;
+                            }
+
+                            const decodedInputDatum: unknown = Data.from(inputDatum);
+                            const decodedOldContract = decodeV1ContractDatum(decodedInputDatum)
+                            if (decodedOldContract == null) {
+                                //invalid transaction
+                                continue;
+                            }
 
                             const redeemer = redeemers.get(0)
-                            /*
-                                Withdraw
-                                RequestRefund
-                                CancelRefundRequest
-                                WithdrawRefund
-                                DenyRefund
-                                WithdrawDisputed
-                                WithdrawFee
-                            */
 
                             const redeemerVersion = JSON.parse(redeemer.data().to_json(PlutusDatumSchema.BasicConversions))[
                                 "constructor"
@@ -279,9 +282,17 @@ export async function checkLatestTransactions() {
                                 newPurchasingStatus = $Enums.PurchasingRequestStatus.DisputedWithdrawn
                             }
                             else if (redeemerVersion == 6) {
-                                //WithdrawFee
-                                newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
-                                newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
+
+                                //Edge case if the submit result happened after the refund was requested
+                                if (decodedOldContract.refundRequested) {
+                                    newStatus = $Enums.PaymentRequestStatus.RefundRequested
+                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestConfirmed
+                                } else {
+                                    //WithdrawFee
+                                    newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
+                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
+                                }
+
                             }
                             else {
                                 //invalid transaction  
@@ -289,18 +300,7 @@ export async function checkLatestTransactions() {
                                 continue;
                             }
 
-                            const inputDatum = inputs[0].inline_datum
-                            if (inputDatum == null) {
-                                //invalid transaction
-                                continue;
-                            }
 
-                            const decodedInputDatum: unknown = Data.from(inputDatum);
-                            const decodedOldContract = decodeV1ContractDatum(decodedInputDatum)
-                            if (decodedOldContract == null) {
-                                //invalid transaction
-                                continue;
-                            }
                             await Promise.all([
                                 handlePaymentTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId),
                                 handlePurchasingTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newPurchasingStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId)
