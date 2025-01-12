@@ -4,7 +4,6 @@ import { prisma } from '@/utils/db';
 import { BlockfrostProvider } from "@meshsdk/core";
 import { logger } from "@/utils/logger";
 import { cardanoRefundHandlerService } from "../cardano-refund-handler/cardano-collection-refund.service";
-import { cardanoDenyRefundHandlerService } from "../cardano-deny-refund-handler/cardano-deny-refund-handler.service";
 import { cardanoSubmitResultHandlerService } from "../cardano-submit-result-handler/cardano-submit-result-handler.service";
 
 const updateMutex = new Sema(1);
@@ -93,11 +92,6 @@ export async function updateWalletTransactionHash() {
                 await cardanoRefundHandlerService.collectRefundV1()
             } catch (error) {
                 logger.error(`Error initiating refunds: ${error}`);
-            }
-            try {
-                await cardanoDenyRefundHandlerService.denyRefundPaymentsV1()
-            } catch (error) {
-                logger.error(`Error denying refund payments: ${error}`);
             }
             try {
                 await cardanoSubmitResultHandlerService.submitResultV1()

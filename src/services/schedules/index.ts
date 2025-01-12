@@ -5,7 +5,6 @@ import { logger } from '@/utils/logger';
 import { batchLatestPaymentEntriesV1 } from "@/services/cardano-payment-batcher/cardano-payment-batcher.service";
 import { collectOutstandingPaymentsV1 } from "@/services/cardano-collection-handler/cardano-collection-handler.service";
 import { collectRefundV1 } from "../cardano-refund-handler/cardano-collection-refund.service";
-import { denyRefundPaymentsV1 } from "../cardano-deny-refund-handler/cardano-deny-refund-handler.service";
 import { updateWalletTransactionHashHandlerService } from "../update-wallet-transaction-hash-handler/update-wallet-transaction-hash-handler.service";
 import { collectTimeoutRefundsV1 } from "../cardano-collect-timeout-refund-handler/cardano-collect-timeout-refund-handler.service";
 
@@ -50,12 +49,6 @@ async function init() {
         logger.info("finished checking payments to refund in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
     })
 
-    cron.schedule(CONFIG.CHECK_DENY_INTERVAL, async () => {
-        logger.info("checking for payments to deny")
-        const start = new Date()
-        await denyRefundPaymentsV1()
-        logger.info("finished checking payments to deny in " + (new Date().getTime() - start.getTime()) / 1000 + "s")
-    })
     cron.schedule(CONFIG.CHECK_WALLET_TRANSACTION_HASH_INTERVAL, async () => {
         logger.info("checking for wallet transaction hash")
         const start = new Date()
