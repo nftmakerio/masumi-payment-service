@@ -33,12 +33,12 @@ pub type Action {
   CancelRefundRequest
   //is implicitly allowed if the refund was requested and the refund time is over (and not denied)
   WithdrawRefund
-  //this will set the refund_denied to True and prevent any withdrawal
-  DenyRefund
   //multi sig 2/3
   WithdrawDisputed
-  //submits the result hash to the contract
+  //submits the result hash to the contract and denies any refund
   SubmitResult
+  //handled the dispute offchain and withdraw any deny of a refund
+  CancelDenyRefund
 }
 
 validator vested_pay(
@@ -97,10 +97,7 @@ validator vested_pay(
 
         expect bytearray.is_empty(resultHash) == False
 
-        and {
-          refund_requested == False,
-          refund_denied == False,
-        }
+        refund_requested == False
       }
 
       RequestRefund -> {
@@ -114,8 +111,6 @@ validator vested_pay(
         expect output_value_is_preserved(input.output.value, output.value)
 
         expect refund_requested == False
-        //prevent a loop after refund denied
-        expect refund_denied == False
 
         expect must_end_before(validity_range, unlock_time)
 
@@ -128,7 +123,7 @@ validator vested_pay(
           new_datum.submit_result_time == submit_result_time,
           new_datum.refund_time == refund_time,
           new_datum.refund_requested == True,
-          new_datum.refund_denied == False,
+          new_datum.refund_denied == refund_denied,
         }
       }
       // Seller can approve the refund request by letting it run into the refund time
@@ -146,45 +141,6 @@ validator vested_pay(
           },
         }
       }
-      DenyRefund -> {
-        expect Some(output) =
-          self.outputs
-            |> list.filter(fn(output) { output.address == count_script_address })
-            |> list.head()
-        expect InlineDatum(maybe_new_datum) = output.datum
-        expect new_datum: Datum = maybe_new_datum
-
-        expect must_be_signed_by(self, seller)
-
-        //expect the locked value to be preserved
-        expect output_value_is_preserved(input.output.value, output.value)
-
-        expect refund_requested == True
-        expect refund_denied == False
-
-        //force output resultHash to be set
-        expect or {
-            and {
-              bytearray.is_empty(new_datum.resultHash) == False,
-              must_end_before(validity_range, submit_result_time) == True,
-            },
-            and {
-              bytearray.is_empty(resultHash) == False,
-              resultHash == new_datum.resultHash,
-            },
-          }
-
-        and {
-          new_datum.buyer == buyer,
-          new_datum.seller == seller,
-          new_datum.referenceId == referenceId,
-          new_datum.unlock_time == unlock_time,
-          new_datum.submit_result_time == submit_result_time,
-          new_datum.refund_time == refund_time,
-          new_datum.refund_requested == True,
-          new_datum.refund_denied == True,
-        }
-      }
       //The buyer can cancel the refund request, if the vesting period is over, this will immediately give the seller the option to withdraw any funds
       CancelRefundRequest -> {
         expect Some(output) =
@@ -198,10 +154,9 @@ validator vested_pay(
         //expect the locked value to be preserved
         expect output_value_is_preserved(input.output.value, output.value)
 
-        //we always allow to cancel the refund request otherwise we would want to ensure
+        //we always allow to cancel the refund request
         expect refund_requested == True
-        expect refund_denied == False
-        //the buyer will not be able to request an other refund as the hash would be set
+
         and {
           new_datum.buyer == buyer,
           new_datum.seller == seller,
@@ -211,7 +166,7 @@ validator vested_pay(
           new_datum.unlock_time == unlock_time,
           new_datum.refund_time == refund_time,
           new_datum.refund_requested == False,
-          new_datum.refund_denied == False,
+          new_datum.refund_denied == refund_denied,
         }
       }
       //multi sig 2/3 to withdraw the disputed funds via network admins
@@ -248,6 +203,34 @@ validator vested_pay(
           new_datum.referenceId == referenceId,
           new_datum.unlock_time == unlock_time,
           new_datum.submit_result_time == submit_result_time,
+          new_datum.refund_time == refund_time,
+          new_datum.refund_requested == refund_requested,
+          //auto deny refund
+          new_datum.refund_denied == True,
+        }
+      }
+      CancelDenyRefund -> {
+        expect Some(output) =
+          self.outputs
+            |> list.filter(fn(output) { output.address == count_script_address })
+            |> list.head()
+        expect InlineDatum(maybe_new_datum) = output.datum
+        expect new_datum: Datum = maybe_new_datum
+        expect must_be_signed_by(self, seller)
+
+        //expect the locked value to be preserved
+        expect output_value_is_preserved(input.output.value, output.value)
+
+        //we always allow to cancel the refund request
+        expect refund_denied == True
+
+        and {
+          new_datum.buyer == buyer,
+          new_datum.seller == seller,
+          new_datum.referenceId == referenceId,
+          bytearray.is_empty(new_datum.resultHash) == True,
+          new_datum.submit_result_time == submit_result_time,
+          new_datum.unlock_time == unlock_time,
           new_datum.refund_time == refund_time,
           new_datum.refund_requested == refund_requested,
           new_datum.refund_denied == False,

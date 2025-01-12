@@ -4,6 +4,7 @@ import { $Enums } from '@prisma/client';
 import { prisma } from '@/utils/db';
 import createHttpError from 'http-errors';
 import * as cbor from "cbor"
+import { cardanoTxHandlerService } from "@/services/cardano-tx-handler"
 
 
 import { tokenCreditService } from '@/services/token-credit';
@@ -256,15 +257,28 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
 
 
         const decodedDatum = cbor.decode(Buffer.from(utxoDatum, 'hex'));
+        if (typeof decodedDatum.value[3] !== 'string') {
+            throw new Error('Invalid datum at position 3');
+        }
+        const resultHash = Buffer.from(decodedDatum.value[3], "hex").toString("utf-8")
+
         if (typeof decodedDatum.value[4] !== 'number') {
             throw new Error('Invalid datum at position 4');
         }
         if (typeof decodedDatum.value[5] !== 'number') {
             throw new Error('Invalid datum at position 5');
         }
+        if (typeof decodedDatum.value[6] !== 'number') {
+            throw new Error('Invalid datum at position 5');
+        }
         const submitResultTime = decodedDatum.value[4];
         const unlockTime = decodedDatum.value[5];
         const refundTime = decodedDatum.value[6];
+
+        const refundDenied = cardanoTxHandlerService.mBoolToBool(decodedDatum.value[8])
+        if (refundDenied == null) {
+            throw new Error("Invalid datum at position 8")
+        }
         const datum = {
             value: {
                 alternative: 0,
@@ -272,21 +286,22 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
                     buyerVerificationKeyHash,
                     sellerVerificationKeyHash,
                     purchase.identifier,
-                    '',
+                    resultHash,
                     submitResultTime,
                     unlockTime,
                     refundTime,
                     //is converted to true
                     mBool(true),
                     //is converted to false
-                    mBool(false),
+                    //Todo decode old contract value
+                    mBool(refundDenied)
                 ],
             },
             inline: true,
         };
         const redeemer = {
             data: {
-                alternative: 4,
+                alternative: 2,
                 fields: [],
             },
         };

@@ -27,9 +27,9 @@ export async function submitResultV1() {
                 }, include: {
                     PaymentRequests: {
                         where: {
-                            unlockTime: {
-                                gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
-
+                            //the smart contract requires the result hash to be provided before the result time
+                            submitResultTime: {
+                                lte: Date.now() - 1000 * 60 * 1 //remove 1 minute for block time
                             }
                             , status: { in: ["PaymentConfirmed", "RefundRequested"] },
                             resultHash: { not: null },
@@ -172,8 +172,9 @@ export async function submitResultV1() {
                     if (typeof decodedDatum.value[5] !== 'number') {
                         throw new Error('Invalid datum at position 5');
                     }
-                    const unlockTime = decodedDatum.value[4];
-                    const refundTime = decodedDatum.value[5];
+                    const submitResultTime = decodedDatum.value[4];
+                    const unlockTime = decodedDatum.value[5];
+                    const refundTime = decodedDatum.value[6];
 
                     const datum = {
                         value: {
@@ -183,12 +184,13 @@ export async function submitResultV1() {
                                 sellerVerificationKeyHash,
                                 request.identifier,
                                 request.resultHash,
+                                submitResultTime,
                                 unlockTime,
                                 refundTime,
                                 //is converted to false
                                 mBool(false),
                                 //is converted to false
-                                mBool(false),
+                                mBool(true),
                             ],
                         } as Data,
                         inline: true,
@@ -196,7 +198,7 @@ export async function submitResultV1() {
 
                     const redeemer = {
                         data: {
-                            alternative: 6,
+                            alternative: 5,
                             fields: [],
                         },
                     };

@@ -14,10 +14,10 @@ CREATE TYPE "PurchaseRequestErrorType" AS ENUM ('NETWORK_ERROR', 'INSUFFICIENT_F
 CREATE TYPE "PaymentType" AS ENUM ('WEB3_CARDANO_V1');
 
 -- CreateEnum
-CREATE TYPE "PaymentRequestStatus" AS ENUM ('PaymentRequested', 'PaymentConfirmed', 'PaymentInvalid', 'ResultGenerated', 'CompletedInitiated', 'CompletedConfirmed', 'Denied', 'RefundRequested', 'Refunded', 'RefundRequestCanceled', 'RefundDeniedInitiated', 'RefundDeniedConfirmed', 'WithdrawnInitiated', 'WithdrawnConfirmed', 'DisputedWithdrawn');
+CREATE TYPE "PaymentRequestStatus" AS ENUM ('PaymentRequested', 'PaymentConfirmed', 'PaymentInvalid', 'ResultGenerated', 'CompletedInitiated', 'CompletedConfirmed', 'Denied', 'RefundRequested', 'Refunded', 'WithdrawnInitiated', 'WithdrawnConfirmed', 'DisputedWithdrawn');
 
 -- CreateEnum
-CREATE TYPE "PurchasingRequestStatus" AS ENUM ('PurchaseRequested', 'PurchaseInitiated', 'PurchaseConfirmed', 'Completed', 'RefundRequestInitiated', 'RefundRequestConfirmed', 'RefundInitiated', 'RefundConfirmed', 'RefundRequestCanceledInitiated', 'RefundRequestCanceledConfirmed', 'RefundDenied', 'Withdrawn', 'DisputedWithdrawn');
+CREATE TYPE "PurchasingRequestStatus" AS ENUM ('PurchaseRequested', 'PurchaseInitiated', 'PurchaseConfirmed', 'Completed', 'RefundRequestInitiated', 'RefundRequestConfirmed', 'RefundInitiated', 'RefundConfirmed', 'RefundRequestCanceledInitiated', 'Withdrawn', 'DisputedWithdrawn');
 
 -- CreateEnum
 CREATE TYPE "Network" AS ENUM ('PREVIEW', 'PREPROD', 'MAINNET');

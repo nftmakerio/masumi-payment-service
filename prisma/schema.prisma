@@ -259,11 +259,6 @@ enum PaymentRequestStatus {
 
   Refunded
 
-  RefundRequestCanceled
-
-  RefundDeniedInitiated
-  RefundDeniedConfirmed
-
   WithdrawnInitiated
   WithdrawnConfirmed
 
@@ -285,9 +280,6 @@ enum PurchasingRequestStatus {
   RefundConfirmed
 
   RefundRequestCanceledInitiated
-  RefundRequestCanceledConfirmed
-
-  RefundDenied
 
   Withdrawn
 

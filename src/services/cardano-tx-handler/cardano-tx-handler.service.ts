@@ -229,7 +229,12 @@ export async function checkLatestTransactions() {
                                 //invalid transaction
                                 continue;
                             }
-                            const inputDatum = inputs[0].inline_datum
+
+                            if (valueInputs.length != 1) {
+                                continue;
+                            }
+
+                            const inputDatum = valueInputs[0].inline_datum
                             if (inputDatum == null) {
                                 //invalid transaction
                                 continue;
@@ -242,11 +247,25 @@ export async function checkLatestTransactions() {
                                 continue;
                             }
 
+                            if (valueOutputs.length > 1) {
+                                continue
+                            }
+
+                            const outputDatum = valueOutputs.length == 1 ? valueOutputs[0].inline_datum : null
+                            const decodedOutputDatum = outputDatum != null ? Data.from(outputDatum) : null
+                            const decodedNewContract = decodeV1ContractDatum(decodedOutputDatum)
+
                             const redeemer = redeemers.get(0)
 
                             const redeemerVersion = JSON.parse(redeemer.data().to_json(PlutusDatumSchema.BasicConversions))[
                                 "constructor"
                             ]
+
+                            if (redeemerVersion != 0 && redeemerVersion != 3 && decodedNewContract == null) {
+                                //this should not be possible
+                                logger.error("Possible invalid state in smart contract detected. tx_hash: " + tx.tx.tx_hash)
+                                continue
+                            }
 
                             let newStatus: $Enums.PaymentRequestStatus;
                             let newPurchasingStatus: $Enums.PurchasingRequestStatus;
@@ -263,8 +282,81 @@ export async function checkLatestTransactions() {
                             }
                             else if (redeemerVersion == 2) {
                                 //CancelRefundRequest
-                                newStatus = $Enums.PaymentRequestStatus.RefundRequestCanceled
-                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestCanceledConfirmed
+                                if (decodedNewContract?.resultHash) {
+                                    newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
+                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
+                                } else {
+                                    //TODO cleanup
+                                    newStatus = await prisma.$transaction(async (prisma) => {
+
+                                        const databaseEntry = await prisma.paymentRequest.findMany({
+                                            where: {
+                                                identifier: decodedNewContract!.referenceId,
+                                                checkedById: networkCheck.id,
+                                                status: $Enums.PaymentRequestStatus.PaymentRequested,
+
+                                            },
+                                            include: {
+                                                amounts: true
+                                            }
+                                        })
+                                        if (databaseEntry.length == 0) {
+                                            //transaction is not registered with us or duplicated (therefore invalid)
+                                            return $Enums.PaymentRequestStatus.PaymentInvalid;
+                                        }
+
+                                        if (databaseEntry.length > 1) {
+                                            //this should not be possible as uniqueness constraints are present on the database
+                                            for (const entry of databaseEntry) {
+
+                                                await prisma.paymentRequest.update({
+                                                    where: { id: entry.id },
+                                                    data: {
+                                                        errorRequiresManualReview: true,
+                                                        errorNote: "Duplicate payment transaction",
+                                                        errorType: $Enums.PaymentRequestErrorType.UNKNOWN
+                                                    }
+                                                })
+                                            }
+                                            return $Enums.PaymentRequestStatus.PaymentInvalid;
+                                        }
+
+                                        const valueMatches = databaseEntry[0].amounts.every((x) => {
+                                            const existingAmount = valueOutputs[0].amount.find((y) => y.unit == x.unit)
+                                            if (existingAmount == null)
+                                                return false;
+                                            //convert to string to avoid large number issues
+                                            return x.amount.toString() == existingAmount.quantity
+                                        })
+
+                                        let newStatus: $Enums.PaymentRequestStatus = $Enums.PaymentRequestStatus.PaymentInvalid;
+                                        if (valueMatches == true) {
+                                            newStatus = $Enums.PaymentRequestStatus.PaymentConfirmed
+                                        }
+                                        //this is a duplicate update but should not be a problem
+                                        await prisma.paymentRequest.update({
+                                            where: { id: databaseEntry[0].id },
+                                            data: {
+                                                status: newStatus,
+                                                txHash: tx.tx.tx_hash,
+                                                utxo: tx.utxos.hash,
+                                                potentialTxHash: null,
+                                                buyerWallet: {
+                                                    connectOrCreate: {
+                                                        where: { networkHandlerId_walletVkey: { networkHandlerId: networkCheck.id, walletVkey: decodedNewContract!.buyer } },
+                                                        create: { walletVkey: decodedNewContract!.buyer, networkHandler: { connect: { id: networkCheck.id } } }
+                                                    }
+                                                }
+                                            }
+                                        })
+                                        return newStatus
+                                    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 100000, maxWait: 10000 }
+                                    )
+
+
+                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.PurchaseConfirmed
+                                }
+
                             }
                             else if (redeemerVersion == 3) {
                                 //WithdrawRefund
@@ -272,27 +364,37 @@ export async function checkLatestTransactions() {
                                 newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundConfirmed
                             }
                             else if (redeemerVersion == 4) {
-                                //DenyRefund
-                                newStatus = $Enums.PaymentRequestStatus.RefundDeniedConfirmed
-                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundDenied
-                            }
-                            else if (redeemerVersion == 5) {
                                 //WithdrawDisputed
                                 newStatus = $Enums.PaymentRequestStatus.DisputedWithdrawn
                                 newPurchasingStatus = $Enums.PurchasingRequestStatus.DisputedWithdrawn
                             }
+                            else if (redeemerVersion == 5) {
+
+                                newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
+
+                            }
                             else if (redeemerVersion == 6) {
+                                //Deny refund canceled
+                                newStatus = $Enums.PaymentRequestStatus.RefundRequested
+                                await prisma.$transaction(async (prisma) => {
+                                    //we dont need to do sanity checks as the tx hash is unique
+                                    const paymentRequest = await prisma.paymentRequest.findUnique({
+                                        where: { checkedById_identifier: { checkedById: networkCheck.id, identifier: decodedOldContract.referenceId } },
+                                    })
 
-                                //Edge case if the submit result happened after the refund was requested
-                                if (decodedOldContract.refundRequested) {
-                                    newStatus = $Enums.PaymentRequestStatus.RefundRequested
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestConfirmed
-                                } else {
-                                    //WithdrawFee
-                                    newStatus = $Enums.PaymentRequestStatus.CompletedConfirmed
-                                    newPurchasingStatus = $Enums.PurchasingRequestStatus.Completed
-                                }
-
+                                    if (paymentRequest == null) {
+                                        //transaction is not registered with us or a payment transaction
+                                        return;
+                                    }
+                                    //TODO cleanup
+                                    //we force the duplicate update to handle the removing of the result hash
+                                    await prisma.paymentRequest.update({
+                                        where: { id: paymentRequest.id },
+                                        data: { status: newStatus, resultHash: null, txHash: tx.tx.tx_hash, utxo: tx.utxos.hash, potentialTxHash: null }
+                                    })
+                                }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, timeout: 10000, maxWait: 10000 })
+                                newPurchasingStatus = $Enums.PurchasingRequestStatus.RefundRequestConfirmed
                             }
                             else {
                                 //invalid transaction  
@@ -405,6 +507,7 @@ function decodeV1ContractDatum(decodedDatum: any) {
         seller: VerificationKeyHash,
         referenceId: ByteArray,
         resultHash: ByteArray,
+        result_submit_time: POSIXTime,
         unlock_time: POSIXTime,
         refund_time: POSIXTime,
         refund_requested: Bool,
@@ -415,7 +518,7 @@ function decodeV1ContractDatum(decodedDatum: any) {
         return null;
     }
 
-    if (decodedDatum.fields?.length != 8) {
+    if (decodedDatum.fields?.length != 9) {
         //invalid transaction
         return null;
     }
@@ -448,20 +551,25 @@ function decodeV1ContractDatum(decodedDatum: any) {
         //invalid transaction
         return null;
     }
-    const unlockTime = decodedDatum.fields[4]
-    const refundTime = decodedDatum.fields[5]
+    if (typeof decodedDatum.fields[6] !== "number" && typeof decodedDatum.fields[6] !== "bigint") {
+        //invalid transaction
+        return null;
+    }
+    const resultTime = decodedDatum.fields[4]
+    const unlockTime = decodedDatum.fields[5]
+    const refundTime = decodedDatum.fields[6]
 
 
-    const refundRequested = mBoolToBool(decodedDatum.fields[6])
+    const refundRequested = mBoolToBool(decodedDatum.fields[7])
 
-    const refundDenied = mBoolToBool(decodedDatum.fields[7])
+    const refundDenied = mBoolToBool(decodedDatum.fields[8])
 
     if (refundRequested == null || refundDenied == null) {
         //invalid transaction
         return null;
     }
 
-    return { buyer, seller, referenceId, resultHash, unlockTime, refundTime, refundRequested, refundDenied }
+    return { buyer, seller, referenceId, resultHash, resultTime, unlockTime, refundTime, refundRequested, refundDenied }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -485,4 +593,4 @@ function mBoolToBool(value: any) {
     return null;
 }
 
-export const cardanoTxHandlerService = { checkLatestTransactions }
+export const cardanoTxHandlerService = { checkLatestTransactions, decodeV1ContractDatum, mBoolToBool }

@@ -135,7 +135,7 @@ const datum = {
       //is converted to true
       mBool(false),
       //is converted to false
-      mBool(false),
+      mBool(true),
     ],
   },
   inline: true,

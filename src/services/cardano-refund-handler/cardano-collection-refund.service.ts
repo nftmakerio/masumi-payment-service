@@ -25,7 +25,7 @@ export async function collectRefundV1() {
                 }, include: {
                     PurchaseRequests: {
                         where: {
-                            submitResultTime: {
+                            refundTime: {
                                 gte: Date.now() + 1000 * 60 * 15 //add 15 minutes for block time
                             }, status: "RefundRequestConfirmed",
                             resultHash: null,
