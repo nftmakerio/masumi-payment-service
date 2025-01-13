@@ -36,10 +36,10 @@ initialize()
             },
             cors: ({ defaultHeaders, }) => ({
                 ...defaultHeaders,
+                "Access-Control-Allow-Headers": "*",
                 "Access-Control-Max-Age": "5000",
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
                 "Access-Control-Expose-Headers": "Content-Range, X-Total-Count"
             }),
             logger: logger

@@ -173,4 +173,5 @@ layers
 - [x] Support purchase limits per API Key
 - [ ] Improve test coverage
 - [ ] Improve documentation
+- [ ] Code cleanup
 - [ ] Admin Dashboard
