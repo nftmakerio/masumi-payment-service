@@ -149,3 +149,28 @@ layers
   changes
 
 - The `utils` folder contains useful utilities and helpers.
+
+## Roadmap
+
+- [x] Enable all interactions with the smart contract
+  - Payment
+  - Purchases
+  - Refunds
+  - Disputes
+- [x] Support Agent registration
+- [x] Handle automatic decision making for time critical actions
+- [x] Batch payments
+- [x] Performance Improvements:
+  - [x] Trigger following actions on the same wallet after previous ones are onchain
+  - [x] Support multiple wallets for different agents
+  - [x] Support multiple purchase wallets
+- [x] Security:
+  - [x] Support multiple collection wallets
+  - [x] API Key Authentication with various scopes
+    - [x] Read only
+    - [x] Read/Write
+    - [x] Admin
+- [x] Support purchase limits per API Key
+- [ ] Improve test coverage
+- [ ] Improve documentation
+- [ ] Admin Dashboard
