@@ -143,7 +143,7 @@ const datum = {
 
 const redeemer = {
   data: {
-    alternative: 6,
+    alternative: 5,
     fields: [],
   },
 };

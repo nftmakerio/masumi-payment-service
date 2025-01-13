@@ -51,41 +51,21 @@
                 }
             }
         },
-        "/api-key/": {
+        "/api-key-status/": {
             "get": {
                 "description": "Gets api key status",
-                "summary": "REQUIRES API KEY Authentication (+admin)",
+                "summary": "REQUIRES API KEY Authentication (+READ)",
                 "tags": [
-                    "api-key"
+                    "api-key-status"
                 ],
                 "security": [
                     {
                         "API-Key": []
                     }
                 ],
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 550
-                        },
-                        "required": false,
-                        "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 550
-                        },
-                        "required": false,
-                        "name": "apiKey",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Api key status",
+                        "description": "API key status",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -97,9 +77,6 @@
                                         "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
                                                 "apiKey": {
                                                     "type": "string"
                                                 },
@@ -127,7 +104,7 @@
                                                                 "type": "integer",
                                                                 "nullable": true,
                                                                 "minimum": 0,
-                                                                "maximum": 1000000
+                                                                "maximum": 100000000
                                                             }
                                                         },
                                                         "required": [
@@ -145,7 +122,6 @@
                                                 }
                                             },
                                             "required": [
-                                                "id",
                                                 "apiKey",
                                                 "permission",
                                                 "usageLimited",
@@ -159,8 +135,9 @@
                                         "data"
                                     ],
                                     "example": {
+                                        "status": "success",
                                         "data": {
-                                            "id": "unique-cuid-v2-auto-generated",
+                                            "status": "ACTIVE",
                                             "apiKey": "masumi-payment-api-key-secret",
                                             "permission": "ADMIN",
                                             "usageLimited": true,
@@ -169,8 +146,391 @@
                                                     "unit": "unit",
                                                     "amount": 1000000
                                                 }
-                                            ],
-                                            "status": "ACTIVE"
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/blockfrost-keys/": {
+            "get": {
+                "description": "Gets blockfrost keys",
+                "summary": "REQUIRES API KEY Authentication (+ADMIN)",
+                "tags": [
+                    "blockfrost-keys"
+                ],
+                "security": [
+                    {
+                        "API-Key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 250
+                        },
+                        "required": false,
+                        "name": "cursorId",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 100
+                        },
+                        "required": false,
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blockfrost keys",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "blockfrostKeys": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "blockfrostApiKey": {
+                                                        "type": "string"
+                                                    },
+                                                    "createdAt": {
+                                                        "type": "string"
+                                                    },
+                                                    "updatedAt": {
+                                                        "type": "string"
+                                                    },
+                                                    "network": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "PREVIEW",
+                                                            "PREPROD",
+                                                            "MAINNET"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "blockfrostApiKey",
+                                                    "createdAt",
+                                                    "updatedAt",
+                                                    "network"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "blockfrostKeys"
+                                    ],
+                                    "example": {
+                                        "blockfrostKeys": [
+                                            {
+                                                "network": "PREPROD",
+                                                "id": "unique-cuid-v2",
+                                                "blockfrostApiKey": "blockfrost_api_key",
+                                                "createdAt": "2025-01-13T06:50:19.976Z",
+                                                "updatedAt": "2025-01-13T06:50:19.976Z"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/": {
+            "get": {
+                "description": "Gets wallet status",
+                "summary": "REQUIRES API KEY Authentication (+ADMIN)",
+                "tags": [
+                    "wallet"
+                ],
+                "security": [
+                    {
+                        "API-Key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Selling",
+                                "Purchasing"
+                            ]
+                        },
+                        "required": true,
+                        "name": "walletType",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 250
+                        },
+                        "required": true,
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "required": false,
+                        "name": "includeSecret",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wallet status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "walletSecret": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "createdAt": {
+                                                            "type": "string"
+                                                        },
+                                                        "updatedAt": {
+                                                            "type": "string"
+                                                        },
+                                                        "secret": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "createdAt",
+                                                        "updatedAt",
+                                                        "secret"
+                                                    ]
+                                                },
+                                                "pendingTransaction": {
+                                                    "type": "object",
+                                                    "nullable": true,
+                                                    "properties": {
+                                                        "createdAt": {
+                                                            "type": "string"
+                                                        },
+                                                        "updatedAt": {
+                                                            "type": "string"
+                                                        },
+                                                        "hash": {
+                                                            "type": "string",
+                                                            "nullable": true
+                                                        },
+                                                        "lastCheckedAt": {
+                                                            "type": "string",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "createdAt",
+                                                        "updatedAt",
+                                                        "hash",
+                                                        "lastCheckedAt"
+                                                    ]
+                                                },
+                                                "note": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "walletVkey": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "pendingTransaction",
+                                                "note",
+                                                "walletVkey"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "data"
+                                    ],
+                                    "example": {
+                                        "status": "success",
+                                        "data": {
+                                            "walletVkey": "walletVkey",
+                                            "note": "note",
+                                            "pendingTransaction": null,
+                                            "walletSecret": {
+                                                "createdAt": "2025-01-13T06:50:19.976Z",
+                                                "updatedAt": "2025-01-13T06:50:19.976Z",
+                                                "secret": "decoded_secret"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api-key/": {
+            "get": {
+                "description": "Gets api key status",
+                "summary": "REQUIRES API KEY Authentication (+admin)",
+                "tags": [
+                    "api-key"
+                ],
+                "security": [
+                    {
+                        "API-Key": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 10
+                        },
+                        "required": false,
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 550
+                        },
+                        "required": false,
+                        "name": "cursorApiKey",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Api key status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "apiKeys": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "apiKey": {
+                                                                "type": "string"
+                                                            },
+                                                            "permission": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "READ",
+                                                                    "READ_PAY",
+                                                                    "ADMIN"
+                                                                ]
+                                                            },
+                                                            "usageLimited": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "remainingUsageCredits": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "unit": {
+                                                                            "type": "string",
+                                                                            "maxLength": 150
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "integer",
+                                                                            "nullable": true,
+                                                                            "minimum": 0,
+                                                                            "maximum": 100000000
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "unit",
+                                                                        "amount"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "ACTIVE",
+                                                                    "REVOKED"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "apiKey",
+                                                            "permission",
+                                                            "usageLimited",
+                                                            "remainingUsageCredits",
+                                                            "status"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "apiKeys"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "data"
+                                    ],
+                                    "example": {
+                                        "data": {
+                                            "apiKeys": [
+                                                {
+                                                    "apiKey": "masumi-payment-api-key-secret",
+                                                    "permission": "ADMIN",
+                                                    "usageLimited": true,
+                                                    "remainingUsageCredits": [
+                                                        {
+                                                            "unit": "unit",
+                                                            "amount": 1000000
+                                                        }
+                                                    ],
+                                                    "status": "ACTIVE"
+                                                }
+                                            ]
                                         },
                                         "status": "success"
                                     }
@@ -590,11 +950,22 @@
                 "parameters": [
                     {
                         "schema": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 10
+                        },
+                        "required": false,
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
                             "type": "string",
                             "maxLength": 250
                         },
-                        "required": true,
-                        "name": "identifier",
+                        "required": false,
+                        "name": "cursorIdentifier",
                         "in": "query"
                     },
                     {
@@ -627,7 +998,7 @@
                             "maxLength": 250
                         },
                         "required": true,
-                        "name": "address",
+                        "name": "contractAddress",
                         "in": "query"
                     }
                 ],
@@ -645,198 +1016,203 @@
                                         "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
-                                                "createdAt": {
-                                                    "type": "string"
-                                                },
-                                                "updatedAt": {
-                                                    "type": "string"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "PaymentRequested",
-                                                        "PaymentConfirmed",
-                                                        "PaymentInvalid",
-                                                        "ResultGenerated",
-                                                        "WithdrawInitiated",
-                                                        "WithdrawConfirmed",
-                                                        "RefundRequested",
-                                                        "Refunded",
-                                                        "RefundRequestCanceled",
-                                                        "RefundDeniedInitiated",
-                                                        "RefundDeniedConfirmed",
-                                                        "FeesWithdrawn",
-                                                        "DisputedWithdrawn",
-                                                        "Error"
-                                                    ]
-                                                },
-                                                "txHash": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "utxo": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "errorType": {
-                                                    "type": "string",
-                                                    "nullable": true,
-                                                    "enum": [
-                                                        "NETWORK_ERROR",
-                                                        "UNKNOWN"
-                                                    ]
-                                                },
-                                                "errorNote": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "errorRequiresManualReview": {
-                                                    "type": "boolean",
-                                                    "nullable": true
-                                                },
-                                                "identifier": {
-                                                    "type": "string",
-                                                    "maxLength": 250
-                                                },
-                                                "sellingWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "walletVkey": {
-                                                            "type": "string"
-                                                        },
-                                                        "note": {
-                                                            "type": "string",
-                                                            "nullable": true
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "walletVkey",
-                                                        "note"
-                                                    ]
-                                                },
-                                                "collectionWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "walletAddress": {
-                                                            "type": "string"
-                                                        },
-                                                        "note": {
-                                                            "type": "string",
-                                                            "nullable": true
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "walletAddress",
-                                                        "note"
-                                                    ]
-                                                },
-                                                "buyerWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "walletVkey": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "walletVkey"
-                                                    ]
-                                                },
-                                                "amounts": {
+                                                "payments": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "id": {
-                                                                "type": "string"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string"
                                                             },
                                                             "updatedAt": {
                                                                 "type": "string"
                                                             },
-                                                            "amount": {
-                                                                "type": "number",
-                                                                "nullable": true,
-                                                                "minimum": 0,
-                                                                "maximum": 9007199254740991
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "PaymentRequested",
+                                                                    "PaymentConfirmed",
+                                                                    "PaymentInvalid",
+                                                                    "ResultGenerated",
+                                                                    "CompletedInitiated",
+                                                                    "CompletedConfirmed",
+                                                                    "Denied",
+                                                                    "RefundRequested",
+                                                                    "Refunded",
+                                                                    "WithdrawnInitiated",
+                                                                    "WithdrawnConfirmed",
+                                                                    "DisputedWithdrawn"
+                                                                ]
                                                             },
-                                                            "unit": {
-                                                                "type": "string"
+                                                            "txHash": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "utxo": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "errorType": {
+                                                                "type": "string",
+                                                                "nullable": true,
+                                                                "enum": [
+                                                                    "NETWORK_ERROR",
+                                                                    "UNKNOWN"
+                                                                ]
+                                                            },
+                                                            "errorNote": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "errorRequiresManualReview": {
+                                                                "type": "boolean",
+                                                                "nullable": true
+                                                            },
+                                                            "identifier": {
+                                                                "type": "string",
+                                                                "maxLength": 250
+                                                            },
+                                                            "sellingWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "walletVkey",
+                                                                    "note"
+                                                                ]
+                                                            },
+                                                            "collectionWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "walletAddress": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "walletAddress",
+                                                                    "note"
+                                                                ]
+                                                            },
+                                                            "buyerWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "walletVkey"
+                                                                ]
+                                                            },
+                                                            "amounts": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "number",
+                                                                            "nullable": true,
+                                                                            "minimum": 0,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "unit": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "id",
+                                                                        "createdAt",
+                                                                        "updatedAt",
+                                                                        "amount",
+                                                                        "unit"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "checkedBy": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "network": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "PREVIEW",
+                                                                            "PREPROD",
+                                                                            "MAINNET"
+                                                                        ]
+                                                                    },
+                                                                    "addressToCheck": {
+                                                                        "type": "string",
+                                                                        "maxLength": 250
+                                                                    },
+                                                                    "paymentType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "WEB3_CARDANO_V1"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "network",
+                                                                    "addressToCheck",
+                                                                    "paymentType"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
-                                                            "id",
                                                             "createdAt",
                                                             "updatedAt",
-                                                            "amount",
-                                                            "unit"
+                                                            "status",
+                                                            "txHash",
+                                                            "utxo",
+                                                            "errorType",
+                                                            "errorNote",
+                                                            "errorRequiresManualReview",
+                                                            "identifier",
+                                                            "sellingWallet",
+                                                            "collectionWallet",
+                                                            "buyerWallet",
+                                                            "amounts",
+                                                            "checkedBy"
                                                         ]
                                                     }
-                                                },
-                                                "checkedBy": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "network": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "PREVIEW",
-                                                                "PREPROD",
-                                                                "MAINNET"
-                                                            ]
-                                                        },
-                                                        "addressToCheck": {
-                                                            "type": "string",
-                                                            "maxLength": 250
-                                                        },
-                                                        "paymentType": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "WEB3_CARDANO_V1"
-                                                            ]
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "network",
-                                                        "addressToCheck",
-                                                        "paymentType"
-                                                    ]
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "createdAt",
-                                                "updatedAt",
-                                                "status",
-                                                "txHash",
-                                                "utxo",
-                                                "errorType",
-                                                "errorNote",
-                                                "errorRequiresManualReview",
-                                                "identifier",
-                                                "sellingWallet",
-                                                "collectionWallet",
-                                                "buyerWallet",
-                                                "amounts",
-                                                "checkedBy"
+                                                "payments"
                                             ]
                                         }
                                     },
@@ -846,44 +1222,47 @@
                                     ],
                                     "example": {
                                         "data": {
-                                            "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
-                                            "status": "PaymentRequested",
-                                            "txHash": "tx_hash",
-                                            "utxo": "utxo",
-                                            "errorType": "NETWORK_ERROR",
-                                            "errorNote": "error_note",
-                                            "errorRequiresManualReview": false,
-                                            "identifier": "identifier",
-                                            "sellingWallet": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "walletVkey": "wallet_vkey",
-                                                "note": "note"
-                                            },
-                                            "collectionWallet": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "walletAddress": "wallet_address",
-                                                "note": "note"
-                                            },
-                                            "buyerWallet": {
-                                                "walletVkey": "wallet_vkey"
-                                            },
-                                            "amounts": [
+                                            "payments": [
                                                 {
-                                                    "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2024-11-26T08:31:06.664Z",
-                                                    "updatedAt": "2024-11-26T08:31:06.664Z",
-                                                    "amount": 1000000,
-                                                    "unit": "unit"
+                                                    "createdAt": "2025-01-13T06:50:19.977Z",
+                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "status": "PaymentRequested",
+                                                    "txHash": "tx_hash",
+                                                    "utxo": "utxo",
+                                                    "errorType": "NETWORK_ERROR",
+                                                    "errorNote": "error_note",
+                                                    "errorRequiresManualReview": false,
+                                                    "identifier": "identifier",
+                                                    "sellingWallet": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "walletVkey": "wallet_vkey",
+                                                        "note": "note"
+                                                    },
+                                                    "collectionWallet": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "walletAddress": "wallet_address",
+                                                        "note": "note"
+                                                    },
+                                                    "buyerWallet": {
+                                                        "walletVkey": "wallet_vkey"
+                                                    },
+                                                    "amounts": [
+                                                        {
+                                                            "id": "unique-cuid-v2-auto-generated",
+                                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                            "amount": 1000000,
+                                                            "unit": "unit"
+                                                        }
+                                                    ],
+                                                    "checkedBy": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "network": "PREPROD",
+                                                        "addressToCheck": "address_to_check",
+                                                        "paymentType": "WEB3_CARDANO_V1"
+                                                    }
                                                 }
-                                            ],
-                                            "checkedBy": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "network": "PREVIEW",
-                                                "addressToCheck": "address_to_check",
-                                                "paymentType": "WEB3_CARDANO_V1"
-                                            }
+                                            ]
                                         },
                                         "status": "success"
                                     }
@@ -932,6 +1311,11 @@
                                         "type": "string",
                                         "maxLength": 250
                                     },
+                                    "agentIdentifier": {
+                                        "type": "string",
+                                        "minLength": 15,
+                                        "maxLength": 250
+                                    },
                                     "amounts": {
                                         "type": "array",
                                         "items": {
@@ -960,14 +1344,31 @@
                                             "WEB3_CARDANO_V1"
                                         ]
                                     },
-                                    "address": {
+                                    "contractAddress": {
                                         "type": "string",
                                         "maxLength": 250
+                                    },
+                                    "submitResultTime": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "format": "date"
+                                            },
+                                            {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        ]
                                     },
                                     "unlockTime": {
                                         "anyOf": [
                                             {
-                                                "type": "string"
+                                                "type": "string",
+                                                "format": "date"
                                             },
                                             {
                                                 "type": "string",
@@ -982,7 +1383,8 @@
                                     "refundTime": {
                                         "anyOf": [
                                             {
-                                                "type": "string"
+                                                "type": "string",
+                                                "format": "date"
                                             },
                                             {
                                                 "type": "string",
@@ -998,16 +1400,19 @@
                                 "required": [
                                     "network",
                                     "sellerVkey",
+                                    "agentIdentifier",
                                     "amounts",
                                     "paymentType",
-                                    "address",
+                                    "contractAddress",
+                                    "submitResultTime",
                                     "unlockTime",
                                     "refundTime"
                                 ],
                                 "example": {
-                                    "network": "PREVIEW",
+                                    "agentIdentifier": "agent_identifier",
+                                    "network": "PREPROD",
                                     "sellerVkey": "seller_vkey",
-                                    "address": "address",
+                                    "contractAddress": "address",
                                     "amounts": [
                                         {
                                             "amount": 1000000,
@@ -1015,8 +1420,9 @@
                                         }
                                     ],
                                     "paymentType": "WEB3_CARDANO_V1",
-                                    "unlockTime": "01.12.2024 00:00:00",
-                                    "refundTime": "02.12.2024 00:00:00"
+                                    "unlockTime": "2024-12-01T23:00:00.000Z",
+                                    "submitResultTime": "2024-12-01T22:00:00.000Z",
+                                    "refundTime": "2024-12-02T23:00:00.000Z"
                                 }
                             }
                         }
@@ -1036,6 +1442,9 @@
                                                 "id": {
                                                     "type": "string"
                                                 },
+                                                "identifier": {
+                                                    "type": "string"
+                                                },
                                                 "createdAt": {
                                                     "type": "string"
                                                 },
@@ -1049,21 +1458,20 @@
                                                         "PaymentConfirmed",
                                                         "PaymentInvalid",
                                                         "ResultGenerated",
-                                                        "WithdrawInitiated",
-                                                        "WithdrawConfirmed",
+                                                        "CompletedInitiated",
+                                                        "CompletedConfirmed",
+                                                        "Denied",
                                                         "RefundRequested",
                                                         "Refunded",
-                                                        "RefundRequestCanceled",
-                                                        "RefundDeniedInitiated",
-                                                        "RefundDeniedConfirmed",
-                                                        "FeesWithdrawn",
-                                                        "DisputedWithdrawn",
-                                                        "Error"
+                                                        "WithdrawnInitiated",
+                                                        "WithdrawnConfirmed",
+                                                        "DisputedWithdrawn"
                                                     ]
                                                 }
                                             },
                                             "required": [
                                                 "id",
+                                                "identifier",
                                                 "createdAt",
                                                 "updatedAt",
                                                 "status"
@@ -1081,8 +1489,9 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
+                                            "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
+                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                            "updatedAt": "2025-01-13T06:50:19.977Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1131,7 +1540,7 @@
                                         "type": "string",
                                         "maxLength": 250
                                     },
-                                    "address": {
+                                    "contractAddress": {
                                         "type": "string",
                                         "maxLength": 250
                                     },
@@ -1147,14 +1556,14 @@
                                 "required": [
                                     "network",
                                     "sellerVkey",
-                                    "address",
+                                    "contractAddress",
                                     "hash",
                                     "identifier"
                                 ],
                                 "example": {
-                                    "network": "PREVIEW",
+                                    "network": "PREPROD",
                                     "sellerVkey": "seller_vkey",
-                                    "address": "address",
+                                    "contractAddress": "address",
                                     "hash": "hash",
                                     "identifier": "identifier"
                                 }
@@ -1189,16 +1598,14 @@
                                                         "PaymentConfirmed",
                                                         "PaymentInvalid",
                                                         "ResultGenerated",
-                                                        "WithdrawInitiated",
-                                                        "WithdrawConfirmed",
+                                                        "CompletedInitiated",
+                                                        "CompletedConfirmed",
+                                                        "Denied",
                                                         "RefundRequested",
                                                         "Refunded",
-                                                        "RefundRequestCanceled",
-                                                        "RefundDeniedInitiated",
-                                                        "RefundDeniedConfirmed",
-                                                        "FeesWithdrawn",
-                                                        "DisputedWithdrawn",
-                                                        "Error"
+                                                        "WithdrawnInitiated",
+                                                        "WithdrawnConfirmed",
+                                                        "DisputedWithdrawn"
                                                     ]
                                                 }
                                             },
@@ -1221,8 +1628,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
+                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                            "updatedAt": "2025-01-13T06:50:19.977Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1257,11 +1664,22 @@
                 "parameters": [
                     {
                         "schema": {
+                            "type": "number",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 10
+                        },
+                        "required": false,
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
                             "type": "string",
                             "maxLength": 250
                         },
-                        "required": true,
-                        "name": "identifier",
+                        "required": false,
+                        "name": "cursorIdentifier",
                         "in": "query"
                     },
                     {
@@ -1275,6 +1693,15 @@
                         },
                         "required": true,
                         "name": "network",
+                        "in": "query"
+                    },
+                    {
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 250
+                        },
+                        "required": true,
+                        "name": "sellingWalletVkey",
                         "in": "query"
                     },
                     {
@@ -1294,13 +1721,13 @@
                             "maxLength": 250
                         },
                         "required": true,
-                        "name": "address",
+                        "name": "contractAddress",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Payment status",
+                        "description": "Purchase status",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1312,198 +1739,187 @@
                                         "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
-                                                "createdAt": {
-                                                    "type": "string"
-                                                },
-                                                "updatedAt": {
-                                                    "type": "string"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "enum": [
-                                                        "PaymentRequested",
-                                                        "PaymentConfirmed",
-                                                        "PaymentInvalid",
-                                                        "ResultGenerated",
-                                                        "WithdrawInitiated",
-                                                        "WithdrawConfirmed",
-                                                        "RefundRequested",
-                                                        "Refunded",
-                                                        "RefundRequestCanceled",
-                                                        "RefundDeniedInitiated",
-                                                        "RefundDeniedConfirmed",
-                                                        "FeesWithdrawn",
-                                                        "DisputedWithdrawn",
-                                                        "Error"
-                                                    ]
-                                                },
-                                                "txHash": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "utxo": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "errorType": {
-                                                    "type": "string",
-                                                    "nullable": true,
-                                                    "enum": [
-                                                        "NETWORK_ERROR",
-                                                        "UNKNOWN"
-                                                    ]
-                                                },
-                                                "errorNote": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                },
-                                                "errorRequiresManualReview": {
-                                                    "type": "boolean",
-                                                    "nullable": true
-                                                },
-                                                "identifier": {
-                                                    "type": "string",
-                                                    "maxLength": 250
-                                                },
-                                                "sellingWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "walletVkey": {
-                                                            "type": "string"
-                                                        },
-                                                        "note": {
-                                                            "type": "string",
-                                                            "nullable": true
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "walletVkey",
-                                                        "note"
-                                                    ]
-                                                },
-                                                "collectionWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "walletAddress": {
-                                                            "type": "string"
-                                                        },
-                                                        "note": {
-                                                            "type": "string",
-                                                            "nullable": true
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "walletAddress",
-                                                        "note"
-                                                    ]
-                                                },
-                                                "buyerWallet": {
-                                                    "type": "object",
-                                                    "nullable": true,
-                                                    "properties": {
-                                                        "walletVkey": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "walletVkey"
-                                                    ]
-                                                },
-                                                "amounts": {
+                                                "purchases": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "object",
                                                         "properties": {
-                                                            "id": {
-                                                                "type": "string"
-                                                            },
                                                             "createdAt": {
                                                                 "type": "string"
                                                             },
                                                             "updatedAt": {
                                                                 "type": "string"
                                                             },
-                                                            "amount": {
-                                                                "type": "number",
-                                                                "nullable": true,
-                                                                "minimum": 0,
-                                                                "maximum": 9007199254740991
+                                                            "status": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "PurchaseRequested",
+                                                                    "PurchaseInitiated",
+                                                                    "PurchaseConfirmed",
+                                                                    "Completed",
+                                                                    "RefundRequestInitiated",
+                                                                    "RefundRequestConfirmed",
+                                                                    "RefundInitiated",
+                                                                    "RefundConfirmed",
+                                                                    "RefundRequestCanceledInitiated",
+                                                                    "Withdrawn",
+                                                                    "DisputedWithdrawn"
+                                                                ]
                                                             },
-                                                            "unit": {
-                                                                "type": "string"
+                                                            "txHash": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "utxo": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "errorType": {
+                                                                "type": "string",
+                                                                "nullable": true,
+                                                                "enum": [
+                                                                    "NETWORK_ERROR",
+                                                                    "INSUFFICIENT_FUNDS",
+                                                                    "UNKNOWN"
+                                                                ]
+                                                            },
+                                                            "errorNote": {
+                                                                "type": "string",
+                                                                "nullable": true
+                                                            },
+                                                            "errorRequiresManualReview": {
+                                                                "type": "boolean",
+                                                                "nullable": true
+                                                            },
+                                                            "identifier": {
+                                                                "type": "string",
+                                                                "maxLength": 250
+                                                            },
+                                                            "purchaserWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "walletVkey",
+                                                                    "note"
+                                                                ]
+                                                            },
+                                                            "sellerWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "walletVkey",
+                                                                    "note"
+                                                                ]
+                                                            },
+                                                            "amounts": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "createdAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "updatedAt": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "number",
+                                                                            "nullable": true,
+                                                                            "minimum": 0,
+                                                                            "maximum": 9007199254740991
+                                                                        },
+                                                                        "unit": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "id",
+                                                                        "createdAt",
+                                                                        "updatedAt",
+                                                                        "amount",
+                                                                        "unit"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "networkHandler": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "network": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "PREVIEW",
+                                                                            "PREPROD",
+                                                                            "MAINNET"
+                                                                        ]
+                                                                    },
+                                                                    "addressToCheck": {
+                                                                        "type": "string",
+                                                                        "maxLength": 250
+                                                                    },
+                                                                    "paymentType": {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "WEB3_CARDANO_V1"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "network",
+                                                                    "addressToCheck",
+                                                                    "paymentType"
+                                                                ]
                                                             }
                                                         },
                                                         "required": [
-                                                            "id",
                                                             "createdAt",
                                                             "updatedAt",
-                                                            "amount",
-                                                            "unit"
+                                                            "status",
+                                                            "txHash",
+                                                            "utxo",
+                                                            "errorType",
+                                                            "errorNote",
+                                                            "errorRequiresManualReview",
+                                                            "identifier",
+                                                            "purchaserWallet",
+                                                            "sellerWallet",
+                                                            "amounts",
+                                                            "networkHandler"
                                                         ]
                                                     }
-                                                },
-                                                "checkedBy": {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string"
-                                                        },
-                                                        "network": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "PREVIEW",
-                                                                "PREPROD",
-                                                                "MAINNET"
-                                                            ]
-                                                        },
-                                                        "addressToCheck": {
-                                                            "type": "string",
-                                                            "maxLength": 250
-                                                        },
-                                                        "paymentType": {
-                                                            "type": "string",
-                                                            "enum": [
-                                                                "WEB3_CARDANO_V1"
-                                                            ]
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "id",
-                                                        "network",
-                                                        "addressToCheck",
-                                                        "paymentType"
-                                                    ]
                                                 }
                                             },
                                             "required": [
-                                                "id",
-                                                "createdAt",
-                                                "updatedAt",
-                                                "status",
-                                                "txHash",
-                                                "utxo",
-                                                "errorType",
-                                                "errorNote",
-                                                "errorRequiresManualReview",
-                                                "identifier",
-                                                "sellingWallet",
-                                                "collectionWallet",
-                                                "buyerWallet",
-                                                "amounts",
-                                                "checkedBy"
+                                                "purchases"
                                             ]
                                         }
                                     },
@@ -1512,47 +1928,46 @@
                                         "data"
                                     ],
                                     "example": {
+                                        "status": "success",
                                         "data": {
-                                            "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
-                                            "status": "PaymentRequested",
-                                            "txHash": "tx_hash",
-                                            "utxo": "utxo",
-                                            "errorType": "NETWORK_ERROR",
-                                            "errorNote": "error_note",
-                                            "errorRequiresManualReview": false,
-                                            "identifier": "identifier",
-                                            "sellingWallet": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "walletVkey": "wallet_vkey",
-                                                "note": "note"
-                                            },
-                                            "collectionWallet": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "walletAddress": "wallet_address",
-                                                "note": "note"
-                                            },
-                                            "buyerWallet": {
-                                                "walletVkey": "wallet_vkey"
-                                            },
-                                            "amounts": [
+                                            "purchases": [
                                                 {
-                                                    "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2024-11-26T08:31:06.664Z",
-                                                    "updatedAt": "2024-11-26T08:31:06.664Z",
-                                                    "amount": 1000000,
-                                                    "unit": "unit"
+                                                    "createdAt": "2025-01-13T06:50:19.977Z",
+                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "status": "PurchaseRequested",
+                                                    "txHash": "tx_hash",
+                                                    "utxo": "utxo",
+                                                    "errorType": "NETWORK_ERROR",
+                                                    "errorNote": "error_note",
+                                                    "errorRequiresManualReview": false,
+                                                    "identifier": "identifier",
+                                                    "amounts": [
+                                                        {
+                                                            "id": "unique-cuid-v2-auto-generated",
+                                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                            "amount": 1000000,
+                                                            "unit": "unit"
+                                                        }
+                                                    ],
+                                                    "networkHandler": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "network": "PREPROD",
+                                                        "addressToCheck": "address_to_check",
+                                                        "paymentType": "WEB3_CARDANO_V1"
+                                                    },
+                                                    "purchaserWallet": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "walletVkey": "wallet_vkey",
+                                                        "note": "note"
+                                                    },
+                                                    "sellerWallet": {
+                                                        "walletVkey": "wallet_vkey",
+                                                        "note": "note"
+                                                    }
                                                 }
-                                            ],
-                                            "checkedBy": {
-                                                "id": "unique-cuid-v2-auto-generated",
-                                                "network": "PREVIEW",
-                                                "addressToCheck": "address_to_check",
-                                                "paymentType": "WEB3_CARDANO_V1"
-                                            }
-                                        },
-                                        "status": "success"
+                                            ]
+                                        }
                                     }
                                 }
                             }
@@ -1603,7 +2018,7 @@
                                         "type": "string",
                                         "maxLength": 250
                                     },
-                                    "address": {
+                                    "contractAddress": {
                                         "type": "string",
                                         "maxLength": 250
                                     },
@@ -1638,7 +2053,8 @@
                                     "unlockTime": {
                                         "anyOf": [
                                             {
-                                                "type": "string"
+                                                "type": "string",
+                                                "format": "date"
                                             },
                                             {
                                                 "type": "string",
@@ -1653,7 +2069,24 @@
                                     "refundTime": {
                                         "anyOf": [
                                             {
-                                                "type": "string"
+                                                "type": "string",
+                                                "format": "date"
+                                            },
+                                            {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        ]
+                                    },
+                                    "submitResultTime": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string",
+                                                "format": "date"
                                             },
                                             {
                                                 "type": "string",
@@ -1670,17 +2103,18 @@
                                     "identifier",
                                     "network",
                                     "sellerVkey",
-                                    "address",
+                                    "contractAddress",
                                     "amounts",
                                     "paymentType",
                                     "unlockTime",
-                                    "refundTime"
+                                    "refundTime",
+                                    "submitResultTime"
                                 ],
                                 "example": {
                                     "identifier": "identifier",
-                                    "network": "PREVIEW",
+                                    "network": "PREPROD",
                                     "sellerVkey": "seller_vkey",
-                                    "address": "address",
+                                    "contractAddress": "address",
                                     "amounts": [
                                         {
                                             "amount": 1000000,
@@ -1688,8 +2122,9 @@
                                         }
                                     ],
                                     "paymentType": "WEB3_CARDANO_V1",
-                                    "unlockTime": "01.12.2024 00:00:00",
-                                    "refundTime": "02.12.2024 00:00:00"
+                                    "unlockTime": "2024-12-01T23:00:00.000Z",
+                                    "refundTime": "2024-12-02T23:00:00.000Z",
+                                    "submitResultTime": "2024-12-01T22:00:00.000Z"
                                 }
                             }
                         }
@@ -1721,17 +2156,14 @@
                                                         "PurchaseRequested",
                                                         "PurchaseInitiated",
                                                         "PurchaseConfirmed",
-                                                        "Withdrawn",
+                                                        "Completed",
                                                         "RefundRequestInitiated",
                                                         "RefundRequestConfirmed",
                                                         "RefundInitiated",
                                                         "RefundConfirmed",
                                                         "RefundRequestCanceledInitiated",
-                                                        "RefundRequestCanceledConfirmed",
-                                                        "RefundDenied",
-                                                        "FeesWithdrawn",
-                                                        "DisputedWithdrawn",
-                                                        "Error"
+                                                        "Withdrawn",
+                                                        "DisputedWithdrawn"
                                                     ]
                                                 }
                                             },
@@ -1754,8 +2186,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
+                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                            "updatedAt": "2025-01-13T06:50:19.977Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -1820,7 +2252,7 @@
                                     "address"
                                 ],
                                 "example": {
-                                    "network": "PREVIEW",
+                                    "network": "PREPROD",
                                     "sellerVkey": "seller_vkey",
                                     "address": "address",
                                     "identifier": "identifier"
@@ -1952,7 +2384,7 @@
                                 "example": {
                                     "name": "Agent Name",
                                     "description": "Agent Description",
-                                    "network": "PREVIEW",
+                                    "network": "PREPROD",
                                     "address": "addr_test1...",
                                     "companyName": "Company Name",
                                     "capabilityName": "Capability Name",
@@ -2089,7 +2521,7 @@
         },
         "/payment-source/": {
             "get": {
-                "description": "Gets the payment source status. It needs to be created first with a POST request.",
+                "description": "Gets the payment sources including the status.",
                 "summary": "REQUIRES API KEY Authentication (+ADMIN)",
                 "tags": [
                     "payment-source"
@@ -2104,9 +2536,10 @@
                         "schema": {
                             "type": "number",
                             "minimum": 1,
-                            "maximum": 100
+                            "maximum": 100,
+                            "default": 10
                         },
-                        "required": true,
+                        "required": false,
                         "name": "take",
                         "in": "query"
                     },
@@ -2197,17 +2630,17 @@
                                                                 "items": {
                                                                     "type": "object",
                                                                     "properties": {
-                                                                        "id": {
-                                                                            "type": "string"
-                                                                        },
                                                                         "walletAddress": {
                                                                             "type": "string",
                                                                             "maxLength": 250
+                                                                        },
+                                                                        "order": {
+                                                                            "type": "number"
                                                                         }
                                                                     },
                                                                     "required": [
-                                                                        "id",
-                                                                        "walletAddress"
+                                                                        "walletAddress",
+                                                                        "order"
                                                                     ]
                                                                 }
                                                             },
@@ -2278,6 +2711,24 @@
                                                                     "walletVkey",
                                                                     "note"
                                                                 ]
+                                                            },
+                                                            "FeeReceiverNetworkWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "walletAddress": {
+                                                                        "type": "string",
+                                                                        "maxLength": 250
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "walletAddress"
+                                                                ]
+                                                            },
+                                                            "FeePermille": {
+                                                                "type": "number",
+                                                                "minimum": 0,
+                                                                "maximum": 1000
                                                             }
                                                         },
                                                         "required": [
@@ -2297,7 +2748,9 @@
                                                             "AdminWallets",
                                                             "CollectionWallet",
                                                             "PurchasingWallets",
-                                                            "SellingWallet"
+                                                            "SellingWallet",
+                                                            "FeeReceiverNetworkWallet",
+                                                            "FeePermille"
                                                         ]
                                                     }
                                                 }
@@ -2317,9 +2770,9 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2024-11-26T08:31:06.664Z",
-                                                    "updatedAt": "2024-11-26T08:31:06.664Z",
-                                                    "network": "PREVIEW",
+                                                    "createdAt": "2025-01-13T06:50:19.977Z",
+                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
                                                     "blockfrostApiKey": "blockfrost_api_key",
@@ -2331,8 +2784,8 @@
                                                     "registryJSON": "{}",
                                                     "AdminWallets": [
                                                         {
-                                                            "id": "unique-cuid-v2-auto-generated",
-                                                            "walletAddress": "wallet_address"
+                                                            "walletAddress": "wallet_address",
+                                                            "order": 0
                                                         }
                                                     ],
                                                     "CollectionWallet": {
@@ -2351,7 +2804,11 @@
                                                         "id": "unique-cuid-v2-auto-generated",
                                                         "walletVkey": "wallet_vkey",
                                                         "note": "note"
-                                                    }
+                                                    },
+                                                    "FeeReceiverNetworkWallet": {
+                                                        "walletAddress": "wallet_address"
+                                                    },
+                                                    "FeePermille": 50
                                                 }
                                             ]
                                         }
@@ -2414,6 +2871,11 @@
                                         "type": "string",
                                         "maxLength": 250
                                     },
+                                    "FeePermille": {
+                                        "type": "number",
+                                        "minimum": 0,
+                                        "maximum": 1000
+                                    },
                                     "AdminWallets": {
                                         "type": "array",
                                         "items": {
@@ -2429,6 +2891,18 @@
                                             ]
                                         },
                                         "maxItems": 20
+                                    },
+                                    "FeeReceiverNetworkWallet": {
+                                        "type": "object",
+                                        "properties": {
+                                            "walletAddress": {
+                                                "type": "string",
+                                                "maxLength": 250
+                                            }
+                                        },
+                                        "required": [
+                                            "walletAddress"
+                                        ]
                                     },
                                     "CollectionWallet": {
                                         "type": "object",
@@ -2495,13 +2969,15 @@
                                     "registryJSON",
                                     "addressToCheck",
                                     "registryIdentifier",
+                                    "FeePermille",
                                     "AdminWallets",
+                                    "FeeReceiverNetworkWallet",
                                     "CollectionWallet",
                                     "PurchasingWallets",
                                     "SellingWallet"
                                 ],
                                 "example": {
-                                    "network": "PREVIEW",
+                                    "network": "PREPROD",
                                     "paymentType": "WEB3_CARDANO_V1",
                                     "addressToCheck": "address_to_check",
                                     "blockfrostApiKey": "blockfrost_api_key",
@@ -2513,6 +2989,10 @@
                                             "walletAddress": "wallet_address"
                                         }
                                     ],
+                                    "FeeReceiverNetworkWallet": {
+                                        "walletAddress": "wallet_address"
+                                    },
+                                    "FeePermille": 50,
                                     "CollectionWallet": {
                                         "walletAddress": "wallet_address",
                                         "note": "note"
@@ -2625,9 +3105,9 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2024-11-26T08:31:06.664Z",
-                                            "updatedAt": "2024-11-26T08:31:06.664Z",
-                                            "network": "PREVIEW",
+                                            "createdAt": "2025-01-13T06:50:19.977Z",
+                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                            "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
                                             "blockfrostApiKey": "blockfrost_api_key",

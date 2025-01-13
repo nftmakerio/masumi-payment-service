@@ -117,7 +117,7 @@ if (!utxo) {
 
 const redeemer = {
   data: {
-    alternative: 5,
+    alternative: 4,
     fields: [],
   },
 };
