@@ -22,7 +22,6 @@ export const paymentSourceSchemaOutput = z.object({
         page: z.number(),
         isSyncing: z.boolean(),
         latestIdentifier: z.string().max(250).nullable(),
-        registryIdentifier: z.string().max(250).nullable(),
         scriptJSON: z.string(),
         registryJSON: z.string(),
         AdminWallets: z.array(z.object({
@@ -81,7 +80,6 @@ export const paymentSourceCreateSchemaInput = z.object({
     scriptJSON: z.string().max(100000),
     registryJSON: z.string().max(100000),
     addressToCheck: z.string().max(250),
-    registryIdentifier: z.string().max(250),
     FeePermille: z.number().min(0).max(1000),
     AdminWallets: z.array(z.object({
         walletAddress: z.string().max(250),
@@ -113,7 +111,6 @@ export const paymentSourceCreateSchemaOutput = z.object({
     page: z.number(),
     isSyncing: z.boolean(),
     latestIdentifier: z.string().max(250).nullable(),
-    registryIdentifier: z.string().max(250).nullable(),
     scriptJSON: z.string(),
     registryJSON: z.string(),
 });
@@ -154,7 +151,6 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
                     blockfrostApiKey: input.blockfrostApiKey,
                     scriptJSON: input.scriptJSON,
                     registryJSON: input.registryJSON,
-                    registryIdentifier: input.registryIdentifier,
                     AdminWallets: {
                         createMany: {
                             data: input.AdminWallets.map((aw, index) => ({

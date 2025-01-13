@@ -299,7 +299,6 @@ model NetworkHandler {
   addressToCheck           String
   scriptJSON               String
   registryJSON             String
-  registryIdentifier       String
   AdminWallets             AdminWallet[]     @relation("AdminWallets")
   FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id])
   adminWalletId            String

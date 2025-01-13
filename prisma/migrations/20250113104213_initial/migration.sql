@@ -210,7 +210,6 @@ CREATE TABLE "NetworkHandler" (
     "addressToCheck" TEXT NOT NULL,
     "scriptJSON" TEXT NOT NULL,
     "registryJSON" TEXT NOT NULL,
-    "registryIdentifier" TEXT NOT NULL,
     "adminWalletId" TEXT NOT NULL,
     "FeePermille" INTEGER NOT NULL DEFAULT 50,
     "paymentType" "PaymentType" NOT NULL,

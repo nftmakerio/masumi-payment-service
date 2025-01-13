@@ -7,6 +7,7 @@ import { ez } from 'express-zod-api';
 import cuid2 from '@paralleldrive/cuid2';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { resolvePaymentKeyHash } from '@meshsdk/core';
+import { deserializePlutusScript } from '@meshsdk/core-cst';
 
 
 export const queryPaymentsSchemaInput = z.object({
@@ -106,7 +107,10 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
         const provider = new BlockFrostAPI({
             projectId: networkCheckSupported.blockfrostApiKey
         })
-        const assetInWallet = await provider.assetsAddresses(networkCheckSupported.registryIdentifier + input.agentIdentifier, { order: "desc", count: 1 })
+        const policyId = deserializePlutusScript(networkCheckSupported.registryJSON, "V3")
+            .hash()
+            .toString();
+        const assetInWallet = await provider.assetsAddresses(policyId + input.agentIdentifier, { order: "desc", count: 1 })
         if (assetInWallet.length == 0) {
             throw createHttpError(404, "Agent identifier not found")
         }

@@ -774,7 +774,7 @@ export function generateOpenAPI() {
   registry.registerPath({
     method: 'delete',
     path: '/registry/',
-    description: 'Unregisters a agent from the registry.',
+    description: 'Deregisters a agent from the specified registry.',
     summary: 'REQUIRES API KEY Authentication (+PAY)',
     tags: ['registry',],
     security: [{ [apiKeyAuth.name]: [] }],
@@ -833,7 +833,6 @@ export function generateOpenAPI() {
                     page: 1,
                     isSyncing: false,
                     latestIdentifier: null,
-                    registryIdentifier: null,
                     scriptJSON: "{}",
                     registryJSON: "{}",
                     AdminWallets: [{
@@ -875,7 +874,6 @@ export function generateOpenAPI() {
                 blockfrostApiKey: "blockfrost_api_key",
                 scriptJSON: "{}",
                 registryJSON: "{}",
-                registryIdentifier: "registry_identifier",
                 AdminWallets: [{ walletAddress: "wallet_address" }],
                 FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
                 FeePermille: 50,
@@ -907,7 +905,6 @@ export function generateOpenAPI() {
                   page: 1,
                   isSyncing: false,
                   latestIdentifier: null,
-                  registryIdentifier: null,
                   scriptJSON: "{}",
                   registryJSON: "{}",
                 }

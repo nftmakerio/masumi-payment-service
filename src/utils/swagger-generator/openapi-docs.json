@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-13T10:21:47.119Z",
-                                                "updatedAt": "2025-01-13T10:21:47.119Z"
+                                                "createdAt": "2025-01-13T10:44:05.521Z",
+                                                "updatedAt": "2025-01-13T10:44:05.521Z"
                                             }
                                         ]
                                     }
@@ -386,8 +386,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-13T10:21:47.119Z",
-                                                "updatedAt": "2025-01-13T10:21:47.119Z",
+                                                "createdAt": "2025-01-13T10:44:05.521Z",
+                                                "updatedAt": "2025-01-13T10:44:05.521Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -1224,8 +1224,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-13T10:21:47.120Z",
-                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
+                                                    "createdAt": "2025-01-13T10:44:05.522Z",
+                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1249,8 +1249,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1490,8 +1490,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1628,8 +1628,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1932,8 +1932,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-13T10:21:47.120Z",
-                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
+                                                    "createdAt": "2025-01-13T10:44:05.522Z",
+                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1944,8 +1944,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2186,8 +2186,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2499,7 +2499,7 @@
                 }
             },
             "delete": {
-                "description": "Unregisters a agent from the registry.",
+                "description": "Deregisters a agent from the specified registry.",
                 "summary": "REQUIRES API KEY Authentication (+PAY)",
                 "tags": [
                     "registry"
@@ -2677,11 +2677,6 @@
                                                                 "nullable": true,
                                                                 "maxLength": 250
                                                             },
-                                                            "registryIdentifier": {
-                                                                "type": "string",
-                                                                "nullable": true,
-                                                                "maxLength": 250
-                                                            },
                                                             "scriptJSON": {
                                                                 "type": "string"
                                                             },
@@ -2805,7 +2800,6 @@
                                                             "page",
                                                             "isSyncing",
                                                             "latestIdentifier",
-                                                            "registryIdentifier",
                                                             "scriptJSON",
                                                             "registryJSON",
                                                             "AdminWallets",
@@ -2833,8 +2827,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-13T10:21:47.120Z",
-                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
+                                                    "createdAt": "2025-01-13T10:44:05.522Z",
+                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -2842,7 +2836,6 @@
                                                     "page": 1,
                                                     "isSyncing": false,
                                                     "latestIdentifier": null,
-                                                    "registryIdentifier": null,
                                                     "scriptJSON": "{}",
                                                     "registryJSON": "{}",
                                                     "AdminWallets": [
@@ -2927,10 +2920,6 @@
                                         "maxLength": 100000
                                     },
                                     "addressToCheck": {
-                                        "type": "string",
-                                        "maxLength": 250
-                                    },
-                                    "registryIdentifier": {
                                         "type": "string",
                                         "maxLength": 250
                                     },
@@ -3031,7 +3020,6 @@
                                     "scriptJSON",
                                     "registryJSON",
                                     "addressToCheck",
-                                    "registryIdentifier",
                                     "FeePermille",
                                     "AdminWallets",
                                     "FeeReceiverNetworkWallet",
@@ -3046,7 +3034,6 @@
                                     "blockfrostApiKey": "blockfrost_api_key",
                                     "scriptJSON": "{}",
                                     "registryJSON": "{}",
-                                    "registryIdentifier": "registry_identifier",
                                     "AdminWallets": [
                                         {
                                             "walletAddress": "wallet_address"
@@ -3131,11 +3118,6 @@
                                                     "nullable": true,
                                                     "maxLength": 250
                                                 },
-                                                "registryIdentifier": {
-                                                    "type": "string",
-                                                    "nullable": true,
-                                                    "maxLength": 250
-                                                },
                                                 "scriptJSON": {
                                                     "type": "string"
                                                 },
@@ -3154,7 +3136,6 @@
                                                 "page",
                                                 "isSyncing",
                                                 "latestIdentifier",
-                                                "registryIdentifier",
                                                 "scriptJSON",
                                                 "registryJSON"
                                             ]
@@ -3168,8 +3149,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:21:47.120Z",
-                                            "updatedAt": "2025-01-13T10:21:47.120Z",
+                                            "createdAt": "2025-01-13T10:44:05.522Z",
+                                            "updatedAt": "2025-01-13T10:44:05.522Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
@@ -3177,7 +3158,6 @@
                                             "page": 1,
                                             "isSyncing": false,
                                             "latestIdentifier": null,
-                                            "registryIdentifier": null,
                                             "scriptJSON": "{}",
                                             "registryJSON": "{}"
                                         }

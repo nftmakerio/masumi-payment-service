@@ -63,7 +63,6 @@ export const seed = async (prisma: PrismaClient) => {
           blockfrostApiKey: blockfrostApiKey,
           scriptJSON: scriptJSON,
           registryJSON: registryJSON,
-          registryIdentifier: registryContractIdentifier,
           paymentType: PaymentType.WEB3_CARDANO_V1,
           isSyncing: true,
           FeeReceiverNetworkWallet: {
