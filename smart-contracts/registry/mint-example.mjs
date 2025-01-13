@@ -29,7 +29,7 @@ console.log(address);
 
 const blueprint = JSON.parse(fs.readFileSync('./plutus.json'));
 const paymentContractAddress =
-  'addr_test1wqwryqpm70ldtryqr2fa9y72ex9e6pyq0k5z4p5260wq0zq8yrz6n';
+  'addr_test1wrm4l7k9qgw9878ymvw223u45fje48tnhqsxk2tewe47z7se03mca';
 
 const script = {
   code: applyParamsToScript(blueprint.validators[0].compiledCode, [
@@ -89,10 +89,17 @@ tx.setMetadata(721, {
       //name can be freely chosen
       name: 'Registry Example NAME',
       api_url: 'http://localhost:3000',
-      description: 'This is an other valid example NFT for the registry',
+      description: 'This is a valid example NFT for the registry',
       company_name: 'Example Inc.',
       capability: { name: 'BetterAI', version: '1.3.4' },
       requests_per_hour: '15.3',
+      pricing: [
+        {
+          asset_id: 'usdm_asset_id',
+          policy_id: 'usdm_policy_id',
+          quantity: '500000000',
+        },
+      ],
     },
   },
 });

@@ -21,8 +21,6 @@ Our backend architecture is built upon the following design patterns and powerfu
 
 This section provides an overview of the key architectural patterns and technologies used in this service:
 
-- [Onion Architecture](http://jeffreypalermo.com/blog/the-onion-architecture-part-1/):
-  Employed as the core architectural design pattern
 - [Express-Zod-Api](https://www.npmjs.com/package/express-zod-api): Utilized as the framework for implementing our RESTful API with Swagger UI. The library uses:
   - [Express](http://expressjs.com/) as the framework for implementing our RESTful API
   - [Zod](https://www.npmjs.com/package/zod) for request validation
@@ -36,48 +34,51 @@ This section provides an overview of the key architectural patterns and technolo
 
 ## Install
 
-1. Install [node.js](https://nodejs.org/en/download/)
+1. Install [node.js](https://nodejs.org/en/download/) in version 18.x
 2. Clone this repository, and using a terminal navigate to its directory.
 3. Run `yarn` or `npm install` to install the dependencies.
-4. 4. Configure the environment variables by copying the `.env.example` file to `.env`or `.env.local` and setup the variables
+4. Configure the environment variables by copying the `.env.example` file to `.env`or `.env.local` and setup the variables
    - DATABASE_URL: Please provide the endpoint for a PostgreSQL database to be used
    - PORT: The port to run the server on (default is 3001)
    - UPDATE_CARDANO_REGISTRY_INTERVAL: The interval to update the cardano registry as a cron string
    - ENCRYPTION_KEY: The key for encrypting the wallets in the database (Please see the [Security](#security) section for more details and security considerations)
    - UPDATE_PAYMENT_REGISTRY_INTERVAL: The interval to update the payment registry as a cron string
-5. In case you need to apply migrations to the database run `yarn prisma:migrate` or `npm prisma:migrate` otherwise run `yarn prisma:generate` or `npm prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3)
-6. In case the database is not yet seeded (and or migrated) please also setup the following variables:
-   - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
-   - NETWORK: Currently only supports the PREPROD Cardano network or MAINNET
-   - ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
-   - Further configuration and explanation in the `.env.example` file
-7. In case you want to seed the database now run `yarn prisma:seed` or `npm prisma:seed`
+
+- 5. In case the database is not yet seeded (and or migrated) please also setup the following variables:
+  - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
+  - NETWORK: Currently only supports the PREPROD Cardano network or MAINNET
+  - ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
+  - Further configuration and explanation in the `.env.example` file
+
+6. In case you need to apply migrations to the database run `yarn prisma:migrate` or `npm run prisma:migrate` otherwise run `yarn prisma:generate` or `npm run prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3)
+7. In case you want to seed the database now run `yarn prisma:seed` or `npm run prisma:seed`
 
 ## Build & Run
 
 1. Copy the contents of the `.env.example` file to a `.env` next to it, and edit it with your values.
-2. Run `yarn build` or `npm build` to build the files.
-3. Run `yarn start` or `npm start` to start the application.
+2. Run `yarn build` or `npm run build` to build the files.
+3. Run `yarn start` or `npm run start` to start the application.
 
-- You can run `yarn dev` or `npm dev` to combine the 2 steps above, while listening to changes and restarting automatically.
+- You can run `yarn dev` or `npm run dev` to combine the 2 steps above, while listening to changes and restarting automatically.
 
 To verify that the application is working correctly, point your browser to
-[http://localhost:3001/api/health](http://localhost:3001/api/health) - you
+[http://localhost:3001/api/v1/health](http://localhost:3001/api/v1/health) - you
 should see a response with one books in JSON format.
 
 You can see a OpenAPI (Swagger) definition of the REST API at
-[http://localhost:3001/api-docs/](http://localhost:3001/api-docs/). This
+[http://localhost:3001/docs/](http://localhost:3001/docs/). This
 interface also allows you to interact with the API.
 
 ## Run with Docker
 
-1. Build:
+1. Create the `.env` file with the correct values or inject the values to docker (migrate the database and optionally seed it first)
+2. Build:
 
    ```
    docker build -t masumi-payment-service .
    ```
 
-2) Run
+3. Run
    ```
    docker run -d -p 3001:3001 masumi-payment-service
    ```
@@ -89,9 +90,9 @@ This service needs full access to some wallets, as it uses them to handle paymen
 
 We also strongly recommend to use different wallets for different purposes.
 
-- One wallet for handling payments, this should have necessary funds to cover the payments
-- One wallet for handling the registry updates, this wallet shall have minimum funds to interact with the smart contract (it will automatically deduct a small amount from each payout to remain liquid)
+- One wallet for handling incoming payments, this should have necessary funds to cover the smart contract interactions. It will automatically deduct a small amount from each payout to remain liquid. This wallet can also be used for handling the registration process. Otherwise you can separate this wallet in which case it shall have minimum funds to interact with the smart contract. You can also setup multiple wallets if you want to register more agents and improve performance with multiple parallel transactions.
 - One wallet to collect all the funds after the payment unlocks. This ideally should be a cold storage wallet (and payment credentials will not be available to this service)
+- One wallet to purchase and pay other agents. This wallet needs the funds you want to use to pay and some additional ADA to cover the transaction fees.
 
 In addition please make sure to update this service with the latest version regularly to benefit from security fixes.
 
@@ -103,8 +104,8 @@ In addition please make sure to update this service with the latest version regu
 
 ## Linting & Formatting
 
-- Run `yarn lint` or `npm lint` to lint the code.
-- Run `yarn format` or `npm format` to format the code.
+- Run `yarn lint` or `npm run lint` to lint the code.
+- Run `yarn format` or `npm run format` to format the code.
 
 ## Testing
 
@@ -112,9 +113,9 @@ In addition please make sure to update this service with the latest version regu
 
 This project uses Jest as the testing framework. Here's how you can run tests:
 
-- Run `yarn test` or `npm test` to execute all tests.
-- Run `yarn test:watch` or `npm test:watch` to run tests in watch mode, which will re-run tests on file changes.
-- Run `yarn test:coverage` or `npm test:coverage` to see the test coverage report.
+- Run `yarn test` or `npm run test` to execute all tests.
+- Run `yarn test:watch` or `npm run test:watch` to run tests in watch mode, which will re-run tests on file changes.
+- Run `yarn test:coverage` or `npm run test:coverage` to see the test coverage report.
 
 ### Writing Tests
 
