@@ -10,14 +10,21 @@ import { deserializePlutusScript } from '@meshsdk/core-cst';
 
 export const registerAgentSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
-    address: z.string().max(250),
-    name: z.string().max(62),
-    description: z.string().max(62),
-    companyName: z.string().max(62),
-    capabilityName: z.string().max(62),
-    capabilityVersion: z.string().max(62),
-    capabilityDescription: z.string().max(62),
-    apiUrl: z.string().max(62),
+    paymentContractAddress: z.string().max(250),
+    tags: z.array(z.string().max(250)).max(5),
+    image: z.string().max(62),
+    //name can be freely chosen
+    name: z.string().max(250),
+    api_url: z.string().max(250),
+    description: z.string().max(250),
+    company_name: z.string().max(250),
+    capability: z.object({ name: z.string().max(250), version: z.string().max(250) }),
+    requests_per_hour: z.string().max(250),
+    pricing: z.array(z.object({
+        asset_id: z.string().max(62),
+        policy_id: z.string().max(62),
+        quantity: z.string().max(20),
+    })).max(5),
 })
 
 export const registerAgentSchemaOutput = z.object({
@@ -30,7 +37,14 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
     output: registerAgentSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Registering Agent", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { AdminWallets: true, SellingWallet: { include: { walletSecret: true } } } })
+        const networkCheckSupported = await prisma.networkHandler.findUnique({
+            where: {
+                network_addressToCheck: {
+                    network: input.network,
+                    addressToCheck: input.paymentContractAddress
+                }
+            }, include: { AdminWallets: true, SellingWallet: { include: { walletSecret: true } } }
+        })
         if (networkCheckSupported == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
@@ -111,14 +125,19 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
         tx.setMetadata(721, {
             [policyId]: {
                 [assetName]: {
-                    name: input.name,
-                    api_url: input.apiUrl,
-                    description: input.description,
-                    company_name: input.companyName,
-                    capability_name: input.capabilityName,
-                    capability_version: input.capabilityVersion,
-                    capability_description: input.capabilityDescription,
-                    paymentContract: input.address
+                    tags: [input.tags.map(tag => stringToMetadata(tag))],
+                    image: input.image,
+                    name: stringToMetadata(input.name),
+                    api_url: stringToMetadata(input.api_url),
+                    description: stringToMetadata(input.description),
+                    company_name: stringToMetadata(input.company_name),
+                    capability: { name: stringToMetadata(input.capability.name), version: stringToMetadata(input.capability.version) },
+                    requests_per_hour: stringToMetadata(input.requests_per_hour),
+                    pricing: input.pricing.map(pricing => ({
+                        asset_id: pricing.asset_id,
+                        policy_id: pricing.policy_id,
+                        quantity: pricing.quantity,
+                    })),
                 },
             },
         });
@@ -145,6 +164,15 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
         return { txHash }
     },
 });
+
+function stringToMetadata(s: string) {
+    //split every 50 characters
+    const arr = []
+    for (let i = 0; i < s.length; i += 50) {
+        arr.push(s.slice(i, i + 50))
+    }
+    return arr
+}
 
 
 export const unregisterAgentSchemaInput = z.object({
