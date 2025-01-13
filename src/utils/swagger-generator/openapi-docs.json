@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-13T06:50:19.976Z",
-                                                "updatedAt": "2025-01-13T06:50:19.976Z"
+                                                "createdAt": "2025-01-13T10:21:47.119Z",
+                                                "updatedAt": "2025-01-13T10:21:47.119Z"
                                             }
                                         ]
                                     }
@@ -386,8 +386,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-13T06:50:19.976Z",
-                                                "updatedAt": "2025-01-13T06:50:19.976Z",
+                                                "createdAt": "2025-01-13T10:21:47.119Z",
+                                                "updatedAt": "2025-01-13T10:21:47.119Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -1224,8 +1224,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-13T06:50:19.977Z",
-                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "createdAt": "2025-01-13T10:21:47.120Z",
+                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1249,8 +1249,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1490,8 +1490,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1628,8 +1628,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1932,8 +1932,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-13T06:50:19.977Z",
-                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "createdAt": "2025-01-13T10:21:47.120Z",
+                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1944,8 +1944,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2186,8 +2186,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2337,60 +2337,123 @@
                                             "MAINNET"
                                         ]
                                     },
-                                    "address": {
+                                    "paymentContractAddress": {
                                         "type": "string",
                                         "maxLength": 250
                                     },
-                                    "name": {
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 250
+                                        },
+                                        "maxItems": 5
+                                    },
+                                    "image": {
                                         "type": "string",
                                         "maxLength": 62
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 250
+                                    },
+                                    "api_url": {
+                                        "type": "string",
+                                        "maxLength": 250
                                     },
                                     "description": {
                                         "type": "string",
-                                        "maxLength": 62
+                                        "maxLength": 250
                                     },
-                                    "companyName": {
+                                    "company_name": {
                                         "type": "string",
-                                        "maxLength": 62
+                                        "maxLength": 250
                                     },
-                                    "capabilityName": {
-                                        "type": "string",
-                                        "maxLength": 62
+                                    "capability": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "maxLength": 250
+                                            },
+                                            "version": {
+                                                "type": "string",
+                                                "maxLength": 250
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "version"
+                                        ]
                                     },
-                                    "capabilityVersion": {
+                                    "requests_per_hour": {
                                         "type": "string",
-                                        "maxLength": 62
+                                        "maxLength": 250
                                     },
-                                    "capabilityDescription": {
-                                        "type": "string",
-                                        "maxLength": 62
-                                    },
-                                    "apiUrl": {
-                                        "type": "string",
-                                        "maxLength": 62
+                                    "pricing": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "asset_id": {
+                                                    "type": "string",
+                                                    "maxLength": 62
+                                                },
+                                                "policy_id": {
+                                                    "type": "string",
+                                                    "maxLength": 62
+                                                },
+                                                "quantity": {
+                                                    "type": "string",
+                                                    "maxLength": 20
+                                                }
+                                            },
+                                            "required": [
+                                                "asset_id",
+                                                "policy_id",
+                                                "quantity"
+                                            ]
+                                        },
+                                        "maxItems": 5
                                     }
                                 },
                                 "required": [
                                     "network",
-                                    "address",
+                                    "paymentContractAddress",
+                                    "tags",
+                                    "image",
                                     "name",
+                                    "api_url",
                                     "description",
-                                    "companyName",
-                                    "capabilityName",
-                                    "capabilityVersion",
-                                    "capabilityDescription",
-                                    "apiUrl"
+                                    "company_name",
+                                    "capability",
+                                    "requests_per_hour",
+                                    "pricing"
                                 ],
                                 "example": {
-                                    "name": "Agent Name",
-                                    "description": "Agent Description",
                                     "network": "PREPROD",
-                                    "address": "addr_test1...",
-                                    "companyName": "Company Name",
-                                    "capabilityName": "Capability Name",
-                                    "capabilityVersion": "1.0.0",
-                                    "capabilityDescription": "Capability Description",
-                                    "apiUrl": "https://api.example.com"
+                                    "paymentContractAddress": "addr_test1...",
+                                    "tags": [
+                                        "tag1",
+                                        "tag2"
+                                    ],
+                                    "image": "https://example.com/image.png",
+                                    "name": "Agent Name",
+                                    "api_url": "https://api.example.com",
+                                    "description": "Agent Description",
+                                    "company_name": "Company Name",
+                                    "capability": {
+                                        "name": "Capability Name",
+                                        "version": "1.0.0"
+                                    },
+                                    "requests_per_hour": "100",
+                                    "pricing": [
+                                        {
+                                            "asset_id": "usdm_asset_id",
+                                            "policy_id": "usdm_policy_id",
+                                            "quantity": "500000000"
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -2770,8 +2833,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-13T06:50:19.977Z",
-                                                    "updatedAt": "2025-01-13T06:50:19.977Z",
+                                                    "createdAt": "2025-01-13T10:21:47.120Z",
+                                                    "updatedAt": "2025-01-13T10:21:47.120Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -3105,8 +3168,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T06:50:19.977Z",
-                                            "updatedAt": "2025-01-13T06:50:19.977Z",
+                                            "createdAt": "2025-01-13T10:21:47.120Z",
+                                            "updatedAt": "2025-01-13T10:21:47.120Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",

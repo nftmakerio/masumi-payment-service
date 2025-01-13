@@ -730,15 +730,22 @@ export function generateOpenAPI() {
           'application/json': {
             schema: registerAgentSchemaInput.openapi({
               example: {
-                name: "Agent Name",
-                description: "Agent Description",
                 network: $Enums.Network.PREPROD,
-                address: "addr_test1...",
-                companyName: "Company Name",
-                capabilityName: "Capability Name",
-                capabilityVersion: "1.0.0",
-                capabilityDescription: "Capability Description",
-                apiUrl: "https://api.example.com"
+                paymentContractAddress: "addr_test1...",
+                tags: ["tag1", "tag2"],
+                image: "https://example.com/image.png",
+                //name can be freely chosen
+                name: "Agent Name",
+                api_url: "https://api.example.com",
+                description: "Agent Description",
+                company_name: "Company Name",
+                capability: { name: "Capability Name", version: "1.0.0" },
+                requests_per_hour: "100",
+                pricing: [{
+                  asset_id: "usdm_asset_id",
+                  policy_id: "usdm_policy_id",
+                  quantity: "500000000",
+                }],
               }
             })
           }

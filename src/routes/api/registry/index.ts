@@ -176,6 +176,7 @@ function stringToMetadata(s: string) {
 
 
 export const unregisterAgentSchemaInput = z.object({
+
     assetName: z.string().max(250),
     network: z.nativeEnum($Enums.Network),
     address: z.string().max(250),
