@@ -13,9 +13,8 @@ import { applyParamsToScript, BlockfrostProvider, mBool, MeshWallet, PlutusScrip
 import { decrypt } from '@/utils/encryption';
 export const queryPurchaseRequestSchemaInput = z.object({
     limit: z.number({ coerce: true }).min(1).max(100).default(10),
-    cursorIdentifier: z.string().max(250).optional(),
+    cursorIdentifier: z.object({ identifier: z.string().max(250), sellingWalletVkey: z.string().max(250) }).optional(),
     network: z.nativeEnum($Enums.Network),
-    sellingWalletVkey: z.string().max(250),
     paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
 })
@@ -49,15 +48,20 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
         if (networkHandler == null) {
             throw createHttpError(404, "Network handler not found")
         }
-        const sellerWallet = await prisma.sellerWallet.findUnique({ where: { networkHandlerId_walletVkey: { networkHandlerId: networkHandler.id, walletVkey: input.sellingWalletVkey } } })
-        if (sellerWallet == null) {
-            throw createHttpError(404, "Selling wallet not found")
+        let cursor = undefined;
+        if (input.cursorIdentifier) {
+            const sellerWallet = await prisma.sellerWallet.findUnique({ where: { networkHandlerId_walletVkey: { networkHandlerId: networkHandler.id, walletVkey: input.cursorIdentifier.sellingWalletVkey } } })
+            if (sellerWallet == null) {
+                throw createHttpError(404, "Selling wallet not found")
+            }
+            cursor = { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.cursorIdentifier.identifier, sellerWalletId: sellerWallet.id } }
+
         }
 
 
         const result = await prisma.purchaseRequest.findMany({
             where: {},
-            cursor: input.cursorIdentifier ? { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.identifier, sellerWalletId: sellerWallet.id } } : undefined,
+            cursor: cursor,
             take: input.limit,
             include: {
                 sellerWallet: { select: { walletVkey: true, note: true } },
@@ -108,19 +112,19 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
         }
         //require at least 3 hours between unlock time and the submit result time
         const additionalRefundTime = 1000 * 60 * 60 * 3;
-        if (input.unlockTime < new Date(input.refundTime.getTime() + additionalRefundTime)) {
+        if (input.unlockTime > new Date(input.refundTime.getTime() + additionalRefundTime)) {
             throw createHttpError(400, "Refund request time must be after unlock time with at least 3 hours difference")
         }
-        if (input.submitResultTime.getTime() > Date.now()) {
+        if (input.submitResultTime.getTime() < Date.now()) {
             throw createHttpError(400, "Submit result time must be in the future")
         }
         const offset = 1000 * 60 * 15;
-        if (input.submitResultTime < new Date(input.unlockTime.getTime() + offset)) {
+        if (input.submitResultTime > new Date(input.unlockTime.getTime() + offset)) {
             throw createHttpError(400, "Submit result time must be after unlock time with at least 15 minutes difference")
         }
 
 
-        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.refundRequestTime, input.unlockTime, input.refundTime);
+        const initial = await tokenCreditService.handlePurchaseCreditInit(options.id, input.amounts.map(amount => ({ amount: BigInt(amount.amount), unit: amount.unit })), input.network, input.identifier, input.paymentType, input.contractAddress, input.sellerVkey, input.submitResultTime, input.unlockTime, input.refundTime);
         return initial
     },
 });

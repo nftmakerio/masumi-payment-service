@@ -38,14 +38,14 @@ export const paymentSourceSchemaOutput = z.object({
             walletVkey: z.string().max(250),
             note: z.string().nullable(),
         })),
-        SellingWallet: z.object({
+        SellingWallets: z.array(z.object({
             id: z.string(),
             walletVkey: z.string().max(250),
             note: z.string().nullable(),
-        }).nullable(),
+        })),
         FeeReceiverNetworkWallet: z.object({
             walletAddress: z.string().max(250),
-        }).nullable(),
+        }),
         FeePermille: z.number().min(0).max(1000),
     })),
 });
@@ -65,7 +65,7 @@ export const paymentSourceEndpointGet = adminAuthenticatedEndpointFactory.build(
                 AdminWallets: { orderBy: { order: "desc" } },
                 CollectionWallet: true,
                 PurchasingWallets: true,
-                SellingWallet: true,
+                SellingWallets: true,
                 FeeReceiverNetworkWallet: true,
             }
         })
@@ -95,10 +95,10 @@ export const paymentSourceCreateSchemaInput = z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
     })).min(1).max(50),
-    SellingWallet: z.object({
+    SellingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    }),
+    })),
 });
 export const paymentSourceCreateSchemaOutput = z.object({
     id: z.string(),
@@ -120,16 +120,19 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
     input: paymentSourceCreateSchemaInput,
     output: paymentSourceCreateSchemaOutput,
     handler: async ({ input }) => {
-        const sellingWalletMesh = {
-            wallet: new MeshWallet({
-                networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
-                key: {
-                    type: "mnemonic",
-                    words: input.SellingWallet.walletMnemonic.split(" ")
-                }
-            }), note: input.SellingWallet.note,
-            secret: encrypt(input.SellingWallet.walletMnemonic)
-        };
+        const sellingWalletsMesh = input.SellingWallets.map(sw => {
+            return {
+                wallet: new MeshWallet({
+                    networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
+                    key: {
+                        type: "mnemonic",
+                        words: sw.walletMnemonic.split(" ")
+                    }
+                }),
+                note: sw.note,
+                secret: encrypt(sw.walletMnemonic)
+            };
+        });
         const purchasingWalletsMesh = input.PurchasingWallets.map(pw => {
             return {
                 wallet: new MeshWallet({
@@ -143,6 +146,14 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
             };
         });
         const result = await prisma.$transaction(async (prisma) => {
+            const sellingWallets = await Promise.all(sellingWalletsMesh.map(async (sw) => {
+                const walletVkey = resolvePaymentKeyHash((await sw.wallet.getUnusedAddresses())[0]);
+                return {
+                    walletVkey: walletVkey,
+                    walletSecretId: (await prisma.walletSecret.create({ data: { secret: sw.secret } })).id,
+                    note: sw.note
+                };
+            }));
             const paymentSource = await prisma.networkHandler.create({
                 data: {
                     network: input.network,
@@ -169,15 +180,9 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
                     CollectionWallet: {
                         create: input.CollectionWallet
                     },
-                    SellingWallet: {
-                        create: {
-                            walletVkey: resolvePaymentKeyHash((await sellingWalletMesh.wallet.getUnusedAddresses())[0]),
-                            walletSecret: {
-                                create: {
-                                    secret: sellingWalletMesh.secret
-                                }
-                            },
-                            note: sellingWalletMesh.note
+                    SellingWallets: {
+                        createMany: {
+                            data: sellingWallets
                         }
                     },
 

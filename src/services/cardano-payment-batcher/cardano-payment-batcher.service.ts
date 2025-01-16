@@ -63,7 +63,7 @@ export async function batchLatestPaymentEntriesV1() {
             return networkChecks;
         }, { isolationLevel: "Serializable" });
 
-        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
+        await Promise.allSettled(networkChecksWithWalletLocked.map(async (networkCheck) => {
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
             if (!network)
                 throw new Error("Invalid network")
@@ -148,7 +148,7 @@ export async function batchLatestPaymentEntriesV1() {
             }
             //only go into error state if we did not reach max batch size, as otherwise we might have enough funds in other wallets
             if (paymentRequestsRemaining.length > 0 && maxBatchSizeReached == false)
-                await Promise.all(paymentRequestsRemaining.map(async (paymentRequest) => {
+                await Promise.allSettled(paymentRequestsRemaining.map(async (paymentRequest) => {
                     //TODO create tx
                     await prisma.purchaseRequest.update({
                         where: { id: paymentRequest.id }, data: {
@@ -158,7 +158,7 @@ export async function batchLatestPaymentEntriesV1() {
                         }
                     })
                 }))
-            await Promise.all(walletPairings.map(async (walletPairing) => {
+            await Promise.allSettled(walletPairings.map(async (walletPairing) => {
                 try {
 
                     const wallet = walletPairing.wallet;
@@ -217,16 +217,23 @@ export async function batchLatestPaymentEntriesV1() {
                     //TODO maybe add alternative submitter
                     try {
                         //update purchase requests
-                        await prisma.purchaseRequest.updateMany({ where: { id: { in: batchedRequests.map((request) => request.id) } }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.PurchaseInitiated } })
+                        const purchaseRequests = await Promise.allSettled(batchedRequests.map(async (request) => {
+                            await prisma.purchaseRequest.update({ where: { id: request.id }, data: { smartContractWallet: { update: { pendingTransaction: { update: { hash: txHash } } } }, potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.PurchaseInitiated } })
+                        }))
+                        const failedPurchaseRequests = purchaseRequests.filter(x => x.status != "fulfilled")
+                        if (failedPurchaseRequests.length > 0) {
+                            logger.error("Error updating payment status, retrying ", failedPurchaseRequests);
+                        }
+
                     } catch (error) {
-                        //TODO handle this error
                         logger.error("Error updating payment status, retrying ", error);
                         const failedRequests = await Promise.allSettled(batchedRequests.map(async (request) => {
-                            await prisma.purchaseRequest.update({ where: { id: request.id }, data: { status: $Enums.PurchasingRequestStatus.PurchaseInitiated } })
+                            await prisma.purchaseRequest.update({ where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.PurchaseInitiated, smartContractWallet: { update: { pendingTransaction: { update: { hash: txHash } } } } } })
                         }))
                         const retriedFailedRequests = failedRequests.filter(x => x.status != "fulfilled")
                         if (retriedFailedRequests.length > 0) {
                             logger.error("Error updating payment status while retrying ", error, retriedFailedRequests);
+                            //TODO figure out what to do here, maybe we shall crash the service or lock the payments?
                         }
                     }
                 } catch (error) {

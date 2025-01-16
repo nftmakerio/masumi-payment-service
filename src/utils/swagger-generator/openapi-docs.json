@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-13T10:44:05.521Z",
-                                                "updatedAt": "2025-01-13T10:44:05.521Z"
+                                                "createdAt": "2025-01-16T15:41:54.915Z",
+                                                "updatedAt": "2025-01-16T15:41:54.915Z"
                                             }
                                         ]
                                     }
@@ -386,8 +386,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-13T10:44:05.521Z",
-                                                "updatedAt": "2025-01-13T10:44:05.521Z",
+                                                "createdAt": "2025-01-16T15:41:54.915Z",
+                                                "updatedAt": "2025-01-16T15:41:54.915Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -1072,26 +1072,28 @@
                                                                 "type": "string",
                                                                 "maxLength": 250
                                                             },
-                                                            "sellingWallet": {
-                                                                "type": "object",
-                                                                "nullable": true,
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "string"
+                                                            "sellingWallets": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "walletVkey": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "note": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
                                                                     },
-                                                                    "walletVkey": {
-                                                                        "type": "string"
-                                                                    },
-                                                                    "note": {
-                                                                        "type": "string",
-                                                                        "nullable": true
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "id",
-                                                                    "walletVkey",
-                                                                    "note"
-                                                                ]
+                                                                    "required": [
+                                                                        "id",
+                                                                        "walletVkey",
+                                                                        "note"
+                                                                    ]
+                                                                }
                                                             },
                                                             "collectionWallet": {
                                                                 "type": "object",
@@ -1202,7 +1204,7 @@
                                                             "errorNote",
                                                             "errorRequiresManualReview",
                                                             "identifier",
-                                                            "sellingWallet",
+                                                            "sellingWallets",
                                                             "collectionWallet",
                                                             "buyerWallet",
                                                             "amounts",
@@ -1224,8 +1226,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-13T10:44:05.522Z",
-                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
+                                                    "createdAt": "2025-01-16T15:41:54.915Z",
+                                                    "updatedAt": "2025-01-16T15:41:54.915Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1233,11 +1235,13 @@
                                                     "errorNote": "error_note",
                                                     "errorRequiresManualReview": false,
                                                     "identifier": "identifier",
-                                                    "sellingWallet": {
-                                                        "id": "unique-cuid-v2-auto-generated",
-                                                        "walletVkey": "wallet_vkey",
-                                                        "note": "note"
-                                                    },
+                                                    "sellingWallets": [
+                                                        {
+                                                            "id": "unique-cuid-v2-auto-generated",
+                                                            "walletVkey": "wallet_vkey",
+                                                            "note": "note"
+                                                        }
+                                                    ],
                                                     "collectionWallet": {
                                                         "id": "unique-cuid-v2-auto-generated",
                                                         "walletAddress": "wallet_address",
@@ -1249,8 +1253,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                                            "createdAt": "2025-01-16T15:41:54.915Z",
+                                                            "updatedAt": "2025-01-16T15:41:54.915Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1283,7 +1287,7 @@
             },
             "post": {
                 "description": "Creates a payment request and identifier. This will check incoming payments in the background.",
-                "summary": "REQUIRES API KEY Authentication (+WRITE)",
+                "summary": "REQUIRES API KEY Authentication (+PAY)",
                 "tags": [
                     "payment"
                 ],
@@ -1490,8 +1494,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                            "createdAt": "2025-01-16T15:41:54.915Z",
+                                            "updatedAt": "2025-01-16T15:41:54.915Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1512,7 +1516,7 @@
             },
             "patch": {
                 "description": "Completes a payment request. This will collect the funds after the unlock time.",
-                "summary": "REQUIRES API KEY Authentication (+WRITE)",
+                "summary": "REQUIRES API KEY Authentication (+PAY)",
                 "tags": [
                     "payment"
                 ],
@@ -1628,8 +1632,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                            "createdAt": "2025-01-16T15:41:54.915Z",
+                                            "updatedAt": "2025-01-16T15:41:54.915Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1675,8 +1679,21 @@
                     },
                     {
                         "schema": {
-                            "type": "string",
-                            "maxLength": 250
+                            "type": "object",
+                            "properties": {
+                                "identifier": {
+                                    "type": "string",
+                                    "maxLength": 250
+                                },
+                                "sellingWalletVkey": {
+                                    "type": "string",
+                                    "maxLength": 250
+                                }
+                            },
+                            "required": [
+                                "identifier",
+                                "sellingWalletVkey"
+                            ]
                         },
                         "required": false,
                         "name": "cursorIdentifier",
@@ -1693,15 +1710,6 @@
                         },
                         "required": true,
                         "name": "network",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 250
-                        },
-                        "required": true,
-                        "name": "sellingWalletVkey",
                         "in": "query"
                     },
                     {
@@ -1932,8 +1940,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-13T10:44:05.522Z",
-                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
+                                                    "createdAt": "2025-01-16T15:41:54.915Z",
+                                                    "updatedAt": "2025-01-16T15:41:54.915Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1944,8 +1952,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                                            "createdAt": "2025-01-16T15:41:54.915Z",
+                                                            "updatedAt": "2025-01-16T15:41:54.915Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1986,7 +1994,7 @@
             },
             "post": {
                 "description": "Creates a purchase and pays the seller. This requires funds to be available.",
-                "summary": "REQUIRES API KEY Authentication (+WRITE)",
+                "summary": "REQUIRES API KEY Authentication (+PAY)",
                 "tags": [
                     "purchase"
                 ],
@@ -2186,8 +2194,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                            "createdAt": "2025-01-16T15:41:54.915Z",
+                                            "updatedAt": "2025-01-16T15:41:54.915Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2208,7 +2216,7 @@
             },
             "patch": {
                 "description": "Requests a refund for a completed purchase. This will collect the refund after the refund time.",
-                "summary": "REQUIRES API KEY Authentication (+WRITE)",
+                "summary": "REQUIRES API KEY Authentication (+PAY)",
                 "tags": [
                     "purchase"
                 ],
@@ -2338,6 +2346,10 @@
                                         ]
                                     },
                                     "paymentContractAddress": {
+                                        "type": "string",
+                                        "maxLength": 250
+                                    },
+                                    "sellingWalletVkey": {
                                         "type": "string",
                                         "maxLength": 250
                                     },
@@ -2748,31 +2760,32 @@
                                                                     ]
                                                                 }
                                                             },
-                                                            "SellingWallet": {
-                                                                "type": "object",
-                                                                "nullable": true,
-                                                                "properties": {
-                                                                    "id": {
-                                                                        "type": "string"
+                                                            "SellingWallets": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "walletVkey": {
+                                                                            "type": "string",
+                                                                            "maxLength": 250
+                                                                        },
+                                                                        "note": {
+                                                                            "type": "string",
+                                                                            "nullable": true
+                                                                        }
                                                                     },
-                                                                    "walletVkey": {
-                                                                        "type": "string",
-                                                                        "maxLength": 250
-                                                                    },
-                                                                    "note": {
-                                                                        "type": "string",
-                                                                        "nullable": true
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "id",
-                                                                    "walletVkey",
-                                                                    "note"
-                                                                ]
+                                                                    "required": [
+                                                                        "id",
+                                                                        "walletVkey",
+                                                                        "note"
+                                                                    ]
+                                                                }
                                                             },
                                                             "FeeReceiverNetworkWallet": {
                                                                 "type": "object",
-                                                                "nullable": true,
                                                                 "properties": {
                                                                     "walletAddress": {
                                                                         "type": "string",
@@ -2805,7 +2818,7 @@
                                                             "AdminWallets",
                                                             "CollectionWallet",
                                                             "PurchasingWallets",
-                                                            "SellingWallet",
+                                                            "SellingWallets",
                                                             "FeeReceiverNetworkWallet",
                                                             "FeePermille"
                                                         ]
@@ -2827,8 +2840,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-13T10:44:05.522Z",
-                                                    "updatedAt": "2025-01-13T10:44:05.522Z",
+                                                    "createdAt": "2025-01-16T15:41:54.915Z",
+                                                    "updatedAt": "2025-01-16T15:41:54.915Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -2856,11 +2869,13 @@
                                                             "note": "note"
                                                         }
                                                     ],
-                                                    "SellingWallet": {
-                                                        "id": "unique-cuid-v2-auto-generated",
-                                                        "walletVkey": "wallet_vkey",
-                                                        "note": "note"
-                                                    },
+                                                    "SellingWallets": [
+                                                        {
+                                                            "id": "unique-cuid-v2-auto-generated",
+                                                            "walletVkey": "wallet_vkey",
+                                                            "note": "note"
+                                                        }
+                                                    ],
                                                     "FeeReceiverNetworkWallet": {
                                                         "walletAddress": "wallet_address"
                                                     },
@@ -2995,22 +3010,25 @@
                                         "minItems": 1,
                                         "maxItems": 50
                                     },
-                                    "SellingWallet": {
-                                        "type": "object",
-                                        "properties": {
-                                            "walletMnemonic": {
-                                                "type": "string",
-                                                "maxLength": 1500
+                                    "SellingWallets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "walletMnemonic": {
+                                                    "type": "string",
+                                                    "maxLength": 1500
+                                                },
+                                                "note": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                }
                                             },
-                                            "note": {
-                                                "type": "string",
-                                                "maxLength": 250
-                                            }
-                                        },
-                                        "required": [
-                                            "walletMnemonic",
-                                            "note"
-                                        ]
+                                            "required": [
+                                                "walletMnemonic",
+                                                "note"
+                                            ]
+                                        }
                                     }
                                 },
                                 "required": [
@@ -3025,7 +3043,7 @@
                                     "FeeReceiverNetworkWallet",
                                     "CollectionWallet",
                                     "PurchasingWallets",
-                                    "SellingWallet"
+                                    "SellingWallets"
                                 ],
                                 "example": {
                                     "network": "PREPROD",
@@ -3053,10 +3071,12 @@
                                             "note": "note"
                                         }
                                     ],
-                                    "SellingWallet": {
-                                        "walletMnemonic": "wallet mnemonic",
-                                        "note": "note"
-                                    }
+                                    "SellingWallets": [
+                                        {
+                                            "walletMnemonic": "wallet mnemonic",
+                                            "note": "note"
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -3149,8 +3169,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-13T10:44:05.522Z",
-                                            "updatedAt": "2025-01-13T10:44:05.522Z",
+                                            "createdAt": "2025-01-16T15:41:54.916Z",
+                                            "updatedAt": "2025-01-16T15:41:54.916Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",

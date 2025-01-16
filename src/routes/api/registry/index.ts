@@ -6,11 +6,13 @@ import createHttpError from 'http-errors';
 import { applyParamsToScript, BlockfrostProvider, MeshWallet, PlutusScript, resolvePlutusScriptAddress, Transaction } from '@meshsdk/core';
 import { decrypt } from '@/utils/encryption';
 import { blake2b } from 'ethereum-cryptography/blake2b.js';
-import { deserializePlutusScript } from '@meshsdk/core-cst';
+import { deserializePlutusScript, resolvePaymentKeyHash } from '@meshsdk/core-cst';
+import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 
 export const registerAgentSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
     paymentContractAddress: z.string().max(250),
+    sellingWalletVkey: z.string().max(250).optional(),
     tags: z.array(z.string().max(250)).max(5),
     image: z.string().max(62),
     //name can be freely chosen
@@ -43,19 +45,28 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
                     network: input.network,
                     addressToCheck: input.paymentContractAddress
                 }
-            }, include: { AdminWallets: true, SellingWallet: { include: { walletSecret: true } } }
+            }, include: { AdminWallets: true, SellingWallets: { include: { walletSecret: true } } }
         })
         if (networkCheckSupported == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
 
-        if (networkCheckSupported.SellingWallet == null) {
-            throw createHttpError(404, "Selling Wallet not found")
+        if (networkCheckSupported.SellingWallets == null || networkCheckSupported.SellingWallets.length == 0) {
+            throw createHttpError(404, "No Selling Wallets found")
         }
 
         const blockchainProvider = new BlockfrostProvider(
             networkCheckSupported.blockfrostApiKey,
         )
+
+        let sellingWallet = networkCheckSupported.SellingWallets.find(wallet => wallet.walletVkey == input.sellingWalletVkey)
+        if (sellingWallet == null) {
+            if (input.sellingWalletVkey != null) {
+                throw createHttpError(404, "Selling Wallet not found")
+            }
+            const randomIndex = Math.floor(Math.random() * networkCheckSupported.SellingWallets.length)
+            sellingWallet = networkCheckSupported.SellingWallets[randomIndex]
+        }
 
         const wallet = new MeshWallet({
             networkId: 0,
@@ -63,7 +74,7 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             submitter: blockchainProvider,
             key: {
                 type: 'mnemonic',
-                words: decrypt(networkCheckSupported.SellingWallet.walletSecret.secret!).split(" "),
+                words: decrypt(sellingWallet.walletSecret.secret!).split(" "),
             },
         });
 
@@ -100,6 +111,7 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             data: { alternative: 0, fields: [] },
             tag: 'MINT',
         };
+
         const policyId = deserializePlutusScript(script.code, script.version)
             .hash()
             .toString();
@@ -192,24 +204,44 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
     output: unregisterAgentSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Deregister Agent", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { AdminWallets: true, SellingWallet: { include: { walletSecret: true } } } })
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { AdminWallets: true, SellingWallets: { include: { walletSecret: true } } } })
         if (networkCheckSupported == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
-        if (networkCheckSupported.SellingWallet == null) {
+        if (networkCheckSupported.SellingWallets == null || networkCheckSupported.SellingWallets.length == 0) {
             throw createHttpError(404, "Selling Wallet not found")
         }
         const blockchainProvider = new BlockfrostProvider(
             networkCheckSupported.blockfrostApiKey,
         )
+        const blockfrost = new BlockFrostAPI({
+            projectId: networkCheckSupported.blockfrostApiKey,
+        })
+        const blueprintRegistry = JSON.parse(networkCheckSupported.registryJSON);
+        const registryScript = {
+            code: applyParamsToScript(blueprintRegistry.validators[0].compiledCode, [
+                networkCheckSupported.addressToCheck,
+            ]),
+            version: 'V3',
+        } as PlutusScript;
+        const policyIdRegistry = deserializePlutusScript(registryScript.code, registryScript.version).hash().toString()
+        const holderWallet = await blockfrost.assetsAddresses(policyIdRegistry + input.assetName, { order: "desc", count: 1 })
+        if (holderWallet.length == 0) {
+            throw createHttpError(404, "Asset not found")
+        }
+        const vkey = resolvePaymentKeyHash(holderWallet[0].address)
 
+        const sellingWallet = networkCheckSupported.SellingWallets.find(wallet => wallet.walletVkey == vkey)
+        if (sellingWallet == null) {
+            throw createHttpError(404, "Registered Wallet not found")
+        }
         const wallet = new MeshWallet({
             networkId: 0,
             fetcher: blockchainProvider,
             submitter: blockchainProvider,
             key: {
                 type: 'mnemonic',
-                words: decrypt(networkCheckSupported.SellingWallet.walletSecret.secret!).split(" "),
+                words: decrypt(sellingWallet.walletSecret.secret!).split(" "),
             },
         });
 

@@ -38,7 +38,7 @@ export async function checkLatestTransactions() {
                     //isSyncing: false
                 },
                 include: {
-                    SellingWallet: true,
+                    SellingWallets: true,
                     CollectionWallet: true
                 }
             })
@@ -403,7 +403,7 @@ export async function checkLatestTransactions() {
                             }
 
 
-                            await Promise.all([
+                            await Promise.allSettled([
                                 handlePaymentTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId),
                                 handlePurchasingTransactionCardanoV1(tx.tx.tx_hash, tx.utxos.hash, newPurchasingStatus, networkCheck.id, decodedOldContract.seller, decodedOldContract.referenceId)
                             ])

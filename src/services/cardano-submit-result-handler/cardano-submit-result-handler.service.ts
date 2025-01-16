@@ -21,9 +21,7 @@ export async function submitResultV1() {
         const networkChecksWithWalletLocked = await prisma.$transaction(async (prisma) => {
             const networkChecks = await prisma.networkHandler.findMany({
                 where: {
-                    paymentType: "WEB3_CARDANO_V1", SellingWallet: {
-                        pendingTransaction: null
-                    }
+                    paymentType: "WEB3_CARDANO_V1",
                 }, include: {
                     PaymentRequests: {
                         where: {
@@ -34,16 +32,16 @@ export async function submitResultV1() {
                             , status: { in: ["PaymentConfirmed", "RefundRequested"] },
                             resultHash: { not: null },
                             errorType: null,
+                            smartContractWallet: { pendingTransaction: null }
                         },
-                        include: { buyerWallet: true }
+                        include: { buyerWallet: true, smartContractWallet: { include: { walletSecret: true } } }
                     },
                     AdminWallets: true,
-                    SellingWallet: { include: { walletSecret: true } },
                     FeeReceiverNetworkWallet: true,
                     CollectionWallet: true
                 }
             })
-            const sellingWalletIds = networkChecks.map(x => x.SellingWallet?.id).filter(x => x != null) as string[];
+            const sellingWalletIds = networkChecks.map(x => x.PaymentRequests).flat().map(x => x.smartContractWallet?.id);
             for (const sellingWalletId of sellingWalletIds) {
                 await prisma.sellingWallet.update({
                     where: { id: sellingWalletId },
@@ -52,9 +50,9 @@ export async function submitResultV1() {
             }
             return networkChecks;
         }, { isolationLevel: "Serializable" });
-        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
+        await Promise.allSettled(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
-            if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
+            if (networkCheck.PaymentRequests.length == 0 || networkCheck.CollectionWallet == null)
                 return;
 
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
@@ -73,11 +71,17 @@ export async function submitResultV1() {
             if (paymentRequests.length == 0)
                 return;
             //we can only allow one transaction per wallet
-            const deDuplicatedRequests = [paymentRequests[0]]
+            const deDuplicatedRequests: ({ buyerWallet: { id: string; createdAt: Date; updatedAt: Date; walletVkey: string; networkHandlerId: string; note: string | null; } | null; smartContractWallet: ({ walletSecret: { id: string; createdAt: Date; updatedAt: Date; secret: string; }; } & { id: string; createdAt: Date; updatedAt: Date; walletVkey: string; walletSecretId: string; pendingTransactionId: string | null; networkHandlerId: string; note: string | null; }) | null; } & { id: string; createdAt: Date; updatedAt: Date; lastCheckedAt: Date | null; status: $Enums.PaymentRequestStatus; errorType: $Enums.PaymentRequestErrorType | null; checkedById: string; smartContractWalletId: string | null; buyerWalletId: string | null; identifier: string; resultHash: string | null; submitResultTime: bigint; unlockTime: bigint; refundTime: bigint; utxo: string | null; txHash: string | null; potentialTxHash: string | null; errorRetries: number; errorNote: string | null; errorRequiresManualReview: boolean | null; })[] = []
+            for (const request of paymentRequests) {
+                if (deDuplicatedRequests.some(r => r.smartContractWalletId == request.smartContractWalletId))
+                    continue;
 
-            await Promise.all(deDuplicatedRequests.map(async (request) => {
+                deDuplicatedRequests.push(request);
+            }
+
+            await Promise.allSettled(deDuplicatedRequests.map(async (request) => {
                 try {
-                    const sellingWallet = networkCheck.SellingWallet!;
+                    const sellingWallet = request.smartContractWallet!;
                     const encryptedSecret = sellingWallet.walletSecret.secret;
 
                     const wallet = new MeshWallet({
@@ -158,7 +162,7 @@ export async function submitResultV1() {
 
 
                     const buyerVerificationKeyHash = request.buyerWallet?.walletVkey;
-                    const sellerVerificationKeyHash = networkCheck.SellingWallet!.walletVkey;
+                    const sellerVerificationKeyHash = request.smartContractWallet!.walletVkey;
 
                     const utxoDatum = utxo.output.plutusData;
                     if (!utxoDatum) {
@@ -237,7 +241,7 @@ export async function submitResultV1() {
                     const txHash = await wallet.submitTx(signedTx);
 
                     await prisma.paymentRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.CompletedInitiated }
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PaymentRequestStatus.CompletedInitiated, smartContractWallet: { update: { pendingTransaction: { create: { hash: txHash } } } } }
                     })
 
                     logger.info(`Created withdrawal transaction:

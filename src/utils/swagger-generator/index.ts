@@ -399,7 +399,7 @@ export function generateOpenAPI() {
                     errorNote: "error_note",
                     errorRequiresManualReview: false,
                     identifier: "identifier",
-                    sellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                    sellingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
                     collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
                     buyerWallet: { walletVkey: "wallet_vkey" },
                     amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
@@ -427,7 +427,7 @@ export function generateOpenAPI() {
     method: 'post',
     path: '/payment/',
     description: 'Creates a payment request and identifier. This will check incoming payments in the background.',
-    summary: 'REQUIRES API KEY Authentication (+WRITE)',
+    summary: 'REQUIRES API KEY Authentication (+PAY)',
     tags: ['payment',],
     request: {
       body: {
@@ -488,7 +488,7 @@ export function generateOpenAPI() {
     method: 'patch',
     path: '/payment/',
     description: 'Completes a payment request. This will collect the funds after the unlock time.',
-    summary: 'REQUIRES API KEY Authentication (+WRITE)',
+    summary: 'REQUIRES API KEY Authentication (+PAY)',
     tags: ['payment',],
     request: {
       body: {
@@ -552,10 +552,9 @@ export function generateOpenAPI() {
       query: queryPurchaseRequestSchemaInput.openapi({
         example: {
           limit: 10,
-          cursorIdentifier: "identifier",
+          cursorIdentifier: { identifier: "identifier", sellingWalletVkey: "wallet_vkey" },
           network: $Enums.Network.PREPROD,
           contractAddress: "addr_abcd1234567890",
-          sellingWalletVkey: "wallet_vkey",
           paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
         }
       })
@@ -607,7 +606,7 @@ export function generateOpenAPI() {
     method: 'post',
     path: '/purchase/',
     description: 'Creates a purchase and pays the seller. This requires funds to be available.',
-    summary: 'REQUIRES API KEY Authentication (+WRITE)',
+    summary: 'REQUIRES API KEY Authentication (+PAY)',
     tags: ['purchase',],
     request: {
       body: {
@@ -667,7 +666,7 @@ export function generateOpenAPI() {
     method: 'patch',
     path: '/purchase/',
     description: 'Requests a refund for a completed purchase. This will collect the refund after the refund time.',
-    summary: 'REQUIRES API KEY Authentication (+WRITE)',
+    summary: 'REQUIRES API KEY Authentication (+PAY)',
     tags: ['purchase',],
     request: {
       body: {
@@ -841,7 +840,7 @@ export function generateOpenAPI() {
                     }],
                     CollectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
                     PurchasingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
-                    SellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
+                    SellingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
                     FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
                     FeePermille: 50,
                   }]
@@ -879,7 +878,7 @@ export function generateOpenAPI() {
                 FeePermille: 50,
                 CollectionWallet: { walletAddress: "wallet_address", note: "note" },
                 PurchasingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }],
-                SellingWallet: { walletMnemonic: "wallet mnemonic", note: "note" }
+                SellingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }]
               }
             })
           }

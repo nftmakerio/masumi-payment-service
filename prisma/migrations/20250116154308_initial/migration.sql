@@ -139,6 +139,7 @@ CREATE TABLE "PaymentRequest" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "lastCheckedAt" TIMESTAMP(3),
     "checkedById" TEXT NOT NULL,
+    "smartContractWalletId" TEXT,
     "buyerWalletId" TEXT,
     "status" "PaymentRequestStatus" NOT NULL,
     "identifier" TEXT NOT NULL,
@@ -166,6 +167,7 @@ CREATE TABLE "PurchaseRequest" (
     "networkHandlerId" TEXT NOT NULL,
     "sellerWalletId" TEXT NOT NULL,
     "purchasingWalletId" TEXT,
+    "smartContractWalletId" TEXT,
     "status" "PurchasingRequestStatus" NOT NULL,
     "identifier" TEXT NOT NULL,
     "resultHash" TEXT,
@@ -243,6 +245,9 @@ CREATE UNIQUE INDEX "apiKey_apiKey_key" ON "apiKey"("apiKey");
 CREATE INDEX "apiKey_apiKey_idx" ON "apiKey"("apiKey");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "SellingWallet_walletVkey_key" ON "SellingWallet"("walletVkey");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "SellingWallet_networkHandlerId_key" ON "SellingWallet"("networkHandlerId");
 
 -- CreateIndex
@@ -306,6 +311,9 @@ ALTER TABLE "CollectionWallet" ADD CONSTRAINT "CollectionWallet_networkHandlerId
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_checkedById_fkey" FOREIGN KEY ("checkedById") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_smartContractWalletId_fkey" FOREIGN KEY ("smartContractWalletId") REFERENCES "SellingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_buyerWalletId_fkey" FOREIGN KEY ("buyerWalletId") REFERENCES "BuyerWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -316,6 +324,9 @@ ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_sellerWalletId_fke
 
 -- AddForeignKey
 ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_purchasingWalletId_fkey" FOREIGN KEY ("purchasingWalletId") REFERENCES "PurchasingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_smartContractWalletId_fkey" FOREIGN KEY ("smartContractWalletId") REFERENCES "SellingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_triggeredById_fkey" FOREIGN KEY ("triggeredById") REFERENCES "apiKey"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

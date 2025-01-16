@@ -28,12 +28,11 @@ export async function collectTimeoutRefundsV1() {
                                 lte: Date.now() + 1000 * 60 * 25 //add 25 minutes for block time
                             }, status: "PurchaseConfirmed", resultHash: null,
                             errorType: null,
-                            purchaserWallet: { pendingTransaction: null }
+                            smartContractWallet: { pendingTransaction: null }
                         },
-                        include: { purchaserWallet: true }
+                        include: { purchaserWallet: true, smartContractWallet: { include: { walletSecret: true } } }
                     },
                     AdminWallets: true,
-                    SellingWallet: { include: { walletSecret: true } },
                     FeeReceiverNetworkWallet: true,
                     CollectionWallet: true
                 }
@@ -57,9 +56,9 @@ export async function collectTimeoutRefundsV1() {
             return networkChecks;
         }, { isolationLevel: "Serializable" });
 
-        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
+        await Promise.allSettled(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
-            if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
+            if (networkCheck.PurchaseRequests.length == 0 || networkCheck.CollectionWallet == null)
                 return;
 
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
@@ -78,11 +77,19 @@ export async function collectTimeoutRefundsV1() {
             if (purchaseRequests.length == 0)
                 return;
             //we can only allow one transaction per wallet
-            const deDuplicatedRequests = [purchaseRequests[0]]
+            const deDuplicatedRequests: ({ purchaserWallet: { id: string; createdAt: Date; updatedAt: Date; walletVkey: string; walletSecretId: string; pendingTransactionId: string | null; networkHandlerId: string; note: string | null; } | null; smartContractWallet: ({ walletSecret: { id: string; createdAt: Date; updatedAt: Date; secret: string; }; } & { id: string; createdAt: Date; updatedAt: Date; walletVkey: string; walletSecretId: string; pendingTransactionId: string | null; networkHandlerId: string; note: string | null; }) | null; } & { id: string; createdAt: Date; updatedAt: Date; lastCheckedAt: Date | null; status: $Enums.PurchasingRequestStatus; resultHash: string | null; errorType: $Enums.PurchaseRequestErrorType | null; networkHandlerId: string; sellerWalletId: string; purchasingWalletId: string | null; smartContractWalletId: string | null; identifier: string; submitResultTime: bigint; unlockTime: bigint; refundTime: bigint; utxo: string | null; txHash: string | null; potentialTxHash: string | null; errorRetries: number; errorNote: string | null; errorRequiresManualReview: boolean | null; triggeredById: string; })[] = []
+            for (const request of purchaseRequests) {
+                if (deDuplicatedRequests.some(r => r.smartContractWalletId == request.smartContractWalletId))
+                    continue;
 
-            await Promise.all(deDuplicatedRequests.map(async (request) => {
+                deDuplicatedRequests.push(request);
+            }
+
+            await Promise.allSettled(deDuplicatedRequests.map(async (request) => {
                 try {
-                    const sellingWallet = networkCheck.SellingWallet!;
+                    const sellingWallet = request.smartContractWallet;
+                    if (sellingWallet == null)
+                        throw new Error("Selling wallet not found");
                     const encryptedSecret = sellingWallet.walletSecret.secret;
 
                     const wallet = new MeshWallet({
@@ -214,7 +221,7 @@ export async function collectTimeoutRefundsV1() {
                     const txHash = await wallet.submitTx(signedTx);
 
                     await prisma.purchaseRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated }
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated, smartContractWallet: { update: { pendingTransaction: { update: { hash: txHash } } } } }
                     })
 
                     logger.info(`Created withdrawal transaction:
@@ -248,6 +255,7 @@ export async function collectTimeoutRefundsV1() {
                 }
             }))
         }))
+
 
     }
     finally {

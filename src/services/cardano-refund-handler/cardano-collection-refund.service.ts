@@ -30,12 +30,12 @@ export async function collectRefundV1() {
                             }, status: "RefundRequestConfirmed",
                             resultHash: null,
                             errorType: null,
-                            purchaserWallet: { pendingTransaction: null }
+                            purchaserWallet: { pendingTransaction: null },
+                            smartContractWallet: { pendingTransaction: null }
                         },
-                        include: { purchaserWallet: true }
+                        include: { purchaserWallet: true, smartContractWallet: { include: { walletSecret: true } } }
                     },
                     AdminWallets: true,
-                    SellingWallet: { include: { walletSecret: true } },
                     FeeReceiverNetworkWallet: true,
                     CollectionWallet: true
                 }
@@ -60,9 +60,9 @@ export async function collectRefundV1() {
             return networkChecks;
         }, { isolationLevel: "Serializable" });
 
-        await Promise.all(networkChecksWithWalletLocked.map(async (networkCheck) => {
+        await Promise.allSettled(networkChecksWithWalletLocked.map(async (networkCheck) => {
 
-            if (networkCheck.SellingWallet == null || networkCheck.CollectionWallet == null)
+            if (networkCheck.PurchaseRequests.length == 0 || networkCheck.CollectionWallet == null)
                 return;
 
             const network = networkCheck.network == "MAINNET" ? "mainnet" : networkCheck.network == "PREPROD" ? "preprod" : networkCheck.network == "PREVIEW" ? "preview" : null;
@@ -83,9 +83,9 @@ export async function collectRefundV1() {
             //we can only allow one transaction per wallet
             const deDuplicatedRequests = [purchaseRequests[0]]
 
-            await Promise.all(deDuplicatedRequests.map(async (request) => {
+            await Promise.allSettled(deDuplicatedRequests.map(async (request) => {
                 try {
-                    const sellingWallet = networkCheck.SellingWallet!;
+                    const sellingWallet = request.smartContractWallet!;
                     const encryptedSecret = sellingWallet.walletSecret.secret;
 
                     const wallet = new MeshWallet({
@@ -218,7 +218,7 @@ export async function collectRefundV1() {
                     const txHash = await wallet.submitTx(signedTx);
 
                     await prisma.purchaseRequest.update({
-                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated }
+                        where: { id: request.id }, data: { potentialTxHash: txHash, status: $Enums.PurchasingRequestStatus.RefundInitiated, smartContractWallet: { update: { pendingTransaction: { create: { hash: txHash } } } } }
                     })
 
                     logger.info(`Created withdrawal transaction:

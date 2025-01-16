@@ -29,7 +29,7 @@ export const queryRegistrySchemaOutput = z.object({
         errorNote: z.string().nullable(),
         errorRequiresManualReview: z.boolean().nullable(),
         identifier: z.string().max(250),
-        sellingWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
+        sellingWallets: z.array(z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() })),
         collectionWallet: z.object({ id: z.string(), walletAddress: z.string(), note: z.string().nullable() }).nullable(),
         buyerWallet: z.object({ walletVkey: z.string(), }).nullable(),
         amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
@@ -44,7 +44,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
     handler: async ({ input, logger }) => {
         logger.info("Querying db", input.paymentTypes);
 
-        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallet: true, CollectionWallet: true } })
+        const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallets: true, CollectionWallet: true } })
         if (!networkHandler) {
             throw createHttpError(404, "Network handler not found")
         }
@@ -68,7 +68,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
         if (result == null) {
             throw createHttpError(404, "Payment not found")
         }
-        return { payments: result.map((data) => { return { ...data, sellingWallet: networkHandler.SellingWallet, collectionWallet: networkHandler.CollectionWallet, amounts: data.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) } }) }
+        return { payments: result.map((data) => { return { ...data, sellingWallets: networkHandler.SellingWallets, collectionWallet: networkHandler.CollectionWallet, amounts: data.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) } }) }
     },
 });
 
@@ -99,8 +99,8 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
     output: createPaymentSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Creating purchase", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallet: true, CollectionWallet: true } })
-        if (networkCheckSupported == null || networkCheckSupported.SellingWallet == null || networkCheckSupported.CollectionWallet == null) {
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallets: true, CollectionWallet: true } })
+        if (networkCheckSupported == null || networkCheckSupported.SellingWallets == null || networkCheckSupported.CollectionWallet == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
 
@@ -122,8 +122,10 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
         if (assetInWallet.length == 0) {
             throw createHttpError(404, "Agent identifier not found")
         }
-        const sellingWalletVkey = networkCheckSupported.SellingWallet.walletVkey
-        if (resolvePaymentKeyHash(assetInWallet[0].address) != sellingWalletVkey) {
+        const vKey = resolvePaymentKeyHash(assetInWallet[0].address)
+
+
+        if (networkCheckSupported.SellingWallets.find(wallet => wallet.walletVkey == vKey) == null) {
             throw createHttpError(404, "Agent identifier not found in wallet")
         }
         const payment = await prisma.paymentRequest.create({
@@ -162,8 +164,8 @@ export const paymentUpdatePatch = authenticatedEndpointFactory.build({
     output: updatePaymentSchemaOutput,
     handler: async ({ input, logger }) => {
         logger.info("Creating purchase", input.paymentTypes);
-        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { SellingWallet: true, CollectionWallet: true, PaymentRequests: { where: { identifier: input.identifier } } } })
-        if (networkCheckSupported == null || networkCheckSupported.SellingWallet == null || networkCheckSupported.CollectionWallet == null) {
+        const networkCheckSupported = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.address } }, include: { SellingWallets: true, CollectionWallet: true, PaymentRequests: { where: { identifier: input.identifier } } } })
+        if (networkCheckSupported == null || networkCheckSupported.SellingWallets == null || networkCheckSupported.CollectionWallet == null) {
             throw createHttpError(404, "Network and Address combination not supported")
         }
         if (networkCheckSupported.PaymentRequests.length == 0) {

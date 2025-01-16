@@ -23,7 +23,6 @@ export const authMiddleware = (minPermission: $Enums.Permission) => new Middlewa
                 apiKey: sendKey as string,
             }
         })
-        logger.info("Found api key", apiKey);
 
         if (!apiKey) {
             throw createHttpError(401, "Invalid token");

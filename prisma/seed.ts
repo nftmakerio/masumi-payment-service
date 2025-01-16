@@ -86,7 +86,7 @@ export const seed = async (prisma: PrismaClient) => {
               walletSecret: { create: { secret: encrypt(purchaseWalletMnemonic) } }
             }
           },
-          SellingWallet: {
+          SellingWallets: {
             create: {
               walletVkey: resolvePaymentKeyHash((await sellerWallet.getUnusedAddresses())[0]),
               note: "Created by seeding",

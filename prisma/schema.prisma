@@ -52,7 +52,7 @@ model SellingWallet {
   id             String       @id @default(cuid())
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  walletVkey     String
+  walletVkey     String       @unique
   walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
   walletSecretId String
 
@@ -62,7 +62,9 @@ model SellingWallet {
   networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
   networkHandlerId String         @unique
 
-  note String?
+  note            String?
+  PaymentRequest  PaymentRequest[]
+  PurchaseRequest PurchaseRequest[]
 }
 
 model PurchasingWallet {
@@ -154,6 +156,9 @@ model PaymentRequest {
   checkedBy     NetworkHandler @relation("PaymentRequestHandler", fields: [checkedById], references: [id])
   checkedById   String
 
+  smartContractWallet   SellingWallet? @relation(fields: [smartContractWalletId], references: [id])
+  smartContractWalletId String?
+
   buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id])
   buyerWalletId String?
 
@@ -189,6 +194,9 @@ model PurchaseRequest {
   sellerWalletId     String
   purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id])
   purchasingWalletId String?
+
+  smartContractWallet   SellingWallet? @relation(fields: [smartContractWalletId], references: [id])
+  smartContractWalletId String?
 
   amounts          RequestAmount[]
   status           PurchasingRequestStatus
@@ -313,9 +321,9 @@ model NetworkHandler {
   PaymentRequests  PaymentRequest[]  @relation("PaymentRequestHandler")
   PurchaseRequests PurchaseRequest[] @relation("PurchaseRequestNetworkHandler")
 
-  BuyerWallets  BuyerWallet[]
-  SellerWallets SellerWallet[]
-  SellingWallet SellingWallet?
+  BuyerWallets   BuyerWallet[]
+  SellerWallets  SellerWallet[]
+  SellingWallets SellingWallet[]
 
   maxCollectRefundRetries  Int @default(3)
   maxCollectPaymentRetries Int @default(3)
