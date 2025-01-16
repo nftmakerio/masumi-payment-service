@@ -82,6 +82,7 @@ model PurchasingWallet {
   networkHandlerId String
   note             String?
   PurchaseRequest  PurchaseRequest[]
+  PaymentRequest   PaymentRequest[]
 
   @@unique([networkHandlerId, walletVkey])
 }
@@ -156,7 +157,7 @@ model PaymentRequest {
   checkedBy     NetworkHandler @relation("PaymentRequestHandler", fields: [checkedById], references: [id])
   checkedById   String
 
-  smartContractWallet   SellingWallet? @relation(fields: [smartContractWalletId], references: [id])
+  smartContractWallet   PurchasingWallet? @relation(fields: [smartContractWalletId], references: [id])
   smartContractWalletId String?
 
   buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id])
@@ -177,6 +178,8 @@ model PaymentRequest {
   errorType                 PaymentRequestErrorType?
   errorNote                 String?
   errorRequiresManualReview Boolean?
+  SellingWallet             SellingWallet?           @relation(fields: [sellingWalletId], references: [id])
+  sellingWalletId           String?
 
   @@unique([checkedById, identifier])
 }

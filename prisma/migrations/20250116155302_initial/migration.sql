@@ -154,6 +154,7 @@ CREATE TABLE "PaymentRequest" (
     "errorType" "PaymentRequestErrorType",
     "errorNote" TEXT,
     "errorRequiresManualReview" BOOLEAN,
+    "sellingWalletId" TEXT,
 
     CONSTRAINT "PaymentRequest_pkey" PRIMARY KEY ("id")
 );
@@ -311,10 +312,13 @@ ALTER TABLE "CollectionWallet" ADD CONSTRAINT "CollectionWallet_networkHandlerId
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_checkedById_fkey" FOREIGN KEY ("checkedById") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_smartContractWalletId_fkey" FOREIGN KEY ("smartContractWalletId") REFERENCES "SellingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_smartContractWalletId_fkey" FOREIGN KEY ("smartContractWalletId") REFERENCES "PurchasingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_buyerWalletId_fkey" FOREIGN KEY ("buyerWalletId") REFERENCES "BuyerWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_sellingWalletId_fkey" FOREIGN KEY ("sellingWalletId") REFERENCES "SellingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
