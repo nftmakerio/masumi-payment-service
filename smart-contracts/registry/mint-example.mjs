@@ -88,15 +88,15 @@ tx.setMetadata(721, {
       image: 'abc.de',
       //name can be freely chosen
       name: 'Registry Example NAME',
-      api_url: 'http://localhost:3002',
+      api_url: 'http://localhost:3003',
       description: 'This is a valid example NFT for the registry',
       company_name: 'Example Inc.',
-      capability: { name: 'BetterAI', version: '1.3.4' },
+      capability: { name: 'BetterAI', version: '1.3.4.5' },
       requests_per_hour: '15.3',
       pricing: [
         {
-          asset_id: 'usdm_asset_id',
-          policy_id: 'usdm_policy_id',
+          asset_id: 'lovelace',
+          policy_id: '',
           quantity: '500000000',
         },
       ],

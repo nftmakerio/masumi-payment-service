@@ -6,7 +6,7 @@ import createHttpError from 'http-errors';
 import { ez } from 'express-zod-api';
 import cuid2 from '@paralleldrive/cuid2';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
-import { resolvePaymentKeyHash } from '@meshsdk/core';
+import { applyParamsToScript, resolvePaymentKeyHash } from '@meshsdk/core';
 import { deserializePlutusScript } from '@meshsdk/core-cst';
 
 
@@ -107,7 +107,15 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
         const provider = new BlockFrostAPI({
             projectId: networkCheckSupported.blockfrostApiKey
         })
-        const policyId = deserializePlutusScript(networkCheckSupported.registryJSON, "V3")
+        const registryJSON = JSON.parse(networkCheckSupported.registryJSON)
+        const script = {
+            code: applyParamsToScript(registryJSON.validators[0].compiledCode, [
+                input.contractAddress,
+            ]),
+            version: 'V3',
+        };
+
+        const policyId = deserializePlutusScript(script.code, script.version as "V1" | "V2" | "V3")
             .hash()
             .toString();
         const assetInWallet = await provider.assetsAddresses(policyId + input.agentIdentifier, { order: "desc", count: 1 })
