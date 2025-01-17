@@ -1,10 +1,11 @@
 import { $Enums } from "@prisma/client";
 import { Sema } from "async-sema";
 import { prisma } from '@/utils/db';
-import { Asset, BlockfrostProvider, Data, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, mBool, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, unixTimeToEnclosingSlot } from "@meshsdk/core";
+import { Asset, BlockfrostProvider, Data, MeshWallet, SLOT_CONFIG_NETWORK, Transaction, mBool, unixTimeToEnclosingSlot } from "@meshsdk/core";
 import { decrypt } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
 import * as cbor from "cbor";
+import { getPaymentScriptFromNetworkHandlerV1 } from "@/utils/contractResolver";
 
 const updateMutex = new Sema(1);
 
@@ -96,53 +97,8 @@ export async function collectOutstandingPaymentsV1() {
                     });
 
                     const address = (await wallet.getUsedAddresses())[0];
-                    console.log(address);
 
-
-                    const blueprint = JSON.parse(networkCheck.scriptJSON);
-                    const adminWallets = networkCheck.AdminWallets;
-                    const sortedAdminWallets = adminWallets.sort((a, b) => a.order - b.order);
-                    if (sortedAdminWallets.length != 3)
-                        throw new Error("Invalid admin wallets")
-
-                    const admin1 = sortedAdminWallets[0].walletAddress;
-                    const admin2 = sortedAdminWallets[1].walletAddress;
-                    const admin3 = sortedAdminWallets[2].walletAddress;
-                    const script: PlutusScript = {
-                        code: applyParamsToScript(blueprint.validators[0].compiledCode, [
-                            [
-                                resolvePaymentKeyHash(admin1),
-                                resolvePaymentKeyHash(admin2),
-                                resolvePaymentKeyHash(admin3),
-                            ],
-                            //yes I love meshJs
-                            {
-                                alternative: 0,
-                                fields: [
-                                    {
-                                        alternative: 0,
-                                        fields: [resolvePaymentKeyHash(admin1)],
-                                    },
-                                    {
-                                        alternative: 0,
-                                        fields: [
-                                            {
-                                                alternative: 0,
-                                                fields: [
-                                                    {
-                                                        alternative: 0,
-                                                        fields: [resolveStakeKeyHash(networkCheck.FeeReceiverNetworkWallet.walletAddress)],
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            networkCheck.FeePermille
-                        ]),
-                        version: "V3"
-                    };
+                    const { script, smartContractAddress } = await getPaymentScriptFromNetworkHandlerV1(networkCheck)
 
                     const utxos = await wallet.getUtxos();
                     if (utxos.length === 0) {
@@ -245,6 +201,13 @@ export async function collectOutstandingPaymentsV1() {
                             delete feeAssets[assetKey];
                         }
                     }
+                    if (networkCheck.CollectionWallet == null) {
+                        await prisma.paymentRequest.update({
+                            where: { id: request.id }, data: { errorType: "UNKNOWN", errorRequiresManualReview: true, errorNote: "Collection wallet not found" }
+                        })
+                        throw new Error("Collection wallet not found");
+                    }
+
                     const unsignedTx = new Transaction({ initiator: wallet }).setMetadata(674, {
                         msg: ["Masumi", "Completed"],
                     })
@@ -255,17 +218,17 @@ export async function collectOutstandingPaymentsV1() {
                         })
                         .sendAssets(
                             {
+                                address: networkCheck.CollectionWallet.walletAddress,
+                                datum: datum,
+                            },
+                            Object.values(remainingAssets)
+                        )
+                        .sendAssets(
+                            {
                                 address: networkCheck.FeeReceiverNetworkWallet.walletAddress,
                                 datum: datum,
                             },
                             Object.values(feeAssets)
-                        )
-                        .sendAssets(
-                            {
-                                address: networkCheck.addressToCheck,
-                                datum: datum,
-                            },
-                            Object.values(remainingAssets)
                         )
                         .setChangeAddress(address)
                         .setRequiredSigners([address]);
@@ -294,7 +257,7 @@ export async function collectOutstandingPaymentsV1() {
                                 ? 'preprod.'
                                 : ''
                         }cardanoscan.io/transaction/${txHash}
-                  Address: ${resolvePlutusScriptAddress(script, 0)}
+                  Smart Contract Address: ${smartContractAddress}
               `);
                 } catch (error) {
                     logger.error(`Error creating collection transaction: ${error}`);

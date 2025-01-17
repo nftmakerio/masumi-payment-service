@@ -12,7 +12,7 @@ import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, queryPur
 import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput } from '@/routes/api/payment-source';
 import { registerAgentSchemaInput, registerAgentSchemaOutput, unregisterAgentSchemaInput, unregisterAgentSchemaOutput } from '@/routes/api/registry';
 import { getAPIKeyStatusSchemaOutput, } from '@/routes/api/api-key-status';
-import { getWalletSchemaInput, getWalletSchemaOutput } from '@/routes/api/wallet';
+import { getWalletSchemaInput, getWalletSchemaOutput, postWalletSchemaInput, postWalletSchemaOutput } from '@/routes/api/wallet';
 import { getBlockfrostKeysSchemaInput, getBlockfrostKeysSchemaOutput } from '@/routes/api/blockfrost-keys';
 
 extendZodWithOpenApi(z);
@@ -144,6 +144,44 @@ export function generateOpenAPI() {
                     secret: "decoded_secret",
                   }
                 }
+              }
+            }),
+          },
+        },
+      },
+    },
+  });
+  registry.registerPath({
+    method: 'post',
+    path: '/wallet/',
+    description: 'Creates a wallet, it will not be saved in the database, please ensure to remember the mnemonic',
+    summary: 'REQUIRES API KEY Authentication (+ADMIN)',
+    tags: ['wallet',],
+    security: [{ [apiKeyAuth.name]: [] }],
+    request: {
+      body: {
+        description: '',
+        content: {
+          'application/json': {
+            schema: postWalletSchemaInput.openapi({
+              example: {
+                network: $Enums.Network.PREPROD,
+              }
+            })
+          }
+        }
+      }
+    },
+    responses: {
+      200: {
+        description: 'Wallet created',
+        content: {
+          'application/json': {
+            schema: postWalletSchemaOutput.openapi({
+              example: {
+                walletSecret: "wallet_secret",
+                walletAddress: "wallet_address",
+                walletVkey: "wallet_vkey",
               }
             }),
           },
@@ -832,17 +870,12 @@ export function generateOpenAPI() {
                     page: 1,
                     isSyncing: false,
                     latestIdentifier: null,
-                    scriptJSON: "{}",
-                    registryJSON: "{}",
-                    AdminWallets: [{
-                      walletAddress: "wallet_address",
-                      order: 0
-                    }],
+                    AdminWallets: [{ walletAddress: "wallet_address", order: 0 }],
                     CollectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
                     PurchasingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
                     SellingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
                     FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
-                    FeePermille: 50,
+                    FeePermille: 50
                   }]
                 }
               }
@@ -869,10 +902,7 @@ export function generateOpenAPI() {
               example: {
                 network: $Enums.Network.PREPROD,
                 paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
-                addressToCheck: "address_to_check",
                 blockfrostApiKey: "blockfrost_api_key",
-                scriptJSON: "{}",
-                registryJSON: "{}",
                 AdminWallets: [{ walletAddress: "wallet_address" }],
                 FeeReceiverNetworkWallet: { walletAddress: "wallet_address" },
                 FeePermille: 50,
@@ -904,8 +934,6 @@ export function generateOpenAPI() {
                   page: 1,
                   isSyncing: false,
                   latestIdentifier: null,
-                  scriptJSON: "{}",
-                  registryJSON: "{}",
                 }
               }
             })

@@ -1,7 +1,7 @@
 import { Network, PaymentType, PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import { readFileSync } from 'fs';
-import { MeshWallet, resolvePaymentKeyHash } from '@meshsdk/core'
+import { MeshWallet, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, PlutusScript, applyParamsToScript } from '@meshsdk/core'
 import { encrypt } from './../src/utils/encryption';
 
 dotenv.config();
@@ -23,10 +23,7 @@ export const seed = async (prisma: PrismaClient) => {
   }
 
 
-
-  const contractAddress = process.env.PAYMENT_CONTRACT_SOURCE_ADDRESS_CARDANO;
-  const registryContractIdentifier = process.env.REGISTRY_POLICY_ID;
-  const registryNetwork = process.env.NETWORK;
+  const registryNetwork = process.env.NETWORK?.toLowerCase();
   const collectionWalletAddress = process.env.COLLECTION_WALLET_ADDRESS;
   const purchaseWalletMnemonic = process.env.PURCHASE_WALLET_MNEMONIC;
   const sellingWalletMnemonic = process.env.SELLING_WALLET_MNEMONIC;
@@ -37,10 +34,56 @@ export const seed = async (prisma: PrismaClient) => {
   const adminWallet2Address = process.env.ADMIN_WALLET2_ADDRESS;
   const adminWallet3Address = process.env.ADMIN_WALLET3_ADDRESS;
 
-  const scriptJSON = readFileSync('./smart-contracts/payment/plutus.json', 'utf-8');
-  const registryJSON = readFileSync('./smart-contracts/registry/plutus.json', 'utf-8');
+  const feeWalletAddress = process.env.FEE_WALLET_ADDRESS;
+  const feePermille = process.env.FEE_PERMILLE;
 
-  if (registryContractIdentifier != null && encryptionKey != null && registryJSON != null && scriptJSON != null && blockfrostApiKey != null && adminWallet1Address != null && adminWallet2Address != null && adminWallet3Address != null && contractAddress != null && registryNetwork != null && collectionWalletAddress != null && purchaseWalletMnemonic != null && sellingWalletMnemonic != null) {
+  const scriptJSON = readFileSync('./smart-contracts/payment/plutus.json', 'utf-8');
+
+  if (encryptionKey != null && scriptJSON != null && blockfrostApiKey != null && adminWallet1Address != null && adminWallet2Address != null && adminWallet3Address != null && feeWalletAddress != null && feePermille != null && registryNetwork != null && collectionWalletAddress != null && purchaseWalletMnemonic != null && sellingWalletMnemonic != null) {
+
+    const blueprint = JSON.parse(scriptJSON)
+
+    const fee = parseInt(feePermille)
+    if (fee < 0 || fee > 1000) throw Error("Fee permille is not valid")
+
+
+    const script: PlutusScript = {
+      code: applyParamsToScript(blueprint.validators[0].compiledCode, [
+        [
+          resolvePaymentKeyHash(adminWallet1Address),
+          resolvePaymentKeyHash(adminWallet2Address),
+          resolvePaymentKeyHash(adminWallet3Address),
+        ],
+        //yes I love meshJs
+        {
+          alternative: 0,
+          fields: [
+            {
+              alternative: 0,
+              fields: [resolvePaymentKeyHash(feeWalletAddress)],
+            },
+            {
+              alternative: 0,
+              fields: [
+                {
+                  alternative: 0,
+                  fields: [
+                    {
+                      alternative: 0,
+                      fields: [resolveStakeKeyHash(feeWalletAddress)],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        fee,
+      ]),
+      version: "V3"
+    };
+    const smartContractAddress = resolvePlutusScriptAddress(script, registryNetwork === "preprod" ? 0 : registryNetwork === "preview" ? 0 : 1,)
+
     try {
       const purchasingWallet = new MeshWallet({
         networkId: registryNetwork === "preprod" ? 0 : registryNetwork === "preview" ? 0 : 1,
@@ -58,11 +101,9 @@ export const seed = async (prisma: PrismaClient) => {
       });
       await prisma.networkHandler.create({
         data: {
-          addressToCheck: contractAddress,
+          addressToCheck: smartContractAddress,
           network: registryNetwork === "preprod" ? Network.PREPROD : registryNetwork === "preview" ? Network.PREVIEW : Network.MAINNET,
           blockfrostApiKey: blockfrostApiKey,
-          scriptJSON: scriptJSON,
-          registryJSON: registryJSON,
           paymentType: PaymentType.WEB3_CARDANO_V1,
           isSyncing: true,
           FeeReceiverNetworkWallet: {
@@ -71,7 +112,7 @@ export const seed = async (prisma: PrismaClient) => {
               order: 1,
             },
           },
-          FeePermille: 50,
+          FeePermille: fee,
           AdminWallets: {
             create: [
               { walletAddress: adminWallet1Address, order: 1 },
@@ -101,7 +142,7 @@ export const seed = async (prisma: PrismaClient) => {
           }
         },
       });
-      console.log('Network check for contract ' + contractAddress + ' added');
+      console.log('Network check for contract ' + smartContractAddress + ' added');
     } catch (error) {
       console.error(error);
     }

@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/utils/db';
 import createHttpError from 'http-errors';
 import { decrypt } from '@/utils/encryption';
+import { Network } from '@prisma/client';
+import { MeshWallet } from '@meshsdk/core';
+import { resolvePaymentKeyHash } from '@meshsdk/core-cst';
 
 
 
@@ -70,6 +73,47 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
 
         }
         throw createHttpError(400, "Invalid wallet type")
+
+    },
+});
+
+
+export const postWalletSchemaInput = z.object({
+    network: z.nativeEnum(Network),
+})
+
+
+export const postWalletSchemaOutput = z.object({
+    walletSecret: z.string(),
+    walletAddress: z.string(),
+    walletVkey: z.string(),
+});
+
+export const queryWalletEndpointPost = adminAuthenticatedEndpointFactory.build({
+    method: "post",
+    input: postWalletSchemaInput,
+    output: postWalletSchemaOutput,
+    handler: async ({ input }) => {
+        const secretKey = MeshWallet.brew(false);
+        const secretWords = typeof secretKey == "string" ? secretKey.split(" ") : secretKey
+
+
+        const wallet = new MeshWallet({
+            networkId: input.network == "MAINNET" ? 1 : 0,
+            key: {
+                type: 'mnemonic',
+                words: secretWords
+            },
+        });
+
+        const address = await (await wallet.getUnusedAddresses())[0]
+        const vKey = resolvePaymentKeyHash(address)
+
+        return {
+            walletSecret: secretWords.join(' '),
+            walletAddress: address,
+            walletVkey: vKey
+        }
 
     },
 });

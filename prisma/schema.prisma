@@ -65,6 +65,8 @@ model SellingWallet {
   note            String?
   PaymentRequest  PaymentRequest[]
   PurchaseRequest PurchaseRequest[]
+
+  @@unique([networkHandlerId, walletVkey])
 }
 
 model PurchasingWallet {
@@ -302,14 +304,13 @@ model NetworkHandler {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  network                  Network
-  lastCheckedAt            DateTime?
-  page                     Int               @default(1)
-  blockfrostApiKey         String
-  latestIdentifier         String?
-  addressToCheck           String
-  scriptJSON               String
-  registryJSON             String
+  network          Network
+  lastCheckedAt    DateTime?
+  page             Int       @default(1)
+  blockfrostApiKey String
+  latestIdentifier String?
+  addressToCheck   String
+
   AdminWallets             AdminWallet[]     @relation("AdminWallets")
   FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id])
   adminWalletId            String

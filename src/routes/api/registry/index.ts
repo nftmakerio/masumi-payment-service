@@ -3,11 +3,12 @@ import { z } from 'zod';
 import { $Enums } from '@prisma/client';
 import { prisma } from '@/utils/db';
 import createHttpError from 'http-errors';
-import { applyParamsToScript, BlockfrostProvider, MeshWallet, PlutusScript, resolvePlutusScriptAddress, Transaction } from '@meshsdk/core';
+import { BlockfrostProvider, MeshWallet, Transaction } from '@meshsdk/core';
 import { decrypt } from '@/utils/encryption';
 import { blake2b } from 'ethereum-cryptography/blake2b.js';
-import { deserializePlutusScript, resolvePaymentKeyHash } from '@meshsdk/core-cst';
+import { resolvePaymentKeyHash } from '@meshsdk/core-cst';
 import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
+import { getRegistryScriptFromNetworkHandlerV1 } from '@/utils/contractResolver';
 
 export const registerAgentSchemaInput = z.object({
     network: z.nativeEnum($Enums.Network),
@@ -80,14 +81,8 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
 
         const address = (await wallet.getUsedAddresses())[0];
 
-        const blueprint = JSON.parse(networkCheckSupported.registryJSON);
+        const { script, policyId, smartContractAddress } = await getRegistryScriptFromNetworkHandlerV1(networkCheckSupported)
 
-        const script = {
-            code: applyParamsToScript(blueprint.validators[0].compiledCode, [
-                networkCheckSupported.addressToCheck,
-            ]),
-            version: 'V3',
-        } as PlutusScript;
 
         const utxos = await wallet.getUtxos();
         if (utxos.length === 0) {
@@ -112,9 +107,6 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             tag: 'MINT',
         };
 
-        const policyId = deserializePlutusScript(script.code, script.version)
-            .hash()
-            .toString();
 
         const tx = new Transaction({ initiator: wallet }).setMetadata(674, {
             msg: ["Masumi", "RegisterAgent"],
@@ -170,7 +162,7 @@ export const registerAgentPost = payAuthenticatedEndpointFactory.build({
             AssetName: ${assetName}
             PolicyId: ${policyId}
             AssetId: ${policyId + assetName}
-            Address: ${resolvePlutusScriptAddress(script, 0)}
+            Smart Contract Address: ${smartContractAddress}
         `);
 
         return { txHash }
@@ -217,15 +209,8 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
         const blockfrost = new BlockFrostAPI({
             projectId: networkCheckSupported.blockfrostApiKey,
         })
-        const blueprintRegistry = JSON.parse(networkCheckSupported.registryJSON);
-        const registryScript = {
-            code: applyParamsToScript(blueprintRegistry.validators[0].compiledCode, [
-                networkCheckSupported.addressToCheck,
-            ]),
-            version: 'V3',
-        } as PlutusScript;
-        const policyIdRegistry = deserializePlutusScript(registryScript.code, registryScript.version).hash().toString()
-        const holderWallet = await blockfrost.assetsAddresses(policyIdRegistry + input.assetName, { order: "desc", count: 1 })
+        const { policyId, script, smartContractAddress } = await getRegistryScriptFromNetworkHandlerV1(networkCheckSupported)
+        const holderWallet = await blockfrost.assetsAddresses(policyId + input.assetName, { order: "desc", count: 1 })
         if (holderWallet.length == 0) {
             throw createHttpError(404, "Asset not found")
         }
@@ -247,14 +232,6 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
 
         const address = (await wallet.getUsedAddresses())[0];
 
-        const blueprint = JSON.parse(networkCheckSupported.registryJSON);
-
-        const script = {
-            code: applyParamsToScript(blueprint.validators[0].compiledCode, [
-                networkCheckSupported.addressToCheck,
-            ]),
-            version: 'V3',
-        } as PlutusScript;
 
         const utxos = await wallet.getUtxos();
         if (utxos.length === 0) {
@@ -267,9 +244,7 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
         const redeemer = {
             data: { alternative: 1, fields: [] },
         };
-        const policyId = deserializePlutusScript(script.code, script.version)
-            .hash()
-            .toString();
+
         const tx = new Transaction({ initiator: wallet }).setMetadata(674, {
             msg: ["Masumi", "DeregisterAgent"],
         }).setTxInputs(utxos);
@@ -297,7 +272,7 @@ export const unregisterAgentDelete = payAuthenticatedEndpointFactory.build({
     Tx ID: ${txHash}
     AssetName: ${assetName}
     PolicyId: ${policyId}
-    Address: ${resolvePlutusScriptAddress(script, 0)}
+    Smart Contract Address: ${smartContractAddress}
 `);
         return { txHash }
     },

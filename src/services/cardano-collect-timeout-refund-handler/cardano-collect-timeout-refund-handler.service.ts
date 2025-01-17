@@ -1,16 +1,15 @@
 import { $Enums } from "@prisma/client";
 import { Sema } from "async-sema";
 import { prisma } from '@/utils/db';
-import { BlockfrostProvider, MeshWallet, PlutusScript, SLOT_CONFIG_NETWORK, Transaction, applyParamsToScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, unixTimeToEnclosingSlot } from "@meshsdk/core";
+import { BlockfrostProvider, MeshWallet, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from "@meshsdk/core";
 import { decrypt } from "@/utils/encryption";
 import { logger } from "@/utils/logger";
 import * as cbor from "cbor";
+import { getPaymentScriptFromNetworkHandlerV1 } from "@/utils/contractResolver";
 
 const updateMutex = new Sema(1);
 
 export async function collectTimeoutRefundsV1() {
-
-
     const acquiredMutex = await updateMutex.tryAcquire();
     //if we are already performing an update, we wait for it to finish and return
     if (!acquiredMutex)
@@ -87,10 +86,10 @@ export async function collectTimeoutRefundsV1() {
 
             await Promise.allSettled(deDuplicatedRequests.map(async (request) => {
                 try {
-                    const sellingWallet = request.smartContractWallet;
-                    if (sellingWallet == null)
-                        throw new Error("Selling wallet not found");
-                    const encryptedSecret = sellingWallet.walletSecret.secret;
+                    const purchasingWallet = request.smartContractWallet;
+                    if (purchasingWallet == null)
+                        throw new Error("Purchasing wallet not found");
+                    const encryptedSecret = purchasingWallet.walletSecret.secret;
 
                     const wallet = new MeshWallet({
                         networkId: 0,
@@ -103,53 +102,8 @@ export async function collectTimeoutRefundsV1() {
                     });
 
                     const address = (await wallet.getUsedAddresses())[0];
-                    console.log(address);
 
-
-                    const blueprint = JSON.parse(networkCheck.scriptJSON);
-                    const adminWallets = networkCheck.AdminWallets;
-                    const sortedAdminWallets = adminWallets.sort((a, b) => a.order - b.order);
-                    if (sortedAdminWallets.length != 3)
-                        throw new Error("Invalid admin wallets")
-
-                    const admin1 = sortedAdminWallets[0].walletAddress;
-                    const admin2 = sortedAdminWallets[1].walletAddress;
-                    const admin3 = sortedAdminWallets[2].walletAddress;
-                    const script: PlutusScript = {
-                        code: applyParamsToScript(blueprint.validators[0].compiledCode, [
-                            [
-                                resolvePaymentKeyHash(admin1),
-                                resolvePaymentKeyHash(admin2),
-                                resolvePaymentKeyHash(admin3),
-                            ],
-                            //yes I love meshJs
-                            {
-                                alternative: 0,
-                                fields: [
-                                    {
-                                        alternative: 0,
-                                        fields: [resolvePaymentKeyHash(admin1)],
-                                    },
-                                    {
-                                        alternative: 0,
-                                        fields: [
-                                            {
-                                                alternative: 0,
-                                                fields: [
-                                                    {
-                                                        alternative: 0,
-                                                        fields: [resolveStakeKeyHash(networkCheck.FeeReceiverNetworkWallet.walletAddress)],
-                                                    },
-                                                ],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            networkCheck.FeePermille
-                        ]),
-                        version: "V3"
-                    };
+                    const { script, smartContractAddress } = await getPaymentScriptFromNetworkHandlerV1(networkCheck)
 
                     const utxos = await wallet.getUtxos();
                     if (utxos.length === 0) {
@@ -232,7 +186,7 @@ export async function collectTimeoutRefundsV1() {
                                 ? 'preprod.'
                                 : ''
                         }cardanoscan.io/transaction/${txHash}
-                  Address: ${resolvePlutusScriptAddress(script, 0)}
+                  Smart Contract Address: ${smartContractAddress}
               `);
                 } catch (error) {
                     logger.error(`Error creating refund transaction: ${error}`);

@@ -20,7 +20,7 @@ const wallet = new MeshWallet({
   },
 });
 
-const address = wallet.getUsedAddresses()[0];
+const address = (await wallet.getUsedAddresses())[0];
 
 const tx = new Transaction({ initiator: wallet });
 tx.sendLovelace(address, '120000000');

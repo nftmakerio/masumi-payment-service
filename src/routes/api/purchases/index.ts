@@ -9,8 +9,9 @@ import { cardanoTxHandlerService } from "@/services/cardano-tx-handler"
 
 import { tokenCreditService } from '@/services/token-credit';
 import { ez } from 'express-zod-api';
-import { applyParamsToScript, BlockfrostProvider, mBool, MeshWallet, PlutusScript, resolvePaymentKeyHash, resolvePlutusScriptAddress, resolveStakeKeyHash, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from '@meshsdk/core';
+import { BlockfrostProvider, mBool, MeshWallet, SLOT_CONFIG_NETWORK, Transaction, unixTimeToEnclosingSlot } from '@meshsdk/core';
 import { decrypt } from '@/utils/encryption';
+import { getPaymentScriptFromNetworkHandlerV1 } from '@/utils/contractResolver';
 export const queryPurchaseRequestSchemaInput = z.object({
     limit: z.number({ coerce: true }).min(1).max(100).default(10),
     cursorIdentifier: z.object({ identifier: z.string().max(250), sellingWalletVkey: z.string().max(250) }).optional(),
@@ -177,53 +178,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
         });
 
         const address = (await wallet.getUsedAddresses())[0];
-
-        const blueprint = JSON.parse(networkCheckSupported.scriptJSON);
-
-        const adminWallets = networkCheckSupported.AdminWallets;
-        if (adminWallets.length != 3)
-            throw createHttpError(500, "Admin Address misconfigured")
-
-        const sortedAdminWallets = adminWallets.sort((a, b) => a.order - b.order)
-
-        const admin1 = sortedAdminWallets[0];
-        const admin2 = sortedAdminWallets[1];
-        const admin3 = sortedAdminWallets[2];
-        const script: PlutusScript = {
-            code: applyParamsToScript(blueprint.validators[0].compiledCode, [
-                [
-                    resolvePaymentKeyHash(admin1.walletAddress),
-                    resolvePaymentKeyHash(admin2.walletAddress),
-                    resolvePaymentKeyHash(admin3.walletAddress),
-                ],
-                //yes I love meshJs
-                {
-                    alternative: 0,
-                    fields: [
-                        {
-                            alternative: 0,
-                            fields: [resolvePaymentKeyHash(admin1.walletAddress)],
-                        },
-                        {
-                            alternative: 0,
-                            fields: [
-                                {
-                                    alternative: 0,
-                                    fields: [
-                                        {
-                                            alternative: 0,
-                                            fields: [resolveStakeKeyHash(networkCheckSupported.FeeReceiverNetworkWallet.walletAddress)],
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-                networkCheckSupported.FeePermille,
-            ]),
-            version: "V3"
-        };
+        const { script, smartContractAddress } = await getPaymentScriptFromNetworkHandlerV1(networkCheckSupported)
 
         const utxos = await wallet.getUtxos();
         if (utxos.length === 0) {
@@ -325,7 +280,7 @@ export const refundPurchasePatch = payAuthenticatedEndpointFactory.build({
                 redeemer: redeemer,
             })
             .sendValue(
-                { address: resolvePlutusScriptAddress(script, 0), datum: datum },
+                { address: smartContractAddress, datum: datum },
                 utxo,
             )
             .setChangeAddress(address)
