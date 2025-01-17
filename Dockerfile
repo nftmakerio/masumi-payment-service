@@ -6,6 +6,7 @@ COPY .env* ./
 
 
 COPY package*.json ./
+COPY smart-contracts ./smart-contracts
 COPY ./src ./src
 COPY ./prisma ./prisma
 COPY tsconfig.json .
@@ -23,7 +24,7 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/package*.json ./
 COPY --from=builder /usr/src/app/prisma ./prisma
-
+COPY --from=builder /usr/src/app/smart-contracts ./smart-contracts
 #optional copy env file
 COPY .env* ./
 
