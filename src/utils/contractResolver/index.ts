@@ -1,8 +1,8 @@
 import { PlutusScript } from "@meshsdk/core";
 import { deserializePlutusScript, resolvePlutusScriptAddress, resolveStakeKeyHash } from "@meshsdk/core-cst";
 import { resolvePaymentKeyHash } from "@meshsdk/core-cst";
-import paymentPlutus from "smart-contracts/payment/plutus.json"
-import registryPlutus from "smart-contracts/registry/plutus.json"
+import paymentPlutus from "@smart-contracts/payment/plutus.json"
+import registryPlutus from "@smart-contracts/registry/plutus.json"
 import { Network, NetworkHandler } from "@prisma/client";
 import { applyParamsToScript } from "@meshsdk/core";
 

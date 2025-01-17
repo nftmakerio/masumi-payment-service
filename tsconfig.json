@@ -14,7 +14,8 @@
     "strict": true,
     "allowSyntheticDefaultImports": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@smart-contracts/*": ["smart-contracts/*"]
     }
   },
   "include": ["src/**/*.ts", "smart-contracts/**/plutus.json"],
