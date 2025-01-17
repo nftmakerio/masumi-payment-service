@@ -17,6 +17,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "smart-contracts/**/plutus.json"],
   "exclude": ["node_modules", "src/**/*.spec.ts"]
 }
