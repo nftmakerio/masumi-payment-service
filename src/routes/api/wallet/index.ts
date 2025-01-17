@@ -89,7 +89,7 @@ export const postWalletSchemaOutput = z.object({
     walletVkey: z.string(),
 });
 
-export const queryWalletEndpointPost = adminAuthenticatedEndpointFactory.build({
+export const postWalletEndpointPost = adminAuthenticatedEndpointFactory.build({
     method: "post",
     input: postWalletSchemaInput,
     output: postWalletSchemaOutput,

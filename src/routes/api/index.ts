@@ -6,7 +6,7 @@ import { paymentInitPost, paymentUpdatePatch, queryPaymentEntryGet } from "./pay
 import { registerAgentPost, unregisterAgentDelete } from "./registry";
 import { paymentSourceEndpointDelete, paymentSourceEndpointGet, paymentSourceEndpointPost } from "./payment-source";
 import { queryAPIKeyStatusEndpointGet } from "./api-key-status";
-import { queryWalletEndpointGet } from "./wallet";
+import { postWalletEndpointPost, queryWalletEndpointGet } from "./wallet";
 import { queryBlockfrostKeysEndpointGet } from "./blockfrost-keys";
 
 export const apiRouter: Routing = {
@@ -37,6 +37,7 @@ export const apiRouter: Routing = {
         }),
         "wallet": new DependsOnMethod({
             get: queryWalletEndpointGet,
+            post: postWalletEndpointPost,
         }),
         "payment-source": new DependsOnMethod({
             get: paymentSourceEndpointGet,
