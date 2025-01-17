@@ -61,7 +61,7 @@ export const paymentSourceEndpointGet = adminAuthenticatedEndpointFactory.build(
             },
             cursor: input.cursorId ? { id: input.cursorId } : undefined,
             include: {
-                AdminWallets: { orderBy: { order: "desc" } },
+                AdminWallets: { orderBy: { order: "asc" } },
                 CollectionWallet: true,
                 PurchasingWallets: true,
                 SellingWallets: true,
