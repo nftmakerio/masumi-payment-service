@@ -141,9 +141,9 @@ We have some general guidelines to ensure code quality
 
 To make your life easier, we can strongly recommend the following extensions
 
-- Installing the [Eslint](`https://marketplace.cursorapi.com/items?itemName=dbaeumer.vscode-eslint`) and [Prettier - Code formatter](<`(https://marketplace.cursorapi.com/items?itemName=esbenp.prettier-vscode)`>) extensions is recommended. This ensures you can follow the formatting standard used.
-- Install the [Prisma](`https://marketplace.cursorapi.com/items?itemName=Prisma.prisma`) extension if you plan to modify the database schema.
-- In case you want to work with the smart contracts we recommend [Aiken](`https://marketplace.cursorapi.com/items?itemName=TxPipe.aiken`)
+- Installing the [Eslint](https://marketplace.cursorapi.com/items?itemName=dbaeumer.vscode-eslint) and [Prettier - Code formatter](https://marketplace.cursorapi.com/items?itemName=esbenp.prettier-vscode) extensions is recommended. This ensures you can follow the formatting standard used.
+- Install the [Prisma](https://marketplace.cursorapi.com/items?itemName=Prisma.prisma) extension if you plan to modify the database schema.
+- In case you want to work with the smart contracts we recommend [Aiken](https://marketplace.cursorapi.com/items?itemName=TxPipe.aiken)
 
 ## Testing
 
