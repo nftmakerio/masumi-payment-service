@@ -61,7 +61,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
 
 
         const result = await prisma.purchaseRequest.findMany({
-            where: {},
+            where: { networkHandlerId: networkHandler.id },
             cursor: cursor,
             take: input.limit,
             include: {
