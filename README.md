@@ -38,20 +38,16 @@ This section provides an overview of the key architectural patterns and technolo
 2. Clone this repository, and using a terminal navigate to its directory.
 3. Run `yarn` or `npm install` to install the dependencies.
 4. Configure the environment variables by copying the `.env.example` file to `.env`or `.env.local` and setup the variables
-   - DATABASE_URL: Please provide the endpoint for a PostgreSQL database to be used
+   - DATABASE_URL: The endpoint for a PostgreSQL database to be used
    - PORT: The port to run the server on (default is 3001)
    - UPDATE_CARDANO_REGISTRY_INTERVAL: The interval to update the cardano registry as a cron string
    - ENCRYPTION_KEY: The key for encrypting the wallets in the database (Please see the [Security](#security) section for more details and security considerations)
-   - UPDATE_PAYMENT_REGISTRY_INTERVAL: The interval to update the payment registry as a cron string
-
-- 5. In case the database is not yet seeded (and or migrated) please also setup the following variables:
+5. If you're setting up the database for the first time also set the following variables:
   - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
   - NETWORK: Currently only supports the PREPROD Cardano network or MAINNET
   - ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
-  - Further configuration and explanation in the `.env.example` file
-
-6. In case you need to apply migrations to the database run `yarn prisma:migrate` or `npm run prisma:migrate` otherwise run `yarn prisma:generate` or `npm run prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3)
-7. In case you want to seed the database now run `yarn prisma:seed` or `npm run prisma:seed`
+6. If you're setting up the database for the first time also run run yarn prisma:migrate or npm run prisma:migrate otherwise run yarn prisma:generate or npm run prisma:generate to generate the prisma client (only works after installing the dependencies via step 3)
+7. If you're setting up the database for the first time run `yarn prisma:seed` or `npm run prisma:seed` to seed the database
 
 ## Build & Run
 
