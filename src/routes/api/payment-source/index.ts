@@ -26,7 +26,7 @@ export const paymentSourceSchemaOutput = z.object({
         AdminWallets: z.array(z.object({
             walletAddress: z.string().max(250),
             order: z.number(),
-        })),
+        })).min(3).max(3),
         CollectionWallet: z.object({
             id: z.string(),
             walletAddress: z.string().max(250),
@@ -36,12 +36,12 @@ export const paymentSourceSchemaOutput = z.object({
             id: z.string(),
             walletVkey: z.string().max(250),
             note: z.string().nullable(),
-        })),
+        })).min(1).max(50),
         SellingWallets: z.array(z.object({
             id: z.string(),
             walletVkey: z.string().max(250),
             note: z.string().nullable(),
-        })),
+        })).min(1).max(50),
         FeeReceiverNetworkWallet: z.object({
             walletAddress: z.string().max(250),
         }),

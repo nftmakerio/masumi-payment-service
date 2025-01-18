@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-18T03:08:00.756Z",
-                                                "updatedAt": "2025-01-18T03:08:00.756Z"
+                                                "createdAt": "2025-01-18T07:59:21.528Z",
+                                                "updatedAt": "2025-01-18T07:59:21.528Z"
                                             }
                                         ]
                                     }
@@ -386,8 +386,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-18T03:08:00.756Z",
-                                                "updatedAt": "2025-01-18T03:08:00.756Z",
+                                                "createdAt": "2025-01-18T07:59:21.528Z",
+                                                "updatedAt": "2025-01-18T07:59:21.528Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -1297,8 +1297,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-18T03:08:00.757Z",
-                                                    "updatedAt": "2025-01-18T03:08:00.757Z",
+                                                    "createdAt": "2025-01-18T07:59:21.528Z",
+                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1324,8 +1324,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1565,8 +1565,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1703,8 +1703,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -2011,8 +2011,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-18T03:08:00.757Z",
-                                                    "updatedAt": "2025-01-18T03:08:00.757Z",
+                                                    "createdAt": "2025-01-18T07:59:21.528Z",
+                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -2023,8 +2023,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2265,8 +2265,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2777,7 +2777,9 @@
                                                                         "walletAddress",
                                                                         "order"
                                                                     ]
-                                                                }
+                                                                },
+                                                                "minItems": 3,
+                                                                "maxItems": 3
                                                             },
                                                             "CollectionWallet": {
                                                                 "type": "object",
@@ -2823,7 +2825,9 @@
                                                                         "walletVkey",
                                                                         "note"
                                                                     ]
-                                                                }
+                                                                },
+                                                                "minItems": 1,
+                                                                "maxItems": 50
                                                             },
                                                             "SellingWallets": {
                                                                 "type": "array",
@@ -2847,7 +2851,9 @@
                                                                         "walletVkey",
                                                                         "note"
                                                                     ]
-                                                                }
+                                                                },
+                                                                "minItems": 1,
+                                                                "maxItems": 50
                                                             },
                                                             "FeeReceiverNetworkWallet": {
                                                                 "type": "object",
@@ -2903,8 +2909,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-18T03:08:00.757Z",
-                                                    "updatedAt": "2025-01-18T03:08:00.757Z",
+                                                    "createdAt": "2025-01-18T07:59:21.528Z",
+                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -2916,6 +2922,14 @@
                                                         {
                                                             "walletAddress": "wallet_address",
                                                             "order": 0
+                                                        },
+                                                        {
+                                                            "walletAddress": "wallet_address",
+                                                            "order": 1
+                                                        },
+                                                        {
+                                                            "walletAddress": "wallet_address",
+                                                            "order": 2
                                                         }
                                                     ],
                                                     "CollectionWallet": {
@@ -3099,7 +3113,13 @@
                                     "blockfrostApiKey": "blockfrost_api_key",
                                     "AdminWallets": [
                                         {
-                                            "walletAddress": "wallet_address"
+                                            "walletAddress": "wallet_address_1"
+                                        },
+                                        {
+                                            "walletAddress": "wallet_address_2"
+                                        },
+                                        {
+                                            "walletAddress": "wallet_address_3"
                                         }
                                     ],
                                     "FeeReceiverNetworkWallet": {
@@ -3206,8 +3226,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T03:08:00.757Z",
-                                            "updatedAt": "2025-01-18T03:08:00.757Z",
+                                            "createdAt": "2025-01-18T07:59:21.528Z",
+                                            "updatedAt": "2025-01-18T07:59:21.528Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
