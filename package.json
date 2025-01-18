@@ -1,6 +1,6 @@
 {
     "name": "masumi-payment-service",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "description": "A Payment service for MASUMI AI Nodes",
     "main": "dist/index.js",
     "author": "NMKR",
