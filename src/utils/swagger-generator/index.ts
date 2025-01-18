@@ -121,7 +121,7 @@ export function generateOpenAPI() {
       query: getWalletSchemaInput.openapi({
         example: {
           id: "unique-cuid-v2-of-entry-to-delete",
-          includeSecret: true,
+          includeSecret: "true",
           walletType: "Selling",
         }
       })
@@ -252,7 +252,7 @@ export function generateOpenAPI() {
           'application/json': {
             schema: addAPIKeySchemaInput.openapi({
               example: {
-                usageLimited: true,
+                usageLimited: "true",
                 usageCredits: [{ unit: "unit", amount: 1000000 }],
                 permission: $Enums.Permission.ADMIN
               }

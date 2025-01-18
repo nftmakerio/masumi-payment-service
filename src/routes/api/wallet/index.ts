@@ -11,8 +11,8 @@ import { resolvePaymentKeyHash } from '@meshsdk/core-cst';
 
 export const getWalletSchemaInput = z.object({
     walletType: z.enum(["Selling", "Purchasing"]),
-    id: z.string().min(1).max(250),
-    includeSecret: z.boolean({ coerce: true }).default(false),
+    id: z.string().min(1).max(250).describe("test test"),
+    includeSecret: z.string().transform((s) => s.toLowerCase() == "true" ? true : false)
 })
 
 
@@ -53,7 +53,7 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
                 },
             });
             const address = (await wallet.getAddresses())
-            if (input.includeSecret) {
+            if (input.includeSecret == true) {
 
                 return {
                     ...result,
@@ -80,8 +80,8 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
                 },
             });
             const address = (await wallet.getAddresses())
-            if (input.includeSecret) {
-
+            console.log(input.includeSecret)
+            if (input.includeSecret == true) {
                 return {
                     ...result,
                     walletSecret: {
@@ -101,7 +101,7 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
 
 
 export const postWalletSchemaInput = z.object({
-    network: z.nativeEnum(Network),
+    network: z.nativeEnum(Network).describe("test 1234"),
 })
 
 
