@@ -957,7 +957,8 @@ export function generateOpenAPI() {
             schema: paymentSourceUpdateSchemaInput.openapi({
               example: {
                 id: "unique-cuid-v2",
-
+                latestIdentifier: "optional_identifier",
+                page: 1,
                 blockfrostApiKey: "blockfrost_api_key",
                 CollectionWallet: { walletAddress: "wallet_address", note: "note" },
                 AddPurchasingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }],

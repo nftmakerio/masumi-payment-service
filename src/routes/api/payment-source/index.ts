@@ -234,6 +234,8 @@ export const paymentSourceUpdateSchemaInput = z.object({
     RemoveSellingWallets: z.array(z.object({
         id: z.string()
     })).optional(),
+    page: z.number({ coerce: true }).min(1).max(100000000).optional(),
+    latestIdentifier: z.string().max(250).nullable().optional()
 });
 export const paymentSourceUpdateSchemaOutput = z.object({
     id: z.string(),
@@ -258,33 +260,34 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
         if (networkHandler == null) {
             throw createHttpError(404, "Payment source not found")
         }
-        const sellingWalletsMesh = input.AddSellingWallets?.map(sellingWallet => {
-            return {
-                wallet: new MeshWallet({
-                    networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
-                    key: {
-                        type: "mnemonic",
-                        words: sellingWallet.walletMnemonic.split(" ")
-                    }
-                }),
-                note: sellingWallet.note,
-                secret: encrypt(sellingWallet.walletMnemonic)
-            };
-        });
-        const purchasingWalletsMesh = input.AddPurchasingWallets?.map(purchasingWallet => {
-            return {
-                wallet: new MeshWallet({
-                    networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
-                    key: {
-                        type: "mnemonic",
-                        words: purchasingWallet.walletMnemonic.split(" ")
-                    }
-                }), note: purchasingWallet.note,
-                secret: encrypt(purchasingWallet.walletMnemonic)
-            };
-        });
+
 
         const result = await prisma.$transaction(async (prisma) => {
+            const sellingWalletsMesh = input.AddSellingWallets?.map(sellingWallet => {
+                return {
+                    wallet: new MeshWallet({
+                        networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
+                        key: {
+                            type: "mnemonic",
+                            words: sellingWallet.walletMnemonic.split(" ")
+                        }
+                    }),
+                    note: sellingWallet.note,
+                    secret: encrypt(sellingWallet.walletMnemonic)
+                };
+            });
+            const purchasingWalletsMesh = input.AddPurchasingWallets?.map(purchasingWallet => {
+                return {
+                    wallet: new MeshWallet({
+                        networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
+                        key: {
+                            type: "mnemonic",
+                            words: purchasingWallet.walletMnemonic.split(" ")
+                        }
+                    }), note: purchasingWallet.note,
+                    secret: encrypt(purchasingWallet.walletMnemonic)
+                };
+            });
             const sellingWallets = sellingWalletsMesh != null ? await Promise.all(sellingWalletsMesh.map(async (sw) => {
                 const walletVkey = resolvePaymentKeyHash((await sw.wallet.getUnusedAddresses())[0]);
                 return {
@@ -301,8 +304,6 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
                     note: pw.note
                 };
             })) : [];
-            const smartContractAddress = networkHandler.addressToCheck
-
 
             await prisma.networkHandler.update({
                 where: { id: input.id }, data: {
@@ -328,9 +329,8 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
             const paymentSource = await prisma.networkHandler.update({
                 where: { id: input.id },
                 data: {
-                    network: input.network,
-                    addressToCheck: smartContractAddress,
-                    paymentType: input.paymentType,
+                    latestIdentifier: input.latestIdentifier,
+                    page: input.page,
                     blockfrostApiKey: input.blockfrostApiKey,
                     CollectionWallet: input.CollectionWallet != undefined ? {
                         create: { walletAddress: input.CollectionWallet.walletAddress, note: input.CollectionWallet.note },
@@ -346,9 +346,8 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
                         }
                     },
 
-                }
+                },
             });
-
 
             return paymentSource
         })
