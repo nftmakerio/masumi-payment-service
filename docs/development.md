@@ -8,6 +8,7 @@ The Masumi Payment Service is built using a hexagonal architecture pattern, sepa
 
 #### Core Technologies
 
+- [**OpenAPI**](https://www.openapis.org/): API specification
 - [**Express-Zod-Api**](https://www.npmjs.com/package/express-zod-api): REST API framework with built-in validation and Swagger UI
 - [**Prisma**](https://www.prisma.io/): Type-safe ORM for PostgreSQL database interactions
 - [**Blockfrost**](https://www.blockfrost.io/): Cardano blockchain interaction layer
