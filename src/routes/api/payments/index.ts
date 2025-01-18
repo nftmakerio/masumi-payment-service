@@ -50,7 +50,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
         }
 
         const result = await prisma.paymentRequest.findMany({
-            where: {},
+            where: { checkedById: networkHandler.id },
             orderBy: { createdAt: "desc" },
             cursor: input.cursorIdentifier ? {
                 checkedById_identifier: {
