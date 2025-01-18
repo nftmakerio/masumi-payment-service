@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-18T07:59:21.528Z",
-                                                "updatedAt": "2025-01-18T07:59:21.528Z"
+                                                "createdAt": "2025-01-18T09:53:06.351Z",
+                                                "updatedAt": "2025-01-18T09:53:06.351Z"
                                             }
                                         ]
                                     }
@@ -386,8 +386,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-18T07:59:21.528Z",
-                                                "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                "createdAt": "2025-01-18T09:53:06.351Z",
+                                                "updatedAt": "2025-01-18T09:53:06.351Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -1055,17 +1055,6 @@
                     {
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "WEB3_CARDANO_V1"
-                            ]
-                        },
-                        "required": true,
-                        "name": "paymentType",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
                             "maxLength": 250
                         },
                         "required": true,
@@ -1143,37 +1132,14 @@
                                                                 "type": "string",
                                                                 "maxLength": 250
                                                             },
-                                                            "sellingWallets": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "object",
-                                                                    "properties": {
-                                                                        "id": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "walletVkey": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "note": {
-                                                                            "type": "string",
-                                                                            "nullable": true
-                                                                        }
-                                                                    },
-                                                                    "required": [
-                                                                        "id",
-                                                                        "walletVkey",
-                                                                        "note"
-                                                                    ]
-                                                                }
-                                                            },
-                                                            "collectionWallet": {
+                                                            "smartContractWallet": {
                                                                 "type": "object",
                                                                 "nullable": true,
                                                                 "properties": {
                                                                     "id": {
                                                                         "type": "string"
                                                                     },
-                                                                    "walletAddress": {
+                                                                    "walletVkey": {
                                                                         "type": "string"
                                                                     },
                                                                     "note": {
@@ -1183,7 +1149,28 @@
                                                                 },
                                                                 "required": [
                                                                     "id",
-                                                                    "walletAddress",
+                                                                    "walletVkey",
+                                                                    "note"
+                                                                ]
+                                                            },
+                                                            "SellingWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "walletVkey",
                                                                     "note"
                                                                 ]
                                                             },
@@ -1275,8 +1262,8 @@
                                                             "errorNote",
                                                             "errorRequiresManualReview",
                                                             "identifier",
-                                                            "sellingWallets",
-                                                            "collectionWallet",
+                                                            "smartContractWallet",
+                                                            "SellingWallet",
                                                             "buyerWallet",
                                                             "amounts",
                                                             "checkedBy"
@@ -1297,8 +1284,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-18T07:59:21.528Z",
-                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                    "createdAt": "2025-01-18T09:53:06.351Z",
+                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1306,26 +1293,24 @@
                                                     "errorNote": "error_note",
                                                     "errorRequiresManualReview": false,
                                                     "identifier": "identifier",
-                                                    "sellingWallets": [
-                                                        {
-                                                            "id": "unique-cuid-v2-auto-generated",
-                                                            "walletVkey": "wallet_vkey",
-                                                            "note": "note"
-                                                        }
-                                                    ],
-                                                    "collectionWallet": {
+                                                    "SellingWallet": {
                                                         "id": "unique-cuid-v2-auto-generated",
-                                                        "walletAddress": "wallet_address",
+                                                        "walletVkey": "wallet_vkey",
                                                         "note": "note"
                                                     },
                                                     "buyerWallet": {
                                                         "walletVkey": "wallet_vkey"
                                                     },
+                                                    "smartContractWallet": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "walletVkey": "wallet_vkey",
+                                                        "note": "note"
+                                                    },
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1565,8 +1550,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1703,8 +1688,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1786,17 +1771,6 @@
                     {
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "WEB3_CARDANO_V1"
-                            ]
-                        },
-                        "required": true,
-                        "name": "paymentType",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
                             "maxLength": 250
                         },
                         "required": true,
@@ -1873,6 +1847,27 @@
                                                             "identifier": {
                                                                 "type": "string",
                                                                 "maxLength": 250
+                                                            },
+                                                            "smartContractWallet": {
+                                                                "type": "object",
+                                                                "nullable": true,
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "walletVkey": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "note": {
+                                                                        "type": "string",
+                                                                        "nullable": true
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "id",
+                                                                    "walletVkey",
+                                                                    "note"
+                                                                ]
                                                             },
                                                             "purchaserWallet": {
                                                                 "type": "object",
@@ -1989,6 +1984,7 @@
                                                             "errorNote",
                                                             "errorRequiresManualReview",
                                                             "identifier",
+                                                            "smartContractWallet",
                                                             "purchaserWallet",
                                                             "sellerWallet",
                                                             "amounts",
@@ -2011,8 +2007,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-18T07:59:21.528Z",
-                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                    "createdAt": "2025-01-18T09:53:06.351Z",
+                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -2020,11 +2016,16 @@
                                                     "errorNote": "error_note",
                                                     "errorRequiresManualReview": false,
                                                     "identifier": "identifier",
+                                                    "smartContractWallet": {
+                                                        "id": "unique-cuid-v2-auto-generated",
+                                                        "walletVkey": "wallet_vkey",
+                                                        "note": "note"
+                                                    },
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2265,8 +2266,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2909,8 +2910,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-18T07:59:21.528Z",
-                                                    "updatedAt": "2025-01-18T07:59:21.528Z",
+                                                    "createdAt": "2025-01-18T09:53:06.351Z",
+                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -3226,8 +3227,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T07:59:21.528Z",
-                                            "updatedAt": "2025-01-18T07:59:21.528Z",
+                                            "createdAt": "2025-01-18T09:53:06.351Z",
+                                            "updatedAt": "2025-01-18T09:53:06.351Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",

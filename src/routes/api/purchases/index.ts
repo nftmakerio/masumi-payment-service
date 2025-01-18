@@ -16,7 +16,6 @@ export const queryPurchaseRequestSchemaInput = z.object({
     limit: z.number({ coerce: true }).min(1).max(100).default(10),
     cursorIdentifier: z.object({ identifier: z.string().max(250), sellingWalletVkey: z.string().max(250) }).optional(),
     network: z.nativeEnum($Enums.Network),
-    paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
 })
 
@@ -31,6 +30,7 @@ export const queryPurchaseRequestSchemaOutput = z.object({
         errorNote: z.string().nullable(),
         errorRequiresManualReview: z.boolean().nullable(),
         identifier: z.string().max(250),
+        smartContractWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         purchaserWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         sellerWallet: z.object({ walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
@@ -43,7 +43,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
     input: queryPurchaseRequestSchemaInput,
     output: queryPurchaseRequestSchemaOutput,
     handler: async ({ input, logger }) => {
-        logger.info("Querying registry", input.paymentTypes);
+        logger.info("Querying registry");
 
         const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } } })
         if (networkHandler == null) {
@@ -56,9 +56,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
                 throw createHttpError(404, "Selling wallet not found")
             }
             cursor = { networkHandlerId_identifier_sellerWalletId: { networkHandlerId: networkHandler.id, identifier: input.cursorIdentifier.identifier, sellerWalletId: sellerWallet.id } }
-
         }
-
 
         const result = await prisma.purchaseRequest.findMany({
             where: { networkHandlerId: networkHandler.id },
@@ -68,6 +66,7 @@ export const queryPurchaseRequestGet = payAuthenticatedEndpointFactory.build({
                 sellerWallet: { select: { walletVkey: true, note: true } },
                 purchaserWallet: { select: { id: true, walletVkey: true, note: true } },
                 networkHandler: true,
+                smartContractWallet: true,
                 amounts: true
             }
         })
