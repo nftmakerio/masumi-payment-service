@@ -180,7 +180,7 @@ model PaymentRequest {
   errorType                 PaymentRequestErrorType?
   errorNote                 String?
   errorRequiresManualReview Boolean?
-  SellingWallet             SellingWallet?           @relation(fields: [sellingWalletId], references: [id])
+  SellingWallet             SellingWallet?           @relation(fields: [sellingWalletId], references: [id], onDelete: SetNull)
   sellingWalletId           String?
 
   @@unique([checkedById, identifier])

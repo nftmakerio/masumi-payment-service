@@ -250,7 +250,7 @@ export const paymentSourceUpdateSchemaOutput = z.object({
 });
 
 export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.build({
-    method: "post",
+    method: "patch",
     input: paymentSourceUpdateSchemaInput,
     output: paymentSourceUpdateSchemaOutput,
     handler: async ({ input }) => {

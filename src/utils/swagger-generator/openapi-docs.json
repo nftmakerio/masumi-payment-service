@@ -244,8 +244,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-18T09:53:06.351Z",
-                                                "updatedAt": "2025-01-18T09:53:06.351Z"
+                                                "createdAt": "2025-01-18T17:04:02.415Z",
+                                                "updatedAt": "2025-01-18T17:04:02.415Z"
                                             }
                                         ]
                                     }
@@ -294,6 +294,7 @@
                     {
                         "schema": {
                             "type": "boolean",
+                            "nullable": true,
                             "default": false
                         },
                         "required": false,
@@ -386,8 +387,8 @@
                                             "note": "note",
                                             "pendingTransaction": null,
                                             "walletSecret": {
-                                                "createdAt": "2025-01-18T09:53:06.351Z",
-                                                "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                "createdAt": "2025-01-18T17:04:02.415Z",
+                                                "updatedAt": "2025-01-18T17:04:02.415Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -640,6 +641,7 @@
                                 "properties": {
                                     "usageLimited": {
                                         "type": "boolean",
+                                        "nullable": true,
                                         "default": false
                                     },
                                     "usageCredits": {
@@ -1284,8 +1286,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-18T09:53:06.351Z",
-                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                    "createdAt": "2025-01-18T17:04:02.415Z",
+                                                    "updatedAt": "2025-01-18T17:04:02.415Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1309,8 +1311,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                            "createdAt": "2025-01-18T17:04:02.415Z",
+                                                            "updatedAt": "2025-01-18T17:04:02.415Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1550,8 +1552,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                            "createdAt": "2025-01-18T17:04:02.415Z",
+                                            "updatedAt": "2025-01-18T17:04:02.415Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1688,8 +1690,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                            "createdAt": "2025-01-18T17:04:02.415Z",
+                                            "updatedAt": "2025-01-18T17:04:02.415Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -2007,8 +2009,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-18T09:53:06.351Z",
-                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                    "createdAt": "2025-01-18T17:04:02.415Z",
+                                                    "updatedAt": "2025-01-18T17:04:02.415Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -2024,8 +2026,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                            "createdAt": "2025-01-18T17:04:02.415Z",
+                                                            "updatedAt": "2025-01-18T17:04:02.415Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2266,8 +2268,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                            "createdAt": "2025-01-18T17:04:02.415Z",
+                                            "updatedAt": "2025-01-18T17:04:02.415Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2910,8 +2912,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-18T09:53:06.351Z",
-                                                    "updatedAt": "2025-01-18T09:53:06.351Z",
+                                                    "createdAt": "2025-01-18T17:04:02.416Z",
+                                                    "updatedAt": "2025-01-18T17:04:02.416Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -3004,6 +3006,7 @@
                                     },
                                     "FeePermille": {
                                         "type": "number",
+                                        "nullable": true,
                                         "minimum": 0,
                                         "maximum": 1000
                                     },
@@ -3227,8 +3230,257 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T09:53:06.351Z",
-                                            "updatedAt": "2025-01-18T09:53:06.351Z",
+                                            "createdAt": "2025-01-18T17:04:02.416Z",
+                                            "updatedAt": "2025-01-18T17:04:02.416Z",
+                                            "network": "PREPROD",
+                                            "paymentType": "WEB3_CARDANO_V1",
+                                            "addressToCheck": "address_to_check",
+                                            "blockfrostApiKey": "blockfrost_api_key",
+                                            "page": 1,
+                                            "isSyncing": false,
+                                            "latestIdentifier": null
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Creates a payment source.",
+                "summary": "REQUIRES API KEY Authentication (+ADMIN)",
+                "tags": [
+                    "payment-source"
+                ],
+                "security": [
+                    {
+                        "API-Key": []
+                    }
+                ],
+                "requestBody": {
+                    "description": "",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "maxLength": 250
+                                    },
+                                    "blockfrostApiKey": {
+                                        "type": "string",
+                                        "maxLength": 250
+                                    },
+                                    "CollectionWallet": {
+                                        "type": "object",
+                                        "properties": {
+                                            "walletAddress": {
+                                                "type": "string",
+                                                "maxLength": 250
+                                            },
+                                            "note": {
+                                                "type": "string",
+                                                "maxLength": 250
+                                            }
+                                        },
+                                        "required": [
+                                            "walletAddress",
+                                            "note"
+                                        ]
+                                    },
+                                    "AddPurchasingWallets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "walletMnemonic": {
+                                                    "type": "string",
+                                                    "maxLength": 1500
+                                                },
+                                                "note": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                }
+                                            },
+                                            "required": [
+                                                "walletMnemonic",
+                                                "note"
+                                            ]
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 50
+                                    },
+                                    "AddSellingWallets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "walletMnemonic": {
+                                                    "type": "string",
+                                                    "maxLength": 1500
+                                                },
+                                                "note": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                }
+                                            },
+                                            "required": [
+                                                "walletMnemonic",
+                                                "note"
+                                            ]
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 50
+                                    },
+                                    "RemovePurchasingWallets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id"
+                                            ]
+                                        }
+                                    },
+                                    "RemoveSellingWallets": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ],
+                                "example": {
+                                    "id": "unique-cuid-v2",
+                                    "blockfrostApiKey": "blockfrost_api_key",
+                                    "CollectionWallet": {
+                                        "walletAddress": "wallet_address",
+                                        "note": "note"
+                                    },
+                                    "AddPurchasingWallets": [
+                                        {
+                                            "walletMnemonic": "wallet mnemonic",
+                                            "note": "note"
+                                        }
+                                    ],
+                                    "AddSellingWallets": [
+                                        {
+                                            "walletMnemonic": "wallet mnemonic",
+                                            "note": "note"
+                                        }
+                                    ],
+                                    "RemovePurchasingWallets": [
+                                        {
+                                            "id": "unique-cuid-v2"
+                                        }
+                                    ],
+                                    "RemoveSellingWallets": [
+                                        {
+                                            "id": "unique-cuid-v2"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment source created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "createdAt": {
+                                                    "type": "string"
+                                                },
+                                                "updatedAt": {
+                                                    "type": "string"
+                                                },
+                                                "network": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "PREVIEW",
+                                                        "PREPROD",
+                                                        "MAINNET"
+                                                    ]
+                                                },
+                                                "addressToCheck": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                },
+                                                "paymentType": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "WEB3_CARDANO_V1"
+                                                    ]
+                                                },
+                                                "blockfrostApiKey": {
+                                                    "type": "string",
+                                                    "maxLength": 250
+                                                },
+                                                "page": {
+                                                    "type": "number"
+                                                },
+                                                "isSyncing": {
+                                                    "type": "boolean"
+                                                },
+                                                "latestIdentifier": {
+                                                    "type": "string",
+                                                    "nullable": true,
+                                                    "maxLength": 250
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "createdAt",
+                                                "updatedAt",
+                                                "network",
+                                                "addressToCheck",
+                                                "paymentType",
+                                                "blockfrostApiKey",
+                                                "page",
+                                                "isSyncing",
+                                                "latestIdentifier"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "status",
+                                        "data"
+                                    ],
+                                    "example": {
+                                        "status": "success",
+                                        "data": {
+                                            "id": "unique-cuid-v2-auto-generated",
+                                            "createdAt": "2025-01-18T17:04:02.416Z",
+                                            "updatedAt": "2025-01-18T17:04:02.416Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
@@ -3245,7 +3497,7 @@
                 }
             },
             "delete": {
-                "description": "Deletes a payment source.",
+                "description": "Deletes a payment source. WARNING will also delete all associated wallets and transactions.",
                 "summary": "REQUIRES API KEY Authentication (+ADMIN)",
                 "tags": [
                     "payment-source"

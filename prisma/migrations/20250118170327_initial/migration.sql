@@ -256,9 +256,6 @@ CREATE UNIQUE INDEX "SellingWallet_networkHandlerId_walletVkey_key" ON "SellingW
 CREATE UNIQUE INDEX "PurchasingWallet_networkHandlerId_walletVkey_key" ON "PurchasingWallet"("networkHandlerId", "walletVkey");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "WalletSecret_secret_key" ON "WalletSecret"("secret");
-
--- CreateIndex
 CREATE UNIQUE INDEX "BuyerWallet_networkHandlerId_walletVkey_key" ON "BuyerWallet"("networkHandlerId", "walletVkey");
 
 -- CreateIndex
@@ -289,7 +286,7 @@ ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_walletSecretId_fkey" F
 ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_pendingTransactionId_fkey" FOREIGN KEY ("pendingTransactionId") REFERENCES "Transaction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SellingWallet" ADD CONSTRAINT "SellingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_walletSecretId_fkey" FOREIGN KEY ("walletSecretId") REFERENCES "WalletSecret"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -298,19 +295,19 @@ ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_walletSecretId_f
 ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_pendingTransactionId_fkey" FOREIGN KEY ("pendingTransactionId") REFERENCES "Transaction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PurchasingWallet" ADD CONSTRAINT "PurchasingWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BuyerWallet" ADD CONSTRAINT "BuyerWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "BuyerWallet" ADD CONSTRAINT "BuyerWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "SellerWallet" ADD CONSTRAINT "SellerWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "SellerWallet" ADD CONSTRAINT "SellerWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "CollectionWallet" ADD CONSTRAINT "CollectionWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CollectionWallet" ADD CONSTRAINT "CollectionWallet_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_checkedById_fkey" FOREIGN KEY ("checkedById") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_checkedById_fkey" FOREIGN KEY ("checkedById") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_smartContractWalletId_fkey" FOREIGN KEY ("smartContractWalletId") REFERENCES "PurchasingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -322,10 +319,10 @@ ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_buyerWalletId_fkey" 
 ALTER TABLE "PaymentRequest" ADD CONSTRAINT "PaymentRequest_sellingWalletId_fkey" FOREIGN KEY ("sellingWalletId") REFERENCES "SellingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_networkHandlerId_fkey" FOREIGN KEY ("networkHandlerId") REFERENCES "NetworkHandler"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_sellerWalletId_fkey" FOREIGN KEY ("sellerWalletId") REFERENCES "SellerWallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_sellerWalletId_fkey" FOREIGN KEY ("sellerWalletId") REFERENCES "SellerWallet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseRequest" ADD CONSTRAINT "PurchaseRequest_purchasingWalletId_fkey" FOREIGN KEY ("purchasingWalletId") REFERENCES "PurchasingWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -343,7 +340,7 @@ ALTER TABLE "RequestAmount" ADD CONSTRAINT "RequestAmount_paymentRequestId_fkey"
 ALTER TABLE "RequestAmount" ADD CONSTRAINT "RequestAmount_purchaseRequestId_fkey" FOREIGN KEY ("purchaseRequestId") REFERENCES "PurchaseRequest"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "NetworkHandler" ADD CONSTRAINT "NetworkHandler_adminWalletId_fkey" FOREIGN KEY ("adminWalletId") REFERENCES "AdminWallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "NetworkHandler" ADD CONSTRAINT "NetworkHandler_adminWalletId_fkey" FOREIGN KEY ("adminWalletId") REFERENCES "AdminWallet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AdminWallet" ADD CONSTRAINT "AdminWallet_networkHandlerAdminId_fkey" FOREIGN KEY ("networkHandlerAdminId") REFERENCES "NetworkHandler"("id") ON DELETE SET NULL ON UPDATE CASCADE;
