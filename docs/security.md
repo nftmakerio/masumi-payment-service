@@ -45,9 +45,10 @@ The Masumi Payment Service handles financial transactions and requires secure wa
 
 2. **Access Control**
 
-   - Implement role-based access control
+   - Implement minimal role-based access control
    - Use strong API key authentication
    - Regular audit of access patterns
+   - Ensure API key confidentiality
 
 3. **Data Protection**
    - Encrypt sensitive data at rest
