@@ -97,8 +97,7 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "unit": {
-                                                                "type": "string",
-                                                                "maxLength": 150
+                                                                "type": "string"
                                                             },
                                                             "amount": {
                                                                 "type": "integer",
@@ -244,8 +243,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-18T17:37:05.804Z",
-                                                "updatedAt": "2025-01-18T17:37:05.804Z"
+                                                "createdAt": "2025-01-18T21:44:46.928Z",
+                                                "updatedAt": "2025-01-18T21:44:46.928Z"
                                             }
                                         ]
                                     }
@@ -285,19 +284,19 @@
                         "schema": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "test test"
                         },
                         "required": true,
+                        "description": "test test",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "schema": {
-                            "type": "boolean",
-                            "nullable": true,
-                            "default": false
+                            "type": "string"
                         },
-                        "required": false,
+                        "required": true,
                         "name": "includeSecret",
                         "in": "query"
                     }
@@ -391,8 +390,8 @@
                                             "pendingTransaction": null,
                                             "address": "addr1_testabcd",
                                             "walletSecret": {
-                                                "createdAt": "2025-01-18T17:37:05.804Z",
-                                                "updatedAt": "2025-01-18T17:37:05.804Z",
+                                                "createdAt": "2025-01-18T21:44:46.928Z",
+                                                "updatedAt": "2025-01-18T21:44:46.928Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -427,7 +426,8 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
+                                        ],
+                                        "description": "test 1234"
                                     }
                                 },
                                 "required": [
@@ -548,14 +548,12 @@
                                                                     "type": "object",
                                                                     "properties": {
                                                                         "unit": {
-                                                                            "type": "string",
-                                                                            "maxLength": 150
+                                                                            "type": "string"
                                                                         },
                                                                         "amount": {
                                                                             "type": "integer",
                                                                             "nullable": true,
-                                                                            "minimum": 0,
-                                                                            "maximum": 100000000
+                                                                            "minimum": 0
                                                                         }
                                                                     },
                                                                     "required": [
@@ -644,9 +642,7 @@
                                 "type": "object",
                                 "properties": {
                                     "usageLimited": {
-                                        "type": "boolean",
-                                        "nullable": true,
-                                        "default": false
+                                        "type": "string"
                                     },
                                     "usageCredits": {
                                         "type": "array",
@@ -681,10 +677,11 @@
                                     }
                                 },
                                 "required": [
+                                    "usageLimited",
                                     "usageCredits"
                                 ],
                                 "example": {
-                                    "usageLimited": true,
+                                    "usageLimited": "true",
                                     "usageCredits": [
                                         {
                                             "unit": "unit",
@@ -1135,8 +1132,7 @@
                                                                 "nullable": true
                                                             },
                                                             "identifier": {
-                                                                "type": "string",
-                                                                "maxLength": 250
+                                                                "type": "string"
                                                             },
                                                             "smartContractWallet": {
                                                                 "type": "object",
@@ -1209,8 +1205,7 @@
                                                                         "amount": {
                                                                             "type": "number",
                                                                             "nullable": true,
-                                                                            "minimum": 0,
-                                                                            "maximum": 9007199254740991
+                                                                            "minimum": 0
                                                                         },
                                                                         "unit": {
                                                                             "type": "string"
@@ -1240,8 +1235,7 @@
                                                                         ]
                                                                     },
                                                                     "addressToCheck": {
-                                                                        "type": "string",
-                                                                        "maxLength": 250
+                                                                        "type": "string"
                                                                     },
                                                                     "paymentType": {
                                                                         "type": "string",
@@ -1290,8 +1284,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-18T17:37:05.804Z",
-                                                    "updatedAt": "2025-01-18T17:37:05.804Z",
+                                                    "createdAt": "2025-01-18T21:44:46.928Z",
+                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1315,8 +1309,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T17:37:05.804Z",
-                                                            "updatedAt": "2025-01-18T17:37:05.804Z",
+                                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1556,8 +1550,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T17:37:05.804Z",
-                                            "updatedAt": "2025-01-18T17:37:05.804Z",
+                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1694,8 +1688,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T17:37:05.804Z",
-                                            "updatedAt": "2025-01-18T17:37:05.804Z",
+                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1851,8 +1845,7 @@
                                                                 "nullable": true
                                                             },
                                                             "identifier": {
-                                                                "type": "string",
-                                                                "maxLength": 250
+                                                                "type": "string"
                                                             },
                                                             "smartContractWallet": {
                                                                 "type": "object",
@@ -1930,8 +1923,7 @@
                                                                         "amount": {
                                                                             "type": "number",
                                                                             "nullable": true,
-                                                                            "minimum": 0,
-                                                                            "maximum": 9007199254740991
+                                                                            "minimum": 0
                                                                         },
                                                                         "unit": {
                                                                             "type": "string"
@@ -1962,8 +1954,7 @@
                                                                         ]
                                                                     },
                                                                     "addressToCheck": {
-                                                                        "type": "string",
-                                                                        "maxLength": 250
+                                                                        "type": "string"
                                                                     },
                                                                     "paymentType": {
                                                                         "type": "string",
@@ -2013,8 +2004,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-18T17:37:05.804Z",
-                                                    "updatedAt": "2025-01-18T17:37:05.804Z",
+                                                    "createdAt": "2025-01-18T21:44:46.928Z",
+                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -2030,8 +2021,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T17:37:05.804Z",
-                                                            "updatedAt": "2025-01-18T17:37:05.804Z",
+                                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2272,8 +2263,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T17:37:05.804Z",
-                                            "updatedAt": "2025-01-18T17:37:05.804Z",
+                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2743,8 +2734,7 @@
                                                                 ]
                                                             },
                                                             "addressToCheck": {
-                                                                "type": "string",
-                                                                "maxLength": 250
+                                                                "type": "string"
                                                             },
                                                             "paymentType": {
                                                                 "type": "string",
@@ -2753,8 +2743,7 @@
                                                                 ]
                                                             },
                                                             "blockfrostApiKey": {
-                                                                "type": "string",
-                                                                "maxLength": 250
+                                                                "type": "string"
                                                             },
                                                             "page": {
                                                                 "type": "number"
@@ -2764,8 +2753,7 @@
                                                             },
                                                             "latestIdentifier": {
                                                                 "type": "string",
-                                                                "nullable": true,
-                                                                "maxLength": 250
+                                                                "nullable": true
                                                             },
                                                             "AdminWallets": {
                                                                 "type": "array",
@@ -2773,8 +2761,7 @@
                                                                     "type": "object",
                                                                     "properties": {
                                                                         "walletAddress": {
-                                                                            "type": "string",
-                                                                            "maxLength": 250
+                                                                            "type": "string"
                                                                         },
                                                                         "order": {
                                                                             "type": "number"
@@ -2784,9 +2771,7 @@
                                                                         "walletAddress",
                                                                         "order"
                                                                     ]
-                                                                },
-                                                                "minItems": 3,
-                                                                "maxItems": 3
+                                                                }
                                                             },
                                                             "CollectionWallet": {
                                                                 "type": "object",
@@ -2796,8 +2781,7 @@
                                                                         "type": "string"
                                                                     },
                                                                     "walletAddress": {
-                                                                        "type": "string",
-                                                                        "maxLength": 250
+                                                                        "type": "string"
                                                                     },
                                                                     "note": {
                                                                         "type": "string",
@@ -2819,8 +2803,7 @@
                                                                             "type": "string"
                                                                         },
                                                                         "walletVkey": {
-                                                                            "type": "string",
-                                                                            "maxLength": 250
+                                                                            "type": "string"
                                                                         },
                                                                         "note": {
                                                                             "type": "string",
@@ -2832,9 +2815,7 @@
                                                                         "walletVkey",
                                                                         "note"
                                                                     ]
-                                                                },
-                                                                "minItems": 1,
-                                                                "maxItems": 50
+                                                                }
                                                             },
                                                             "SellingWallets": {
                                                                 "type": "array",
@@ -2845,8 +2826,7 @@
                                                                             "type": "string"
                                                                         },
                                                                         "walletVkey": {
-                                                                            "type": "string",
-                                                                            "maxLength": 250
+                                                                            "type": "string"
                                                                         },
                                                                         "note": {
                                                                             "type": "string",
@@ -2858,16 +2838,13 @@
                                                                         "walletVkey",
                                                                         "note"
                                                                     ]
-                                                                },
-                                                                "minItems": 1,
-                                                                "maxItems": 50
+                                                                }
                                                             },
                                                             "FeeReceiverNetworkWallet": {
                                                                 "type": "object",
                                                                 "properties": {
                                                                     "walletAddress": {
-                                                                        "type": "string",
-                                                                        "maxLength": 250
+                                                                        "type": "string"
                                                                     }
                                                                 },
                                                                 "required": [
@@ -2916,8 +2893,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-18T17:37:05.805Z",
-                                                    "updatedAt": "2025-01-18T17:37:05.805Z",
+                                                    "createdAt": "2025-01-18T21:44:46.928Z",
+                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -3028,7 +3005,8 @@
                                                 "walletAddress"
                                             ]
                                         },
-                                        "maxItems": 5
+                                        "minItems": 3,
+                                        "maxItems": 3
                                     },
                                     "FeeReceiverNetworkWallet": {
                                         "type": "object",
@@ -3187,8 +3165,7 @@
                                                     ]
                                                 },
                                                 "addressToCheck": {
-                                                    "type": "string",
-                                                    "maxLength": 250
+                                                    "type": "string"
                                                 },
                                                 "paymentType": {
                                                     "type": "string",
@@ -3197,8 +3174,7 @@
                                                     ]
                                                 },
                                                 "blockfrostApiKey": {
-                                                    "type": "string",
-                                                    "maxLength": 250
+                                                    "type": "string"
                                                 },
                                                 "page": {
                                                     "type": "number"
@@ -3208,8 +3184,7 @@
                                                 },
                                                 "latestIdentifier": {
                                                     "type": "string",
-                                                    "nullable": true,
-                                                    "maxLength": 250
+                                                    "nullable": true
                                                 }
                                             },
                                             "required": [
@@ -3234,8 +3209,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T17:37:05.805Z",
-                                            "updatedAt": "2025-01-18T17:37:05.805Z",
+                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
@@ -3350,7 +3325,8 @@
                                             "required": [
                                                 "id"
                                             ]
-                                        }
+                                        },
+                                        "maxItems": 50
                                     },
                                     "RemoveSellingWallets": {
                                         "type": "array",
@@ -3364,7 +3340,8 @@
                                             "required": [
                                                 "id"
                                             ]
-                                        }
+                                        },
+                                        "maxItems": 50
                                     },
                                     "page": {
                                         "type": "number",
@@ -3448,8 +3425,7 @@
                                                     ]
                                                 },
                                                 "addressToCheck": {
-                                                    "type": "string",
-                                                    "maxLength": 250
+                                                    "type": "string"
                                                 },
                                                 "paymentType": {
                                                     "type": "string",
@@ -3458,8 +3434,7 @@
                                                     ]
                                                 },
                                                 "blockfrostApiKey": {
-                                                    "type": "string",
-                                                    "maxLength": 250
+                                                    "type": "string"
                                                 },
                                                 "page": {
                                                     "type": "number"
@@ -3469,8 +3444,7 @@
                                                 },
                                                 "latestIdentifier": {
                                                     "type": "string",
-                                                    "nullable": true,
-                                                    "maxLength": 250
+                                                    "nullable": true
                                                 }
                                             },
                                             "required": [
@@ -3495,8 +3469,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T17:37:05.805Z",
-                                            "updatedAt": "2025-01-18T17:37:05.805Z",
+                                            "createdAt": "2025-01-18T21:44:46.928Z",
+                                            "updatedAt": "2025-01-18T21:44:46.928Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
