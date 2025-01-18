@@ -111,14 +111,31 @@ In addition please make sure to update this service with the latest version regu
 
 ## Developing
 
+## General
+
+We are happy you want to contribute. If you are not a developer, you can still help, by letting us know if something is broken or needs to be improved.
+
+As a developer you are of course also welcome to interact with our community to find Issues and Improvements to help with. We are also happy if you directly contribute to the codebase. To do so, please follow these steps:
+
+1.  Fork the repository and create a new branch.
+2.  Work on any changes you want to make.
+3.  Afterwards create a PR and we will review and merge it ASAP.
+
+We have some general guidelines to ensure code quality
+
+- General recommendation. Please make yourself familiar with the codebase and the architecture before working on any changes. Keep in mind that we want to ensure security as we handle wallets and funds.
+- We would love if you provide tests, to ensure your new code works
+- Ensure your new version still builds correctly and all tests pass
+- To ensure a consistent code style, please run `npm run lint` to lint the code and `npm run format` to format the code before creating a PR (or use the VSCode extensions)
+- Provide some description of the changes you made and why you made them
+
 ### Visual Studio Code
 
-- Installing the Eslint (`dbaeumer.vscode-eslint`) and Prettier - Code formatter (`esbenp.prettier-vscode`) extensions is recommended.
+To make your life easier, we can strongly recommend the following extensions
 
-## Linting & Formatting
-
-- Run `npm run lint` to lint the code.
-- Run `npm run format` to format the code.
+- Installing the [Eslint](`https://marketplace.cursorapi.com/items?itemName=dbaeumer.vscode-eslint`) and [Prettier - Code formatter](<`(https://marketplace.cursorapi.com/items?itemName=esbenp.prettier-vscode)`>) extensions is recommended. This ensures you can follow the formatting standard used.
+- Install the [Prisma](`https://marketplace.cursorapi.com/items?itemName=Prisma.prisma`) extension if you plan to modify the database schema.
+- In case you want to work with the smart contracts we recommend [Aiken](`https://marketplace.cursorapi.com/items?itemName=TxPipe.aiken`)
 
 ## Testing
 
