@@ -18,33 +18,33 @@ export const paymentSourceSchemaOutput = z.object({
         createdAt: z.date(),
         updatedAt: z.date(),
         network: z.nativeEnum($Enums.Network),
-        addressToCheck: z.string().max(250),
+        addressToCheck: z.string(),
         paymentType: z.nativeEnum($Enums.PaymentType),
-        blockfrostApiKey: z.string().max(250),
+        blockfrostApiKey: z.string(),
         page: z.number(),
         isSyncing: z.boolean(),
-        latestIdentifier: z.string().max(250).nullable(),
+        latestIdentifier: z.string().nullable(),
         AdminWallets: z.array(z.object({
-            walletAddress: z.string().max(250),
+            walletAddress: z.string(),
             order: z.number(),
-        })).min(3).max(3),
+        })),
         CollectionWallet: z.object({
             id: z.string(),
-            walletAddress: z.string().max(250),
+            walletAddress: z.string(),
             note: z.string().nullable(),
         }).nullable(),
         PurchasingWallets: z.array(z.object({
             id: z.string(),
-            walletVkey: z.string().max(250),
+            walletVkey: z.string(),
             note: z.string().nullable(),
-        })).min(1).max(50),
+        })),
         SellingWallets: z.array(z.object({
             id: z.string(),
-            walletVkey: z.string().max(250),
+            walletVkey: z.string(),
             note: z.string().nullable(),
-        })).min(1).max(50),
+        })),
         FeeReceiverNetworkWallet: z.object({
-            walletAddress: z.string().max(250),
+            walletAddress: z.string(),
         }),
         FeePermille: z.number().min(0).max(1000),
     })),
@@ -80,7 +80,7 @@ export const paymentSourceCreateSchemaInput = z.object({
     FeePermille: z.number({ coerce: true }).min(0).max(1000),
     AdminWallets: z.array(z.object({
         walletAddress: z.string().max(250),
-    })).max(5),
+    })).min(3).max(3),
     FeeReceiverNetworkWallet: z.object({
         walletAddress: z.string().max(250),
     }),
@@ -102,12 +102,12 @@ export const paymentSourceCreateSchemaOutput = z.object({
     createdAt: z.date(),
     updatedAt: z.date(),
     network: z.nativeEnum($Enums.Network),
-    addressToCheck: z.string().max(250),
+    addressToCheck: z.string(),
     paymentType: z.nativeEnum($Enums.PaymentType),
-    blockfrostApiKey: z.string().max(250),
+    blockfrostApiKey: z.string(),
     page: z.number(),
     isSyncing: z.boolean(),
-    latestIdentifier: z.string().max(250).nullable(),
+    latestIdentifier: z.string().nullable(),
 
 });
 
@@ -230,10 +230,10 @@ export const paymentSourceUpdateSchemaInput = z.object({
     })).min(1).max(50).optional(),
     RemovePurchasingWallets: z.array(z.object({
         id: z.string()
-    })).optional(),
+    })).max(50).optional(),
     RemoveSellingWallets: z.array(z.object({
         id: z.string()
-    })).optional(),
+    })).max(50).optional(),
     page: z.number({ coerce: true }).min(1).max(100000000).optional(),
     latestIdentifier: z.string().max(250).nullable().optional()
 });
@@ -242,13 +242,12 @@ export const paymentSourceUpdateSchemaOutput = z.object({
     createdAt: z.date(),
     updatedAt: z.date(),
     network: z.nativeEnum($Enums.Network),
-    addressToCheck: z.string().max(250),
+    addressToCheck: z.string(),
     paymentType: z.nativeEnum($Enums.PaymentType),
-    blockfrostApiKey: z.string().max(250),
+    blockfrostApiKey: z.string(),
     page: z.number(),
     isSyncing: z.boolean(),
-    latestIdentifier: z.string().max(250).nullable(),
-
+    latestIdentifier: z.string().nullable(),
 });
 
 export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.build({

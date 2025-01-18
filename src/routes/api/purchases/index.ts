@@ -29,12 +29,12 @@ export const queryPurchaseRequestSchemaOutput = z.object({
         errorType: z.nativeEnum($Enums.PurchaseRequestErrorType).nullable(),
         errorNote: z.string().nullable(),
         errorRequiresManualReview: z.boolean().nullable(),
-        identifier: z.string().max(250),
+        identifier: z.string(),
         smartContractWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         purchaserWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         sellerWallet: z.object({ walletVkey: z.string(), note: z.string().nullable() }).nullable(),
-        amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
-        networkHandler: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }).nullable(),
+        amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0), unit: z.string() })),
+        networkHandler: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string(), paymentType: z.nativeEnum($Enums.PaymentType) }).nullable(),
     }))
 });
 

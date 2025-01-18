@@ -18,8 +18,8 @@ export const getAPIKeySchemaOutput = z.object({
         permission: z.nativeEnum(Permission),
         usageLimited: z.boolean(),
         remainingUsageCredits: z.array(z.object({
-            unit: z.string().max(150),
-            amount: z.number({ coerce: true }).int().min(0).max(100000000)
+            unit: z.string(),
+            amount: z.number({ coerce: true }).int().min(0)
         })),
         status: z.nativeEnum(APIKeyStatus),
     }))
