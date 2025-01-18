@@ -10,9 +10,9 @@ import { resolvePaymentKeyHash } from '@meshsdk/core-cst';
 
 
 export const getWalletSchemaInput = z.object({
-    walletType: z.enum(["Selling", "Purchasing"]),
-    id: z.string().min(1).max(250).describe("test test"),
-    includeSecret: z.string().transform((s) => s.toLowerCase() == "true" ? true : false)
+    walletType: z.enum(["Selling", "Purchasing"]).describe("The type of wallet to query"),
+    id: z.string().min(1).max(250).describe("The id of the wallet to query"),
+    includeSecret: z.string().transform((s) => s.toLowerCase() == "true" ? true : false).describe("Whether to include the decrypted secret in the response")
 })
 
 
@@ -101,7 +101,7 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
 
 
 export const postWalletSchemaInput = z.object({
-    network: z.nativeEnum(Network).describe("test 1234"),
+    network: z.nativeEnum(Network).describe("The network the Cardano wallet will be used on"),
 })
 
 

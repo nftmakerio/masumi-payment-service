@@ -172,9 +172,11 @@
                         "schema": {
                             "type": "string",
                             "minLength": 1,
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "Used to paginate through the blockfrost keys"
                         },
                         "required": false,
+                        "description": "Used to paginate through the blockfrost keys",
                         "name": "cursorId",
                         "in": "query"
                     },
@@ -183,9 +185,11 @@
                             "type": "number",
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 100
+                            "default": 100,
+                            "description": "The number of blockfrost keys to return"
                         },
                         "required": false,
+                        "description": "The number of blockfrost keys to return",
                         "name": "limit",
                         "in": "query"
                     }
@@ -243,8 +247,8 @@
                                                 "network": "PREPROD",
                                                 "id": "unique-cuid-v2",
                                                 "blockfrostApiKey": "blockfrost_api_key",
-                                                "createdAt": "2025-01-18T21:44:46.928Z",
-                                                "updatedAt": "2025-01-18T21:44:46.928Z"
+                                                "createdAt": "2025-01-18T22:25:11.079Z",
+                                                "updatedAt": "2025-01-18T22:25:11.079Z"
                                             }
                                         ]
                                     }
@@ -274,9 +278,11 @@
                             "enum": [
                                 "Selling",
                                 "Purchasing"
-                            ]
+                            ],
+                            "description": "The type of wallet to query"
                         },
                         "required": true,
+                        "description": "The type of wallet to query",
                         "name": "walletType",
                         "in": "query"
                     },
@@ -285,18 +291,20 @@
                             "type": "string",
                             "minLength": 1,
                             "maxLength": 250,
-                            "description": "test test"
+                            "description": "The id of the wallet to query"
                         },
                         "required": true,
-                        "description": "test test",
+                        "description": "The id of the wallet to query",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "Whether to include the decrypted secret in the response"
                         },
                         "required": true,
+                        "description": "Whether to include the decrypted secret in the response",
                         "name": "includeSecret",
                         "in": "query"
                     }
@@ -390,8 +398,8 @@
                                             "pendingTransaction": null,
                                             "address": "addr1_testabcd",
                                             "walletSecret": {
-                                                "createdAt": "2025-01-18T21:44:46.928Z",
-                                                "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                "createdAt": "2025-01-18T22:25:11.079Z",
+                                                "updatedAt": "2025-01-18T22:25:11.079Z",
                                                 "secret": "decoded_secret"
                                             }
                                         }
@@ -427,7 +435,7 @@
                                             "PREPROD",
                                             "MAINNET"
                                         ],
-                                        "description": "test 1234"
+                                        "description": "The network the Cardano wallet will be used on"
                                     }
                                 },
                                 "required": [
@@ -493,18 +501,22 @@
                             "type": "number",
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 10
+                            "default": 10,
+                            "description": "The number of API keys to return"
                         },
                         "required": false,
+                        "description": "The number of API keys to return",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 550
+                            "maxLength": 550,
+                            "description": "Used to paginate through the API keys"
                         },
                         "required": false,
+                        "description": "Used to paginate through the API keys",
                         "name": "cursorApiKey",
                         "in": "query"
                     }
@@ -642,7 +654,8 @@
                                 "type": "object",
                                 "properties": {
                                     "usageLimited": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "description": "Whether the API key is usage limited. Meaning only allowed to use the specified credits or can freely spend"
                                     },
                                     "usageCredits": {
                                         "type": "array",
@@ -664,7 +677,8 @@
                                                 "unit",
                                                 "amount"
                                             ]
-                                        }
+                                        },
+                                        "description": "The credits allowed to be used by the API key. Only relevant if usageLimited is true. "
                                     },
                                     "permission": {
                                         "type": "string",
@@ -673,7 +687,8 @@
                                             "READ_PAY",
                                             "ADMIN"
                                         ],
-                                        "default": "READ"
+                                        "default": "READ",
+                                        "description": "The permission of the API key"
                                     }
                                 },
                                 "required": [
@@ -791,11 +806,13 @@
                                 "properties": {
                                     "id": {
                                         "type": "string",
-                                        "maxLength": 150
+                                        "maxLength": 150,
+                                        "description": "The id of the API key to update. Provide either id or apiKey"
                                     },
                                     "apiKey": {
                                         "type": "string",
-                                        "maxLength": 550
+                                        "maxLength": 550,
+                                        "description": "The API key to update. Provide either id or apiKey"
                                     },
                                     "usageCredits": {
                                         "type": "array",
@@ -817,7 +834,8 @@
                                                 "unit",
                                                 "amount"
                                             ]
-                                        }
+                                        },
+                                        "description": "The remaining credits allowed to be used by the API key. Only relevant if usageLimited is true. "
                                     },
                                     "status": {
                                         "type": "string",
@@ -825,7 +843,8 @@
                                             "ACTIVE",
                                             "REVOKED"
                                         ],
-                                        "default": "ACTIVE"
+                                        "default": "ACTIVE",
+                                        "description": "The status of the API key"
                                     }
                                 },
                                 "example": {
@@ -940,11 +959,13 @@
                                 "properties": {
                                     "id": {
                                         "type": "string",
-                                        "maxLength": 150
+                                        "maxLength": 150,
+                                        "description": "The id of the API key to delete. Provide either id or apiKey"
                                     },
                                     "apiKey": {
                                         "type": "string",
-                                        "maxLength": 550
+                                        "maxLength": 550,
+                                        "description": "The API key to delete. Provide either id or apiKey"
                                     }
                                 },
                                 "example": {
@@ -1027,18 +1048,22 @@
                             "type": "number",
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 10
+                            "default": 10,
+                            "description": "The number of payments to return"
                         },
                         "required": false,
+                        "description": "The number of payments to return",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "Used to paginate through the payments"
                         },
                         "required": false,
+                        "description": "Used to paginate through the payments",
                         "name": "cursorIdentifier",
                         "in": "query"
                     },
@@ -1049,18 +1074,22 @@
                                 "PREVIEW",
                                 "PREPROD",
                                 "MAINNET"
-                            ]
+                            ],
+                            "description": "The network the payments were made on"
                         },
                         "required": true,
+                        "description": "The network the payments were made on",
                         "name": "network",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "The address of the smart contract where the payments were made to"
                         },
                         "required": true,
+                        "description": "The address of the smart contract where the payments were made to",
                         "name": "contractAddress",
                         "in": "query"
                     }
@@ -1284,8 +1313,8 @@
                                         "data": {
                                             "payments": [
                                                 {
-                                                    "createdAt": "2025-01-18T21:44:46.928Z",
-                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                    "createdAt": "2025-01-18T22:25:11.080Z",
+                                                    "updatedAt": "2025-01-18T22:25:11.080Z",
                                                     "status": "PaymentRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -1309,8 +1338,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -1365,16 +1394,14 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
-                                    },
-                                    "sellerVkey": {
-                                        "type": "string",
-                                        "maxLength": 250
+                                        ],
+                                        "description": "The network the payment will be received on"
                                     },
                                     "agentIdentifier": {
                                         "type": "string",
                                         "minLength": 15,
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The identifier of the agent that will be paid"
                                     },
                                     "amounts": {
                                         "type": "array",
@@ -1396,17 +1423,20 @@
                                                 "unit"
                                             ]
                                         },
-                                        "maxItems": 7
+                                        "maxItems": 7,
+                                        "description": "The amounts of the payment"
                                     },
                                     "paymentType": {
                                         "type": "string",
                                         "enum": [
                                             "WEB3_CARDANO_V1"
-                                        ]
+                                        ],
+                                        "description": "The type of payment contract used"
                                     },
                                     "contractAddress": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The address of the smart contract where the payment will be made to"
                                     },
                                     "submitResultTime": {
                                         "anyOf": [
@@ -1422,7 +1452,8 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time after which the payment has to be submitted to the smart contract"
                                     },
                                     "unlockTime": {
                                         "anyOf": [
@@ -1438,7 +1469,8 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time after which the payment will be unlocked"
                                     },
                                     "refundTime": {
                                         "anyOf": [
@@ -1454,12 +1486,12 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time after which a refund will be approved"
                                     }
                                 },
                                 "required": [
                                     "network",
-                                    "sellerVkey",
                                     "agentIdentifier",
                                     "amounts",
                                     "paymentType",
@@ -1550,8 +1582,8 @@
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
                                             "identifier": "agentIdentifier_unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1594,28 +1626,27 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
-                                    },
-                                    "sellerVkey": {
-                                        "type": "string",
-                                        "maxLength": 250
+                                        ],
+                                        "description": "The network the payment was received on"
                                     },
                                     "contractAddress": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The address of the smart contract where the payment was made to"
                                     },
                                     "hash": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The hash of the AI agent result to be submitted"
                                     },
                                     "identifier": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The identifier of the payment"
                                     }
                                 },
                                 "required": [
                                     "network",
-                                    "sellerVkey",
                                     "contractAddress",
                                     "hash",
                                     "identifier"
@@ -1688,8 +1719,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                             "status": "PaymentRequested"
                                         }
                                     }
@@ -1727,9 +1758,11 @@
                             "type": "number",
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 10
+                            "default": 10,
+                            "description": "The number of purchases to return"
                         },
                         "required": false,
+                        "description": "The number of purchases to return",
                         "name": "limit",
                         "in": "query"
                     },
@@ -1749,9 +1782,11 @@
                             "required": [
                                 "identifier",
                                 "sellingWalletVkey"
-                            ]
+                            ],
+                            "description": "Used to paginate through the purchases"
                         },
                         "required": false,
+                        "description": "Used to paginate through the purchases",
                         "name": "cursorIdentifier",
                         "in": "query"
                     },
@@ -1762,18 +1797,22 @@
                                 "PREVIEW",
                                 "PREPROD",
                                 "MAINNET"
-                            ]
+                            ],
+                            "description": "The network the purchases were made on"
                         },
                         "required": true,
+                        "description": "The network the purchases were made on",
                         "name": "network",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "The address of the smart contract where the purchases were made to"
                         },
                         "required": true,
+                        "description": "The address of the smart contract where the purchases were made to",
                         "name": "contractAddress",
                         "in": "query"
                     }
@@ -2004,8 +2043,8 @@
                                         "data": {
                                             "purchases": [
                                                 {
-                                                    "createdAt": "2025-01-18T21:44:46.928Z",
-                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                    "createdAt": "2025-01-18T22:25:11.080Z",
+                                                    "updatedAt": "2025-01-18T22:25:11.080Z",
                                                     "status": "PurchaseRequested",
                                                     "txHash": "tx_hash",
                                                     "utxo": "utxo",
@@ -2021,8 +2060,8 @@
                                                     "amounts": [
                                                         {
                                                             "id": "unique-cuid-v2-auto-generated",
-                                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                                             "amount": 1000000,
                                                             "unit": "unit"
                                                         }
@@ -2081,7 +2120,8 @@
                                 "properties": {
                                     "identifier": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The identifier of the purchase. Is provided by the seller"
                                     },
                                     "network": {
                                         "type": "string",
@@ -2089,15 +2129,18 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
+                                        ],
+                                        "description": "The network the transaction will be made on"
                                     },
                                     "sellerVkey": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The verification key of the seller"
                                     },
                                     "contractAddress": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The address of the smart contract where the purchase will be made to"
                                     },
                                     "amounts": {
                                         "type": "array",
@@ -2119,13 +2162,15 @@
                                                 "unit"
                                             ]
                                         },
-                                        "maxItems": 7
+                                        "maxItems": 7,
+                                        "description": "The amounts of the purchase"
                                     },
                                     "paymentType": {
                                         "type": "string",
                                         "enum": [
                                             "WEB3_CARDANO_V1"
-                                        ]
+                                        ],
+                                        "description": "The payment type of smart contract used"
                                     },
                                     "unlockTime": {
                                         "anyOf": [
@@ -2141,7 +2186,8 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time after which the purchase will be unlocked"
                                     },
                                     "refundTime": {
                                         "anyOf": [
@@ -2157,7 +2203,8 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time after which a refund will be approved"
                                     },
                                     "submitResultTime": {
                                         "anyOf": [
@@ -2173,7 +2220,8 @@
                                                 "type": "string",
                                                 "format": "date-time"
                                             }
-                                        ]
+                                        ],
+                                        "description": "The time by which the result has to be submitted"
                                     }
                                 },
                                 "required": [
@@ -2263,8 +2311,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                             "status": "PurchaseRequested"
                                         }
                                     }
@@ -2303,7 +2351,8 @@
                                 "properties": {
                                     "identifier": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The identifier of the purchase to be refunded"
                                     },
                                     "network": {
                                         "type": "string",
@@ -2311,27 +2360,24 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
+                                        ],
+                                        "description": "The network the Cardano wallet will be used on"
                                     },
-                                    "sellerVkey": {
+                                    "smartContractAddress": {
                                         "type": "string",
-                                        "maxLength": 250
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The address of the smart contract holding the purchase"
                                     }
                                 },
                                 "required": [
                                     "identifier",
                                     "network",
-                                    "sellerVkey",
-                                    "address"
+                                    "smartContractAddress"
                                 ],
                                 "example": {
                                     "network": "PREPROD",
                                     "sellerVkey": "seller_vkey",
-                                    "address": "address",
+                                    "smartContractAddress": "address",
                                     "identifier": "identifier"
                                 }
                             }
@@ -2412,15 +2458,18 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
+                                        ],
+                                        "description": "The Cardano network used to register the agent on"
                                     },
                                     "paymentContractAddress": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The smart contract address of the payment contract to be registered for"
                                     },
                                     "sellingWalletVkey": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The payment key of a specific wallet used for the registration"
                                     },
                                     "tags": {
                                         "type": "array",
@@ -2428,7 +2477,8 @@
                                             "type": "string",
                                             "maxLength": 250
                                         },
-                                        "maxItems": 5
+                                        "maxItems": 5,
+                                        "description": "Tags used in the registry metadata"
                                     },
                                     "image": {
                                         "type": "string",
@@ -2436,19 +2486,23 @@
                                     },
                                     "name": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "Name of the agent"
                                     },
                                     "api_url": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "Base URL of the agent, to request interactions"
                                     },
                                     "description": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "Description of the agent"
                                     },
                                     "company_name": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The company running the agent"
                                     },
                                     "capability": {
                                         "type": "object",
@@ -2465,11 +2519,13 @@
                                         "required": [
                                             "name",
                                             "version"
-                                        ]
+                                        ],
+                                        "description": "Provide information about the used AI model and version"
                                     },
                                     "requests_per_hour": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The request the agent can handle per hour"
                                     },
                                     "pricing": {
                                         "type": "array",
@@ -2495,7 +2551,8 @@
                                                 "quantity"
                                             ]
                                         },
-                                        "maxItems": 5
+                                        "maxItems": 5,
+                                        "description": "Price for a default interaction"
                                     }
                                 },
                                 "required": [
@@ -2594,9 +2651,11 @@
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "The identifier of the registration (asset) to be deregistered"
                         },
                         "required": true,
+                        "description": "The identifier of the registration (asset) to be deregistered",
                         "name": "assetName",
                         "in": "query"
                     },
@@ -2607,18 +2666,22 @@
                                 "PREVIEW",
                                 "PREPROD",
                                 "MAINNET"
-                            ]
+                            ],
+                            "description": "The network the registration was made on"
                         },
                         "required": true,
+                        "description": "The network the registration was made on",
                         "name": "network",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "The address of the wallet holding the registration"
                         },
                         "required": true,
+                        "description": "The address of the wallet holding the registration",
                         "name": "address",
                         "in": "query"
                     }
@@ -2681,18 +2744,22 @@
                             "type": "number",
                             "minimum": 1,
                             "maximum": 100,
-                            "default": 10
+                            "default": 10,
+                            "description": "The number of payment sources to return"
                         },
                         "required": false,
+                        "description": "The number of payment sources to return",
                         "name": "take",
                         "in": "query"
                     },
                     {
                         "schema": {
                             "type": "string",
-                            "maxLength": 250
+                            "maxLength": 250,
+                            "description": "Used to paginate through the payment sources"
                         },
                         "required": false,
+                        "description": "Used to paginate through the payment sources",
                         "name": "cursorId",
                         "in": "query"
                     }
@@ -2893,8 +2960,8 @@
                                             "paymentSources": [
                                                 {
                                                     "id": "unique-cuid-v2-auto-generated",
-                                                    "createdAt": "2025-01-18T21:44:46.928Z",
-                                                    "updatedAt": "2025-01-18T21:44:46.928Z",
+                                                    "createdAt": "2025-01-18T22:25:11.080Z",
+                                                    "updatedAt": "2025-01-18T22:25:11.080Z",
                                                     "network": "PREPROD",
                                                     "paymentType": "WEB3_CARDANO_V1",
                                                     "addressToCheck": "address_to_check",
@@ -2973,23 +3040,27 @@
                                             "PREVIEW",
                                             "PREPROD",
                                             "MAINNET"
-                                        ]
+                                        ],
+                                        "description": "The network the payment source will be used on"
                                     },
                                     "paymentType": {
                                         "type": "string",
                                         "enum": [
                                             "WEB3_CARDANO_V1"
-                                        ]
+                                        ],
+                                        "description": "The type of payment contract used"
                                     },
                                     "blockfrostApiKey": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The blockfrost api key to be used for the payment source"
                                     },
                                     "FeePermille": {
                                         "type": "number",
                                         "nullable": true,
                                         "minimum": 0,
-                                        "maximum": 1000
+                                        "maximum": 1000,
+                                        "description": "The fee in permille to be used for the payment source. The default contract uses 50 (5%)"
                                     },
                                     "AdminWallets": {
                                         "type": "array",
@@ -3006,7 +3077,8 @@
                                             ]
                                         },
                                         "minItems": 3,
-                                        "maxItems": 3
+                                        "maxItems": 3,
+                                        "description": "The wallet addresses of the admin wallets (exactly 3)"
                                     },
                                     "FeeReceiverNetworkWallet": {
                                         "type": "object",
@@ -3018,7 +3090,8 @@
                                         },
                                         "required": [
                                             "walletAddress"
-                                        ]
+                                        ],
+                                        "description": "The wallet address of the network fee receiver wallet"
                                     },
                                     "CollectionWallet": {
                                         "type": "object",
@@ -3035,7 +3108,8 @@
                                         "required": [
                                             "walletAddress",
                                             "note"
-                                        ]
+                                        ],
+                                        "description": "The wallet address and note of the collection wallet (ideally a hardware wallet). Please backup the mnemonic of the wallet."
                                     },
                                     "PurchasingWallets": {
                                         "type": "array",
@@ -3057,7 +3131,8 @@
                                             ]
                                         },
                                         "minItems": 1,
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The mnemonic of the purchasing wallets to be added. Please backup the mnemonic of the wallets."
                                     },
                                     "SellingWallets": {
                                         "type": "array",
@@ -3079,7 +3154,8 @@
                                             ]
                                         },
                                         "minItems": 1,
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The mnemonic of the selling wallets to be added. Please backup the mnemonic of the wallets."
                                     }
                                 },
                                 "required": [
@@ -3209,8 +3285,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
@@ -3246,11 +3322,13 @@
                                 "properties": {
                                     "id": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The id of the payment source to be updated"
                                     },
                                     "blockfrostApiKey": {
                                         "type": "string",
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The blockfrost api key to be used for the payment source"
                                     },
                                     "CollectionWallet": {
                                         "type": "object",
@@ -3267,7 +3345,8 @@
                                         "required": [
                                             "walletAddress",
                                             "note"
-                                        ]
+                                        ],
+                                        "description": "The wallet address and note of the collection wallet (ideally a hardware wallet). Usually should not be changed. Please backup the mnemonic of the old wallet before changing it."
                                     },
                                     "AddPurchasingWallets": {
                                         "type": "array",
@@ -3289,7 +3368,8 @@
                                             ]
                                         },
                                         "minItems": 1,
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The mnemonic of the purchasing wallets to be added"
                                     },
                                     "AddSellingWallets": {
                                         "type": "array",
@@ -3311,7 +3391,8 @@
                                             ]
                                         },
                                         "minItems": 1,
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The mnemonic of the selling wallets to be added"
                                     },
                                     "RemovePurchasingWallets": {
                                         "type": "array",
@@ -3326,7 +3407,8 @@
                                                 "id"
                                             ]
                                         },
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The ids of the purchasing wallets to be removed. Please backup the mnemonic of the old wallet before removing it."
                                     },
                                     "RemoveSellingWallets": {
                                         "type": "array",
@@ -3341,17 +3423,20 @@
                                                 "id"
                                             ]
                                         },
-                                        "maxItems": 50
+                                        "maxItems": 50,
+                                        "description": "The ids of the selling wallets to be removed. Please backup the mnemonic of the old wallet before removing it."
                                     },
                                     "page": {
                                         "type": "number",
                                         "minimum": 1,
-                                        "maximum": 100000000
+                                        "maximum": 100000000,
+                                        "description": "The page number of the payment source. Usually should not be changed"
                                     },
                                     "latestIdentifier": {
                                         "type": "string",
                                         "nullable": true,
-                                        "maxLength": 250
+                                        "maxLength": 250,
+                                        "description": "The latest identifier of the payment source. Usually should not be changed"
                                     }
                                 },
                                 "required": [
@@ -3469,8 +3554,8 @@
                                         "status": "success",
                                         "data": {
                                             "id": "unique-cuid-v2-auto-generated",
-                                            "createdAt": "2025-01-18T21:44:46.928Z",
-                                            "updatedAt": "2025-01-18T21:44:46.928Z",
+                                            "createdAt": "2025-01-18T22:25:11.080Z",
+                                            "updatedAt": "2025-01-18T22:25:11.080Z",
                                             "network": "PREPROD",
                                             "paymentType": "WEB3_CARDANO_V1",
                                             "addressToCheck": "address_to_check",
@@ -3500,9 +3585,11 @@
                 "parameters": [
                     {
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "description": "The id of the payment source to be deleted"
                         },
                         "required": true,
+                        "description": "The id of the payment source to be deleted",
                         "name": "id",
                         "in": "query"
                     }

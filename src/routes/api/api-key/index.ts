@@ -7,8 +7,8 @@ import createHttpError from 'http-errors';
 
 
 export const getAPIKeySchemaInput = z.object({
-    limit: z.number({ coerce: true }).min(1).max(100).default(10),
-    cursorApiKey: z.string().max(550).optional()
+    limit: z.number({ coerce: true }).min(1).max(100).default(10).describe("The number of API keys to return"),
+    cursorApiKey: z.string().max(550).optional().describe("Used to paginate through the API keys")
 })
 
 
@@ -36,22 +36,20 @@ export const queryAPIKeyEndpointGet = adminAuthenticatedEndpointFactory.build({
 });
 
 export const addAPIKeySchemaInput = z.object({
-    usageLimited: z.string().transform((s) => s.toLowerCase() == "true" ? true : false),
+    usageLimited: z.string().transform((s) => s.toLowerCase() == "true" ? true : false).describe("Whether the API key is usage limited. Meaning only allowed to use the specified credits or can freely spend"),
     usageCredits: z.array(z.object({
         unit: z.string().max(150),
         amount: z.number({ coerce: true }).int().min(0).max(1000000)
-    })),
-    permission: z.nativeEnum(Permission).default(Permission.READ),
+    })).describe("The credits allowed to be used by the API key. Only relevant if usageLimited is true. "),
+    permission: z.nativeEnum(Permission).default(Permission.READ).describe("The permission of the API key"),
 })
 
 export const addAPIKeySchemaOutput = z.object({
-
     id: z.string(),
     apiKey: z.string(),
     permission: z.nativeEnum(Permission),
     usageLimited: z.boolean(),
     status: z.nativeEnum(APIKeyStatus),
-
 })
 
 export const addAPIKeyEndpointPost = adminAuthenticatedEndpointFactory.build({
@@ -72,13 +70,13 @@ export const addAPIKeyEndpointPost = adminAuthenticatedEndpointFactory.build({
 });
 
 export const updateAPIKeySchemaInput = z.object({
-    id: z.string().max(150).optional(),
-    apiKey: z.string().max(550).optional(),
+    id: z.string().max(150).optional().describe("The id of the API key to update. Provide either id or apiKey"),
+    apiKey: z.string().max(550).optional().describe("The API key to update. Provide either id or apiKey"),
     usageCredits: z.array(z.object({
         unit: z.string().max(150),
         amount: z.number({ coerce: true }).int().min(0).max(1000000)
-    })).optional(),
-    status: z.nativeEnum(APIKeyStatus).default(APIKeyStatus.ACTIVE).optional(),
+    })).optional().describe("The remaining credits allowed to be used by the API key. Only relevant if usageLimited is true. "),
+    status: z.nativeEnum(APIKeyStatus).default(APIKeyStatus.ACTIVE).optional().describe("The status of the API key"),
 })
 
 export const updateAPIKeySchemaOutput = z.object({
@@ -107,8 +105,8 @@ export const updateAPIKeyEndpointPatch = adminAuthenticatedEndpointFactory.build
 });
 
 export const deleteAPIKeySchemaInput = z.object({
-    id: z.string().max(150).optional(),
-    apiKey: z.string().max(550).optional()
+    id: z.string().max(150).optional().describe("The id of the API key to delete. Provide either id or apiKey"),
+    apiKey: z.string().max(550).optional().describe("The API key to delete. Provide either id or apiKey"),
 })
 
 export const deleteAPIKeySchemaOutput = z.object({

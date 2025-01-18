@@ -11,23 +11,23 @@ import { BlockFrostAPI } from '@blockfrost/blockfrost-js';
 import { getRegistryScriptFromNetworkHandlerV1 } from '@/utils/contractResolver';
 
 export const registerAgentSchemaInput = z.object({
-    network: z.nativeEnum($Enums.Network),
-    paymentContractAddress: z.string().max(250),
-    sellingWalletVkey: z.string().max(250).optional(),
-    tags: z.array(z.string().max(250)).max(5),
+    network: z.nativeEnum($Enums.Network).describe("The Cardano network used to register the agent on"),
+    paymentContractAddress: z.string().max(250).describe("The smart contract address of the payment contract to be registered for"),
+    sellingWalletVkey: z.string().max(250).optional().describe("The payment key of a specific wallet used for the registration"),
+    tags: z.array(z.string().max(250)).max(5).describe("Tags used in the registry metadata"),
     image: z.string().max(62),
     //name can be freely chosen
-    name: z.string().max(250),
-    api_url: z.string().max(250),
-    description: z.string().max(250),
-    company_name: z.string().max(250),
-    capability: z.object({ name: z.string().max(250), version: z.string().max(250) }),
-    requests_per_hour: z.string().max(250),
+    name: z.string().max(250).describe("Name of the agent"),
+    api_url: z.string().max(250).describe("Base URL of the agent, to request interactions"),
+    description: z.string().max(250).describe("Description of the agent"),
+    company_name: z.string().max(250).describe("The company running the agent"),
+    capability: z.object({ name: z.string().max(250), version: z.string().max(250) }).describe("Provide information about the used AI model and version"),
+    requests_per_hour: z.string().max(250).describe("The request the agent can handle per hour"),
     pricing: z.array(z.object({
         asset_id: z.string().max(62),
         policy_id: z.string().max(62),
         quantity: z.string().max(20),
-    })).max(5),
+    })).max(5).describe("Price for a default interaction"),
 })
 
 export const registerAgentSchemaOutput = z.object({
@@ -180,10 +180,9 @@ function stringToMetadata(s: string) {
 
 
 export const unregisterAgentSchemaInput = z.object({
-
-    assetName: z.string().max(250),
-    network: z.nativeEnum($Enums.Network),
-    address: z.string().max(250),
+    assetName: z.string().max(250).describe("The identifier of the registration (asset) to be deregistered"),
+    network: z.nativeEnum($Enums.Network).describe("The network the registration was made on"),
+    address: z.string().max(250).describe("The address of the wallet holding the registration"),
 })
 
 export const unregisterAgentSchemaOutput = z.object({

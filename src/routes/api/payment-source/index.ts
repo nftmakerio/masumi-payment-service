@@ -9,8 +9,8 @@ import createHttpError from 'http-errors';
 import { z } from 'zod';
 
 export const paymentSourceSchemaInput = z.object({
-    take: z.number({ coerce: true }).min(1).max(100).default(10),
-    cursorId: z.string().max(250).optional(),
+    take: z.number({ coerce: true }).min(1).max(100).default(10).describe("The number of payment sources to return"),
+    cursorId: z.string().max(250).optional().describe("Used to paginate through the payment sources"),
 });
 export const paymentSourceSchemaOutput = z.object({
     paymentSources: z.array(z.object({
@@ -74,28 +74,28 @@ export const paymentSourceEndpointGet = adminAuthenticatedEndpointFactory.build(
 });
 
 export const paymentSourceCreateSchemaInput = z.object({
-    network: z.nativeEnum($Enums.Network),
-    paymentType: z.nativeEnum($Enums.PaymentType),
-    blockfrostApiKey: z.string().max(250),
-    FeePermille: z.number({ coerce: true }).min(0).max(1000),
+    network: z.nativeEnum($Enums.Network).describe("The network the payment source will be used on"),
+    paymentType: z.nativeEnum($Enums.PaymentType).describe("The type of payment contract used"),
+    blockfrostApiKey: z.string().max(250).describe("The blockfrost api key to be used for the payment source"),
+    FeePermille: z.number({ coerce: true }).min(0).max(1000).describe("The fee in permille to be used for the payment source. The default contract uses 50 (5%)"),
     AdminWallets: z.array(z.object({
         walletAddress: z.string().max(250),
-    })).min(3).max(3),
+    })).min(3).max(3).describe("The wallet addresses of the admin wallets (exactly 3)"),
     FeeReceiverNetworkWallet: z.object({
         walletAddress: z.string().max(250),
-    }),
+    }).describe("The wallet address of the network fee receiver wallet"),
     CollectionWallet: z.object({
         walletAddress: z.string().max(250),
         note: z.string().max(250),
-    }),
+    }).describe("The wallet address and note of the collection wallet (ideally a hardware wallet). Please backup the mnemonic of the wallet."),
     PurchasingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50),
+    })).min(1).max(50).describe("The mnemonic of the purchasing wallets to be added. Please backup the mnemonic of the wallets."),
     SellingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50),
+    })).min(1).max(50).describe("The mnemonic of the selling wallets to be added. Please backup the mnemonic of the wallets."),
 });
 export const paymentSourceCreateSchemaOutput = z.object({
     id: z.string(),
@@ -214,28 +214,28 @@ export const paymentSourceEndpointPost = adminAuthenticatedEndpointFactory.build
 });
 
 export const paymentSourceUpdateSchemaInput = z.object({
-    id: z.string().max(250),
-    blockfrostApiKey: z.string().max(250).optional(),
+    id: z.string().max(250).describe("The id of the payment source to be updated"),
+    blockfrostApiKey: z.string().max(250).optional().describe("The blockfrost api key to be used for the payment source"),
     CollectionWallet: z.object({
         walletAddress: z.string().max(250),
         note: z.string().max(250),
-    }).optional(),
+    }).optional().describe("The wallet address and note of the collection wallet (ideally a hardware wallet). Usually should not be changed. Please backup the mnemonic of the old wallet before changing it."),
     AddPurchasingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50).optional(),
+    })).min(1).max(50).optional().describe("The mnemonic of the purchasing wallets to be added"),
     AddSellingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50).optional(),
+    })).min(1).max(50).optional().describe("The mnemonic of the selling wallets to be added"),
     RemovePurchasingWallets: z.array(z.object({
         id: z.string()
-    })).max(50).optional(),
+    })).max(50).optional().describe("The ids of the purchasing wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
     RemoveSellingWallets: z.array(z.object({
         id: z.string()
-    })).max(50).optional(),
-    page: z.number({ coerce: true }).min(1).max(100000000).optional(),
-    latestIdentifier: z.string().max(250).nullable().optional()
+    })).max(50).optional().describe("The ids of the selling wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
+    page: z.number({ coerce: true }).min(1).max(100000000).optional().describe("The page number of the payment source. Usually should not be changed"),
+    latestIdentifier: z.string().max(250).nullable().optional().describe("The latest identifier of the payment source. Usually should not be changed")
 });
 export const paymentSourceUpdateSchemaOutput = z.object({
     id: z.string(),
@@ -354,7 +354,7 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
     },
 });
 export const paymentSourceDeleteSchemaInput = z.object({
-    id: z.string()
+    id: z.string().describe("The id of the payment source to be deleted")
 })
 export const paymentSourceDeleteSchemaOutput = z.object({
     id: z.string()

@@ -715,7 +715,7 @@ export function generateOpenAPI() {
               example: {
                 network: $Enums.Network.PREPROD,
                 sellerVkey: "seller_vkey",
-                address: "address",
+                smartContractAddress: "address",
                 identifier: "identifier",
               }
             })

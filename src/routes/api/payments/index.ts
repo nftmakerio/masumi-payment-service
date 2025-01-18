@@ -11,10 +11,10 @@ import { getRegistryScriptV1 } from '@/utils/contractResolver';
 
 
 export const queryPaymentsSchemaInput = z.object({
-    limit: z.number({ coerce: true }).min(1).max(100).default(10),
-    cursorIdentifier: z.string().max(250).optional(),
-    network: z.nativeEnum($Enums.Network),
-    contractAddress: z.string().max(250),
+    limit: z.number({ coerce: true }).min(1).max(100).default(10).describe("The number of payments to return"),
+    cursorIdentifier: z.string().max(250).optional().describe("Used to paginate through the payments"),
+    network: z.nativeEnum($Enums.Network).describe("The network the payments were made on"),
+    contractAddress: z.string().max(250).describe("The address of the smart contract where the payments were made to"),
 })
 
 export const queryRegistrySchemaOutput = z.object({
@@ -76,15 +76,14 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
 
 
 export const createPaymentsSchemaInput = z.object({
-    network: z.nativeEnum($Enums.Network),
-    sellerVkey: z.string().max(250),
-    agentIdentifier: z.string().min(15).max(250),
-    amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7),
-    paymentType: z.nativeEnum($Enums.PaymentType),
-    contractAddress: z.string().max(250),
-    submitResultTime: ez.dateIn(),
-    unlockTime: ez.dateIn(),
-    refundTime: ez.dateIn(),
+    network: z.nativeEnum($Enums.Network).describe("The network the payment will be received on"),
+    agentIdentifier: z.string().min(15).max(250).describe("The identifier of the agent that will be paid"),
+    amounts: z.array(z.object({ amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })).max(7).describe("The amounts of the payment"),
+    paymentType: z.nativeEnum($Enums.PaymentType).describe("The type of payment contract used"),
+    contractAddress: z.string().max(250).describe("The address of the smart contract where the payment will be made to"),
+    submitResultTime: ez.dateIn().describe("The time after which the payment has to be submitted to the smart contract"),
+    unlockTime: ez.dateIn().describe("The time after which the payment will be unlocked"),
+    refundTime: ez.dateIn().describe("The time after which a refund will be approved"),
 })
 
 export const createPaymentSchemaOutput = z.object({
@@ -136,11 +135,10 @@ export const paymentInitPost = authenticatedEndpointFactory.build({
 });
 
 export const updatePaymentsSchemaInput = z.object({
-    network: z.nativeEnum($Enums.Network),
-    sellerVkey: z.string().max(250),
-    contractAddress: z.string().max(250),
-    hash: z.string().max(250),
-    identifier: z.string().max(250),
+    network: z.nativeEnum($Enums.Network).describe("The network the payment was received on"),
+    contractAddress: z.string().max(250).describe("The address of the smart contract where the payment was made to"),
+    hash: z.string().max(250).describe("The hash of the AI agent result to be submitted"),
+    identifier: z.string().max(250).describe("The identifier of the payment"),
 })
 
 export const updatePaymentSchemaOutput = z.object({
