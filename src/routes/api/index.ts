@@ -4,7 +4,7 @@ import { queryAPIKeyEndpointGet as queryCentralizedRegistrySourceGet, addAPIKeyE
 import { createPurchaseInitPost, queryPurchaseRequestGet, refundPurchasePatch } from "./purchases";
 import { paymentInitPost, paymentUpdatePatch, queryPaymentEntryGet } from "./payments";
 import { registerAgentPost, unregisterAgentDelete } from "./registry";
-import { paymentSourceEndpointDelete, paymentSourceEndpointGet, paymentSourceEndpointPost } from "./payment-source";
+import { paymentSourceEndpointDelete, paymentSourceEndpointGet, paymentSourceEndpointPatch, paymentSourceEndpointPost } from "./payment-source";
 import { queryAPIKeyStatusEndpointGet } from "./api-key-status";
 import { postWalletEndpointPost, queryWalletEndpointGet } from "./wallet";
 import { queryBlockfrostKeysEndpointGet } from "./blockfrost-keys";
@@ -42,6 +42,7 @@ export const apiRouter: Routing = {
         "payment-source": new DependsOnMethod({
             get: paymentSourceEndpointGet,
             post: paymentSourceEndpointPost,
+            patch: paymentSourceEndpointPatch,
             delete: paymentSourceEndpointDelete
         }),
         "blockfrost-keys": new DependsOnMethod({

@@ -9,7 +9,7 @@ import { addAPIKeySchemaInput, addAPIKeySchemaOutput, deleteAPIKeySchemaInput, d
 import { $Enums } from '@prisma/client';
 import { createPaymentSchemaOutput, createPaymentsSchemaInput, queryPaymentsSchemaInput, queryRegistrySchemaOutput as queryPaymentsSchemaOutput, updatePaymentSchemaOutput, updatePaymentsSchemaInput } from '@/routes/api/payments';
 import { createPurchaseInitSchemaInput, createPurchaseInitSchemaOutput, queryPurchaseRequestSchemaInput, queryPurchaseRequestSchemaOutput, refundPurchaseSchemaInput, refundPurchaseSchemaOutput } from '@/routes/api/purchases';
-import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput } from '@/routes/api/payment-source';
+import { paymentSourceCreateSchemaInput, paymentSourceCreateSchemaOutput, paymentSourceDeleteSchemaInput, paymentSourceDeleteSchemaOutput, paymentSourceSchemaInput, paymentSourceSchemaOutput, paymentSourceUpdateSchemaInput, paymentSourceUpdateSchemaOutput } from '@/routes/api/payment-source';
 import { registerAgentSchemaInput, registerAgentSchemaOutput, unregisterAgentSchemaInput, unregisterAgentSchemaOutput } from '@/routes/api/registry';
 import { getAPIKeyStatusSchemaOutput, } from '@/routes/api/api-key-status';
 import { getWalletSchemaInput, getWalletSchemaOutput, postWalletSchemaInput, postWalletSchemaOutput } from '@/routes/api/wallet';
@@ -920,6 +920,62 @@ export function generateOpenAPI() {
         content: {
           'application/json': {
             schema: z.object({ status: z.string(), data: paymentSourceCreateSchemaOutput }).openapi({
+              example: {
+                status: "success",
+                data: {
+                  id: "unique-cuid-v2-auto-generated",
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  network: $Enums.Network.PREPROD,
+                  paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
+                  addressToCheck: "address_to_check",
+                  blockfrostApiKey: "blockfrost_api_key",
+                  page: 1,
+                  isSyncing: false,
+                  latestIdentifier: null,
+                }
+              }
+            })
+          }
+        }
+      }
+    }
+  })
+
+  registry.registerPath({
+    method: 'patch',
+    path: '/payment-source/',
+    description: 'Creates a payment source.',
+    summary: 'REQUIRES API KEY Authentication (+ADMIN)',
+    tags: ['payment-source',],
+    security: [{ [apiKeyAuth.name]: [] }],
+    request: {
+      body: {
+        description: '',
+        content: {
+          'application/json': {
+            schema: paymentSourceUpdateSchemaInput.openapi({
+              example: {
+                id: "unique-cuid-v2",
+
+                blockfrostApiKey: "blockfrost_api_key",
+                CollectionWallet: { walletAddress: "wallet_address", note: "note" },
+                AddPurchasingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }],
+                AddSellingWallets: [{ walletMnemonic: "wallet mnemonic", note: "note" }],
+                RemovePurchasingWallets: [{ id: "unique-cuid-v2" }],
+                RemoveSellingWallets: [{ id: "unique-cuid-v2" }]
+              }
+            })
+          }
+        }
+      }
+    },
+    responses: {
+      200: {
+        description: 'Payment source created',
+        content: {
+          'application/json': {
+            schema: z.object({ status: z.string(), data: paymentSourceUpdateSchemaOutput }).openapi({
               example: {
                 status: "success",
                 data: {

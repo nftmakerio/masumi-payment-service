@@ -306,10 +306,6 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
 
             await prisma.networkHandler.update({
                 where: { id: input.id }, data: {
-                    network: input.network,
-                    addressToCheck: smartContractAddress,
-                    paymentType: input.paymentType,
-                    blockfrostApiKey: input.blockfrostApiKey,
                     SellingWallets: {
                         deleteMany: {
                             id: {
@@ -336,7 +332,9 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
                     addressToCheck: smartContractAddress,
                     paymentType: input.paymentType,
                     blockfrostApiKey: input.blockfrostApiKey,
-
+                    CollectionWallet: input.CollectionWallet != undefined ? {
+                        create: { walletAddress: input.CollectionWallet.walletAddress, note: input.CollectionWallet.note },
+                    } : undefined,
                     SellingWallets: {
                         createMany: {
                             data: sellingWallets
