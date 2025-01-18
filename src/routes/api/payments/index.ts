@@ -14,7 +14,6 @@ export const queryPaymentsSchemaInput = z.object({
     limit: z.number({ coerce: true }).min(1).max(100).default(10),
     cursorIdentifier: z.string().max(250).optional(),
     network: z.nativeEnum($Enums.Network),
-    paymentType: z.nativeEnum($Enums.PaymentType),
     contractAddress: z.string().max(250),
 })
 
@@ -29,8 +28,8 @@ export const queryRegistrySchemaOutput = z.object({
         errorNote: z.string().nullable(),
         errorRequiresManualReview: z.boolean().nullable(),
         identifier: z.string().max(250),
-        sellingWallets: z.array(z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() })),
-        collectionWallet: z.object({ id: z.string(), walletAddress: z.string(), note: z.string().nullable() }).nullable(),
+        smartContractWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
+        SellingWallet: z.object({ id: z.string(), walletVkey: z.string(), note: z.string().nullable() }).nullable(),
         buyerWallet: z.object({ walletVkey: z.string(), }).nullable(),
         amounts: z.array(z.object({ id: z.string(), createdAt: z.date(), updatedAt: z.date(), amount: z.number({ coerce: true }).min(0).max(Number.MAX_SAFE_INTEGER), unit: z.string() })),
         checkedBy: z.object({ id: z.string(), network: z.nativeEnum($Enums.Network), addressToCheck: z.string().max(250), paymentType: z.nativeEnum($Enums.PaymentType) }),
@@ -42,7 +41,7 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
     input: queryPaymentsSchemaInput,
     output: queryRegistrySchemaOutput,
     handler: async ({ input, logger }) => {
-        logger.info("Querying db", input.paymentTypes);
+        logger.info("Querying db");
 
         const networkHandler = await prisma.networkHandler.findUnique({ where: { network_addressToCheck: { network: input.network, addressToCheck: input.contractAddress } }, include: { SellingWallets: true, CollectionWallet: true } })
         if (!networkHandler) {
@@ -61,6 +60,8 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
             take: input.limit,
             include: {
                 buyerWallet: true,
+                smartContractWallet: true,
+                SellingWallet: true,
                 checkedBy: true,
                 amounts: true
             }
@@ -68,7 +69,8 @@ export const queryPaymentEntryGet = authenticatedEndpointFactory.build({
         if (result == null) {
             throw createHttpError(404, "Payment not found")
         }
-        return { payments: result.map((data) => { return { ...data, sellingWallets: networkHandler.SellingWallets, collectionWallet: networkHandler.CollectionWallet, amounts: data.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) } }) }
+
+        return { payments: result.map(payment => ({ ...payment, amounts: payment.amounts.map(amount => ({ ...amount, amount: Number(amount.amount) })) })) }
     },
 });
 

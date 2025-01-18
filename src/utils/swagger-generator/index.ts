@@ -410,7 +410,6 @@ export function generateOpenAPI() {
     request: {
       query: queryPaymentsSchemaInput.openapi({
         example: {
-          paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
           limit: 10,
           cursorIdentifier: "identifier",
           network: $Enums.Network.PREPROD,
@@ -437,9 +436,9 @@ export function generateOpenAPI() {
                     errorNote: "error_note",
                     errorRequiresManualReview: false,
                     identifier: "identifier",
-                    sellingWallets: [{ id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" }],
-                    collectionWallet: { id: "unique-cuid-v2-auto-generated", walletAddress: "wallet_address", note: "note" },
+                    SellingWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
                     buyerWallet: { walletVkey: "wallet_vkey" },
+                    smartContractWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
                     amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
                     checkedBy: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
                   }]
@@ -593,7 +592,6 @@ export function generateOpenAPI() {
           cursorIdentifier: { identifier: "identifier", sellingWalletVkey: "wallet_vkey" },
           network: $Enums.Network.PREPROD,
           contractAddress: "addr_abcd1234567890",
-          paymentType: $Enums.PaymentType.WEB3_CARDANO_V1,
         }
       })
     },
@@ -617,6 +615,7 @@ export function generateOpenAPI() {
                     errorNote: "error_note",
                     errorRequiresManualReview: false,
                     identifier: "identifier",
+                    smartContractWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
                     amounts: [{ id: "unique-cuid-v2-auto-generated", createdAt: new Date(), updatedAt: new Date(), amount: 1000000, unit: "unit" }],
                     networkHandler: { id: "unique-cuid-v2-auto-generated", network: $Enums.Network.PREPROD, addressToCheck: "address_to_check", paymentType: $Enums.PaymentType.WEB3_CARDANO_V1 },
                     purchaserWallet: { id: "unique-cuid-v2-auto-generated", walletVkey: "wallet_vkey", note: "note" },
