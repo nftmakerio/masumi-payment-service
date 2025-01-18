@@ -24,9 +24,27 @@ export const seed = async (prisma: PrismaClient) => {
 
 
   const registryNetwork = process.env.NETWORK?.toLowerCase();
-  const collectionWalletAddress = process.env.COLLECTION_WALLET_ADDRESS;
-  const purchaseWalletMnemonic = process.env.PURCHASE_WALLET_MNEMONIC;
-  const sellingWalletMnemonic = process.env.SELLING_WALLET_MNEMONIC;
+  let collectionWalletAddress = process.env.COLLECTION_WALLET_ADDRESS;
+  let purchaseWalletMnemonic = process.env.PURCHASE_WALLET_MNEMONIC;
+  if (purchaseWalletMnemonic == null) {
+    const secret_key = MeshWallet.brew(false) as string[];
+    purchaseWalletMnemonic = secret_key.join(" ");
+  }
+  let sellingWalletMnemonic = process.env.SELLING_WALLET_MNEMONIC;
+  if (sellingWalletMnemonic == null) {
+    const secret_key = MeshWallet.brew(false) as string[];
+    sellingWalletMnemonic = secret_key.join(" ");
+  }
+  if (collectionWalletAddress == null) {
+    const sellingWallet = new MeshWallet({
+      networkId: registryNetwork === "preprod" ? 0 : registryNetwork === "preview" ? 0 : 1,
+      key: {
+        type: 'mnemonic',
+        words: sellingWalletMnemonic.split(" "),
+      },
+    });
+    collectionWalletAddress = (await sellingWallet.getUnusedAddresses())[0];
+  }
   const blockfrostApiKey = process.env.BLOCKFROST_API_KEY;
   const encryptionKey = process.env.ENCRYPTION_KEY;
 
@@ -39,7 +57,7 @@ export const seed = async (prisma: PrismaClient) => {
 
   const scriptJSON = readFileSync('./smart-contracts/payment/plutus.json', 'utf-8');
 
-  if (encryptionKey != null && scriptJSON != null && blockfrostApiKey != null && adminWallet1Address != null && adminWallet2Address != null && adminWallet3Address != null && feeWalletAddress != null && feePermille != null && registryNetwork != null && collectionWalletAddress != null && purchaseWalletMnemonic != null && sellingWalletMnemonic != null) {
+  if (encryptionKey != null && scriptJSON != null && blockfrostApiKey != null && adminWallet1Address != null && adminWallet2Address != null && adminWallet3Address != null && feeWalletAddress != null && feePermille != null && registryNetwork != null && collectionWalletAddress != null) {
 
     const blueprint = JSON.parse(scriptJSON)
 
@@ -92,7 +110,7 @@ export const seed = async (prisma: PrismaClient) => {
           words: purchaseWalletMnemonic.split(" "),
         },
       });
-      const sellerWallet = new MeshWallet({
+      const sellingWallet = new MeshWallet({
         networkId: registryNetwork === "preprod" ? 0 : registryNetwork === "preview" ? 0 : 1,
         key: {
           type: 'mnemonic',
@@ -129,7 +147,7 @@ export const seed = async (prisma: PrismaClient) => {
           },
           SellingWallets: {
             create: {
-              walletVkey: resolvePaymentKeyHash((await sellerWallet.getUnusedAddresses())[0]),
+              walletVkey: resolvePaymentKeyHash((await sellingWallet.getUnusedAddresses())[0]),
               note: "Created by seeding",
               walletSecret: { create: { secret: encrypt(sellingWalletMnemonic) } }
             }

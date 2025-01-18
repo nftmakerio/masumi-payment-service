@@ -46,12 +46,12 @@ This section provides an overview of the key architectural patterns and technolo
 
 - 5. In case the database is not yet seeded (and or migrated) please also setup the following variables:
   - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
-  - NETWORK: Currently only supports the PREPROD Cardano network or MAINNET
+  - NETWORK: Currently supports PREVIEW (not recommended), PREPROD Cardano network or MAINNET
   - ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
   - Further configuration and explanation in the `.env.example` file
 
-6. In case you need to apply migrations to the database run `yarn prisma:migrate` or `npm run prisma:migrate` otherwise run `yarn prisma:generate` or `npm run prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3)
-7. In case you want to seed the database now run `yarn prisma:seed` or `npm run prisma:seed`
+1. In case you need to apply migrations to the database run `yarn prisma:migrate` or `npm run prisma:migrate` otherwise run `yarn prisma:generate` or `npm run prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3)
+2. In case you want to seed the database now run `yarn prisma:seed` or `npm run prisma:seed`
 
 ## Build & Run
 
