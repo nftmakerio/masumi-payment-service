@@ -29,7 +29,12 @@ initialize()
             startupLogo: false,
             beforeRouting: ({ app, }) => {
                 logger.info("Serving the API documentation at localhost:" + PORT + "/docs");
-                app.use("/docs", ui.serve, ui.setup(generateOpenAPI()));
+                app.use("/docs", ui.serve, ui.setup(generateOpenAPI(), {
+                    explorer: false, swaggerOptions: {
+                        persistAuthorization: true,
+                        tryItOutEnabled: true
+                    }
+                }));
             },
             http: {
                 listen: PORT,
