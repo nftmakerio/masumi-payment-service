@@ -36,26 +36,43 @@ This section provides an overview of the key architectural patterns and technolo
 
 1. Install [node.js](https://nodejs.org/en/download/) in version 18.x
 2. Clone this repository, and using a terminal navigate to its directory.
-3. Run `yarn` or `npm install` to install the dependencies.
+3. Run `npm install` to install the dependencies.
 4. Configure the environment variables by copying the `.env.example` file to `.env`or `.env.local` and setup the variables
    - DATABASE_URL: The endpoint for a PostgreSQL database to be used
    - PORT: The port to run the server on (default is 3001)
    - UPDATE_CARDANO_REGISTRY_INTERVAL: The interval to update the cardano registry as a cron string
    - ENCRYPTION_KEY: The key for encrypting the wallets in the database (Please see the [Security](#security) section for more details and security considerations)
-5. If you're setting up the database for the first time also set the following variables:
-  - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
-  - NETWORK: Currently only supports the PREPROD Cardano network or MAINNET
-  - ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
-6. If you're setting up the database for the first time also run run yarn prisma:migrate or npm run prisma:migrate otherwise run yarn prisma:generate or npm run prisma:generate to generate the prisma client (only works after installing the dependencies via step 3)
-7. If you're setting up the database for the first time run `yarn prisma:seed` or `npm run prisma:seed` to seed the database
+5. If you're setting up the database for the first time (or want to provide some initial data) you also need the following variables:
+
+- BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
+- NETWORK: Currently supports PREVIEW (not recommended), PREPROD Cardano network or MAINNET
+- ADMIN_KEY: The key of the admin user, this key will have all permissions and can create new api_keys
+- SMART CONTRACT DATA: You can leave them the same as the example if you are using the default smart contract on the PREPROD network. Otherwise please refer to the smart contract documentation to find the correct values.
+
+  - ADMIN Wallets are used to solve disputes (the default payment contract requires 2/3 independent admins to agree to resolve disputes).
+
+    - ADMIN_WALLET1_ADDRESS="addr_test1qrgpga399l0r8fg7n0jfshhxsjl26w0uslxf5m02yclur8mremst4rk8xsz9lx78e9sdtjfsyj3c9kll2c4958uhkals2qrm9q" # This should be the example address, if you use the public PREPROD test contract. Otherwise the first wallet address of the network admin.
+    - ADMIN_WALLET2_ADDRESS="addr_test1qqturqflellkrv0kcg9guuzkk8wx5yaytpsfcd3mmvemg0v7akaxvzel56ls59kw2fs20ckxhs09365medeen6tyy0pqkx3hku" #This is the second wallet address of the network admin. This should be the example address, if you use the public PREPROD test contract.
+    - ADMIN_WALLET3_ADDRESS="addr_test1qz93vk0v6jcy4n8g4w3srqkjmcy6ryw90gngx0llvyek5rsc665n90486m4vvue3c2dsjg8sw3tchkjzgxgp4y77rkxqgxjd2h" #This is the third wallet address of the network admin. This should be the example address, if you use the public PREPROD test contract.
+
+  - The default payment contract will collect a fee to support the network.
+    - FEE_WALLET_ADDRESS="addr_test1qrgpga399l0r8fg7n0jfshhxsjl26w0uslxf5m02yclur8mremst4rk8xsz9lx78e9sdtjfsyj3c9kll2c4958uhkals2qrm9q" # This should be the example address, if you use the public PREPROD test contract. Otherwise the wallet address of the network that receives the fee. Please check the documentation of the payment contract you are using.
+    - FEE_PERMILLE="50" #The fee for the network in permille. This should be the example, if you use the public PREPROD test contract. Otherwise please check the documentation of the payment contract you are using.
+
+- OPTIONAL Wallet data: Used to configure payment and purchase wallets, if you want to use existing wallets
+  - PURCHASE_WALLET_MNEMONIC: The mnemonic of the wallet used to purchase any agent requests. This needs to have sufficient funds to pay, or be topped up. If you do not provide a mnemonic, a new one will be generated. Please ensure you export them immediately after creation and store them securely.
+  - SELLING_WALLET_MNEMONIC: The mnemonic of the wallet used to interact with the smart contract. This only needs minimal funds, to cover the CARDANO Network fees. If you do not provide a mnemonic, a new one will be generated. Please ensure you export them immediately after creation and store them securely.
+  - COLLECTION_WALLET_ADDRESS: The wallet address of the collection wallet. It will receive all payments after a successful and completed purchase (not refund). It does not need any funds, however it is strongly recommended to create it via a hardware wallet or ensure its secret is stored securely. If you do not provide an address, the SELLING_WALLET will be used.
+
+1. If you're setting up the database for the first time or there are any schema changes also run run `npm run prisma:migrate` (this will also seed the database) otherwise `npm run prisma:generate` to generate the prisma client (only works after installing the dependencies via step 3) and afterwards optionally `npm run prisma:seed` to seed the database
 
 ## Build & Run
 
 1. Copy the contents of the `.env.example` file to a `.env` next to it, and edit it with your values.
-2. Run `yarn build` or `npm run build` to build the files.
-3. Run `yarn start` or `npm run start` to start the application.
+2. Run `npm run build` to build the files.
+3. Run `npm run start` to start the application.
 
-- You can run `yarn dev` or `npm run dev` to combine the 2 steps above, while listening to changes and restarting automatically.
+- You can run `npm run dev` to combine the 2 steps above, while listening to changes and restarting automatically.
 
 To verify that the application is working correctly, point your browser to
 [http://localhost:3001/api/v1/health](http://localhost:3001/api/v1/health) - you
@@ -100,8 +117,8 @@ In addition please make sure to update this service with the latest version regu
 
 ## Linting & Formatting
 
-- Run `yarn lint` or `npm run lint` to lint the code.
-- Run `yarn format` or `npm run format` to format the code.
+- Run `npm run lint` to lint the code.
+- Run `npm run format` to format the code.
 
 ## Testing
 
@@ -109,9 +126,9 @@ In addition please make sure to update this service with the latest version regu
 
 This project uses Jest as the testing framework. Here's how you can run tests:
 
-- Run `yarn test` or `npm run test` to execute all tests.
-- Run `yarn test:watch` or `npm run test:watch` to run tests in watch mode, which will re-run tests on file changes.
-- Run `yarn test:coverage` or `npm run test:coverage` to see the test coverage report.
+- Run `npm run test` to execute all tests.
+- Run `npm run test:watch` to run tests in watch mode, which will re-run tests on file changes.
+- Run `npm run test:coverage` to see the test coverage report.
 
 ### Writing Tests
 
