@@ -27,7 +27,6 @@ This section provides an overview of the key architectural patterns and technolo
 - [Prisma](https://www.prisma.io/): Implemented as the ORM to interact with our PostgreSQL database
 - [DOTENV](https://www.npmjs.com/package/dotenv): Incorporated to securely load environment variables from `.env` files
 - [Zod-to-OpenAPI](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi): Used to generate the OpenAPI schema from the Zod schemas
-- [Zod-to-OpenAPI](https://www.npmjs.com/package/@asteasolutions/zod-to-openapi): Used to generate the OpenAPI schema from the Zod schemas
 - [Blockfrost](https://www.npmjs.com/package/@blockfrost/blockfrost-js): Used to interact with the Cardano blockchain
 - [Jest](https://jestjs.io/): Used as the testing framework
 - [Docker](https://www.docker.com/): Used to containerize the application for production
@@ -38,10 +37,19 @@ This section provides an overview of the key architectural patterns and technolo
 2. Clone this repository, and using a terminal navigate to its directory.
 3. Run `npm install` to install the dependencies.
 4. Configure the environment variables by copying the `.env.example` file to `.env`or `.env.local` and setup the variables
+
    - DATABASE_URL: The endpoint for a PostgreSQL database to be used
    - PORT: The port to run the server on (default is 3001)
-   - UPDATE_CARDANO_REGISTRY_INTERVAL: The interval to update the cardano registry as a cron string
    - ENCRYPTION_KEY: The key for encrypting the wallets in the database (Please see the [Security](#security) section for more details and security considerations)
+   - OPTIONALLY: The services will run the following jobs whenever previous ones completed or after the provided time. (Defaults apply if not set)
+     - CHECK_WALLET_TRANSACTION_HASH_INTERVAL: Cron expression for checking wallet transaction hash. This also reruns potentially effected services by unlocking the wallet
+     - BATCH_PAYMENT_INTERVAL: Cron expression for batching requests
+     - CHECK_COLLECTION_INTERVAL: Cron expression for checking collection
+     - CHECK_TX_INTERVAL: Cron expression for checking payment
+     - CHECK_COLLECT_REFUND_INTERVAL: Cron expression for checking collection and refund
+     - CHECK_REFUND_INTERVAL: Cron expression for checking refund
+     - CHECK_DENY_INTERVAL: Cron expression for checking deny
+
 5. If you're setting up the database for the first time (or want to provide some initial data) you also need the following variables:
 
 - BLOCKFROST_API_KEY: An API Key from [https://blockfrost.io/](https://blockfrost.io/) for the correct blockchain network, you can create this for free
