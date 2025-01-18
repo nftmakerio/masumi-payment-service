@@ -138,6 +138,7 @@ export function generateOpenAPI() {
                   walletVkey: "walletVkey",
                   note: "note",
                   pendingTransaction: null,
+                  address: "addr1_testabcd",
                   walletSecret: {
                     createdAt: new Date(),
                     updatedAt: new Date(),

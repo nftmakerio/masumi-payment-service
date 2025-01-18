@@ -30,6 +30,7 @@ export const getWalletSchemaOutput = z.object({
     }).nullable(),
     note: z.string().nullable(),
     walletVkey: z.string(),
+    address: z.string().optional()
 
 });
 
@@ -39,37 +40,58 @@ export const queryWalletEndpointGet = adminAuthenticatedEndpointFactory.build({
     output: getWalletSchemaOutput,
     handler: async ({ input }) => {
         if (input.walletType == "Selling") {
-            const result = await prisma.sellingWallet.findFirst({ where: { id: input.id }, include: { walletSecret: input.includeSecret, pendingTransaction: true } })
+            const result = await prisma.sellingWallet.findFirst({ where: { id: input.id }, include: { walletSecret: true, pendingTransaction: true, networkHandler: true } })
             if (result == null) {
                 throw createHttpError(404, "Selling wallet not found")
             }
+            const decodedSecret = decrypt(result.walletSecret.secret)
+            const wallet = new MeshWallet({
+                networkId: result.networkHandler.network == "MAINNET" ? 1 : 0,
+                key: {
+                    type: 'mnemonic',
+                    words: decodedSecret.split(" ")
+                },
+            });
+            const address = (await wallet.getAddresses())
             if (input.includeSecret) {
-                const decodedSecret = decrypt(result.walletSecret.secret)
+
                 return {
                     ...result,
                     walletSecret: {
                         ...result.walletSecret,
                         secret: decodedSecret
-                    }
+                    },
+                    address: address?.baseAddressBech32
                 }
             }
-            return result
+            return { ...result, walletSecret: undefined, address: address?.baseAddressBech32 }
         } else if (input.walletType == "Purchasing") {
-            const result = await prisma.purchasingWallet.findFirst({ where: { id: input.id }, include: { walletSecret: input.includeSecret, pendingTransaction: true } })
+            const result = await prisma.purchasingWallet.findFirst({ where: { id: input.id }, include: { walletSecret: true, pendingTransaction: true, networkHandler: true } })
             if (result == null) {
                 throw createHttpError(404, "Purchasing wallet not found")
             }
+            const decodedSecret = decrypt(result.walletSecret.secret)
+
+            const wallet = new MeshWallet({
+                networkId: result.networkHandler.network == "MAINNET" ? 1 : 0,
+                key: {
+                    type: 'mnemonic',
+                    words: decodedSecret.split(" ")
+                },
+            });
+            const address = (await wallet.getAddresses())
             if (input.includeSecret) {
-                const decodedSecret = decrypt(result.walletSecret.secret)
+
                 return {
                     ...result,
                     walletSecret: {
                         ...result.walletSecret,
                         secret: decodedSecret
-                    }
+                    },
+                    address: address?.baseAddressBech32
                 }
             }
-            return result
+            return { ...result, walletSecret: undefined, address: address?.baseAddressBech32 }
 
         }
         throw createHttpError(400, "Invalid wallet type")
