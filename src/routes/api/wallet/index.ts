@@ -12,7 +12,7 @@ import { resolvePaymentKeyHash } from '@meshsdk/core-cst';
 export const getWalletSchemaInput = z.object({
     walletType: z.enum(["Selling", "Purchasing"]),
     id: z.string().min(1).max(250),
-    includeSecret: z.boolean().default(false),
+    includeSecret: z.boolean({ coerce: true }).default(false),
 })
 
 

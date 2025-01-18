@@ -56,10 +56,10 @@ model SellingWallet {
   walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
   walletSecretId String
 
-  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id])
+  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id], onDelete: SetNull)
   pendingTransactionId String?
 
-  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String         @unique
 
   note            String?
@@ -77,10 +77,10 @@ model PurchasingWallet {
   walletSecret   WalletSecret @relation(fields: [walletSecretId], references: [id])
   walletSecretId String
 
-  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id])
+  pendingTransaction   Transaction? @relation(fields: [pendingTransactionId], references: [id], onDelete: SetNull)
   pendingTransactionId String?
 
-  networkHandler   NetworkHandler    @relation(fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler    @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String
   note             String?
   PurchaseRequest  PurchaseRequest[]
@@ -101,12 +101,12 @@ model Transaction {
 }
 
 model WalletSecret {
-  id               String             @id @default(cuid())
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  secret           String             @unique //encrypted 
-  SellerWallet     SellingWallet[]
-  PurchasingWallet PurchasingWallet[]
+  id                String             @id @default(cuid())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  secret            String //encrypted 
+  SellingWallets    SellingWallet[]
+  PurchasingWallets PurchasingWallet[]
 }
 
 model BuyerWallet {
@@ -114,7 +114,7 @@ model BuyerWallet {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   walletVkey       String
-  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String
 
   note           String?
@@ -128,7 +128,7 @@ model SellerWallet {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   walletVkey       String
-  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String
 
   note            String?
@@ -143,7 +143,7 @@ model CollectionWallet {
   updatedAt     DateTime @updatedAt
   walletAddress String
 
-  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String         @unique
   note             String?
 
@@ -156,13 +156,13 @@ model PaymentRequest {
   updatedAt DateTime @updatedAt
 
   lastCheckedAt DateTime?
-  checkedBy     NetworkHandler @relation("PaymentRequestHandler", fields: [checkedById], references: [id])
+  checkedBy     NetworkHandler @relation("PaymentRequestHandler", fields: [checkedById], references: [id], onDelete: Cascade)
   checkedById   String
 
-  smartContractWallet   PurchasingWallet? @relation(fields: [smartContractWalletId], references: [id])
+  smartContractWallet   PurchasingWallet? @relation(fields: [smartContractWalletId], references: [id], onDelete: SetNull)
   smartContractWalletId String?
 
-  buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id])
+  buyerWallet   BuyerWallet? @relation(fields: [buyerWalletId], references: [id], onDelete: SetNull)
   buyerWalletId String?
 
   amounts          RequestAmount[]
@@ -192,15 +192,15 @@ model PurchaseRequest {
   updatedAt DateTime @updatedAt
 
   lastCheckedAt    DateTime?
-  networkHandler   NetworkHandler @relation("PurchaseRequestNetworkHandler", fields: [networkHandlerId], references: [id])
+  networkHandler   NetworkHandler @relation("PurchaseRequestNetworkHandler", fields: [networkHandlerId], references: [id], onDelete: Cascade)
   networkHandlerId String
 
-  sellerWallet       SellerWallet      @relation(fields: [sellerWalletId], references: [id])
+  sellerWallet       SellerWallet      @relation(fields: [sellerWalletId], references: [id], onDelete: Cascade)
   sellerWalletId     String
-  purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id])
+  purchaserWallet    PurchasingWallet? @relation(fields: [purchasingWalletId], references: [id], onDelete: SetNull)
   purchasingWalletId String?
 
-  smartContractWallet   SellingWallet? @relation(fields: [smartContractWalletId], references: [id])
+  smartContractWallet   SellingWallet? @relation(fields: [smartContractWalletId], references: [id], onDelete: SetNull)
   smartContractWalletId String?
 
   amounts          RequestAmount[]
@@ -232,9 +232,9 @@ model RequestAmount {
   updatedAt         DateTime         @updatedAt
   amount            BigInt
   unit              String
-  PaymentRequest    PaymentRequest?  @relation(fields: [paymentRequestId], references: [id])
+  PaymentRequest    PaymentRequest?  @relation(fields: [paymentRequestId], references: [id], onDelete: SetNull)
   paymentRequestId  String?
-  PurchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id])
+  PurchaseRequest   PurchaseRequest? @relation(fields: [purchaseRequestId], references: [id], onDelete: SetNull)
   purchaseRequestId String?
 }
 
@@ -312,7 +312,7 @@ model NetworkHandler {
   addressToCheck   String
 
   AdminWallets             AdminWallet[]     @relation("AdminWallets")
-  FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id])
+  FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id], onDelete: Cascade)
   adminWalletId            String
   FeePermille              Int               @default(50)
   CollectionWallet         CollectionWallet?
@@ -344,7 +344,7 @@ model AdminWallet {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
   walletAddress         String
-  NetworkHandlerAdmin   NetworkHandler? @relation("AdminWallets", fields: [networkHandlerAdminId], references: [id])
+  NetworkHandlerAdmin   NetworkHandler? @relation("AdminWallets", fields: [networkHandlerAdminId], references: [id], onDelete: SetNull)
   networkHandlerAdminId String?
   order                 Int
 

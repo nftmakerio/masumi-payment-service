@@ -945,7 +945,7 @@ export function generateOpenAPI() {
   registry.registerPath({
     method: 'delete',
     path: '/payment-source/',
-    description: 'Deletes a payment source.',
+    description: 'Deletes a payment source. WARNING will also delete all associated wallets and transactions.',
     summary: 'REQUIRES API KEY Authentication (+ADMIN)',
     tags: ['payment-source',],
     security: [{ [apiKeyAuth.name]: [] }],

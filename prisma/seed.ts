@@ -7,6 +7,7 @@ import { encrypt } from './../src/utils/encryption';
 dotenv.config();
 const prisma = new PrismaClient();
 export const seed = async (prisma: PrismaClient) => {
+
   const adminKey = process.env.ADMIN_KEY;
   if (adminKey != null) {
     if (adminKey.length < 15) throw Error('API-KEY is insecure');
@@ -22,20 +23,19 @@ export const seed = async (prisma: PrismaClient) => {
     console.log('ADMIN_KEY is skipped');
   }
 
-
   const registryNetwork = process.env.NETWORK?.toLowerCase();
   let collectionWalletAddress = process.env.COLLECTION_WALLET_ADDRESS;
   let purchaseWalletMnemonic = process.env.PURCHASE_WALLET_MNEMONIC;
-  if (purchaseWalletMnemonic == null) {
+  if (!purchaseWalletMnemonic) {
     const secret_key = MeshWallet.brew(false) as string[];
     purchaseWalletMnemonic = secret_key.join(" ");
   }
   let sellingWalletMnemonic = process.env.SELLING_WALLET_MNEMONIC;
-  if (sellingWalletMnemonic == null) {
+  if (!sellingWalletMnemonic) {
     const secret_key = MeshWallet.brew(false) as string[];
     sellingWalletMnemonic = secret_key.join(" ");
   }
-  if (collectionWalletAddress == null) {
+  if (!collectionWalletAddress) {
     const sellingWallet = new MeshWallet({
       networkId: registryNetwork === "preprod" ? 0 : registryNetwork === "preview" ? 0 : 1,
       key: {

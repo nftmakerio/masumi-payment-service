@@ -36,7 +36,7 @@ export const queryAPIKeyEndpointGet = adminAuthenticatedEndpointFactory.build({
 });
 
 export const addAPIKeySchemaInput = z.object({
-    usageLimited: z.boolean().default(false),
+    usageLimited: z.boolean({ coerce: true }).default(false),
     usageCredits: z.array(z.object({
         unit: z.string().max(150),
         amount: z.number({ coerce: true }).int().min(0).max(1000000)
