@@ -40,7 +40,6 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## Roadmap
 
 See our [Roadmap](ROADMAP.md) for planned features and improvements.
-See the [Release Notes](RELEASE_NOTES.md) for the latest changes.
 
 ## License
 
