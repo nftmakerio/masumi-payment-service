@@ -223,17 +223,17 @@ export const paymentSourceUpdateSchemaInput = z.object({
     AddPurchasingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50).optional().describe("The mnemonic of the purchasing wallets to be added"),
+    })).min(1).max(10).optional().describe("The mnemonic of the purchasing wallets to be added"),
     AddSellingWallets: z.array(z.object({
         walletMnemonic: z.string().max(1500),
         note: z.string().max(250),
-    })).min(1).max(50).optional().describe("The mnemonic of the selling wallets to be added"),
+    })).min(1).max(10).optional().describe("The mnemonic of the selling wallets to be added"),
     RemovePurchasingWallets: z.array(z.object({
         id: z.string()
-    })).max(50).optional().describe("The ids of the purchasing wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
+    })).max(10).optional().describe("The ids of the purchasing wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
     RemoveSellingWallets: z.array(z.object({
         id: z.string()
-    })).max(50).optional().describe("The ids of the selling wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
+    })).max(10).optional().describe("The ids of the selling wallets to be removed. Please backup the mnemonic of the old wallet before removing it."),
     page: z.number({ coerce: true }).min(1).max(100000000).optional().describe("The page number of the payment source. Usually should not be changed"),
     latestIdentifier: z.string().max(250).nullable().optional().describe("The latest identifier of the payment source. Usually should not be changed")
 });
@@ -259,34 +259,33 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
         if (networkHandler == null) {
             throw createHttpError(404, "Payment source not found")
         }
-
-
+        const sellingWalletsMesh = input.AddSellingWallets?.map(sellingWallet => {
+            return {
+                wallet: new MeshWallet({
+                    networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
+                    key: {
+                        type: "mnemonic",
+                        words: sellingWallet.walletMnemonic.split(" ")
+                    }
+                }),
+                note: sellingWallet.note,
+                secret: encrypt(sellingWallet.walletMnemonic)
+            };
+        });
+        const purchasingWalletsMesh = input.AddPurchasingWallets?.map(purchasingWallet => {
+            return {
+                wallet: new MeshWallet({
+                    networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
+                    key: {
+                        type: "mnemonic",
+                        words: purchasingWallet.walletMnemonic.split(" ")
+                    }
+                }), note: purchasingWallet.note,
+                secret: encrypt(purchasingWallet.walletMnemonic)
+            };
+        });
         const result = await prisma.$transaction(async (prisma) => {
-            const sellingWalletsMesh = input.AddSellingWallets?.map(sellingWallet => {
-                return {
-                    wallet: new MeshWallet({
-                        networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
-                        key: {
-                            type: "mnemonic",
-                            words: sellingWallet.walletMnemonic.split(" ")
-                        }
-                    }),
-                    note: sellingWallet.note,
-                    secret: encrypt(sellingWallet.walletMnemonic)
-                };
-            });
-            const purchasingWalletsMesh = input.AddPurchasingWallets?.map(purchasingWallet => {
-                return {
-                    wallet: new MeshWallet({
-                        networkId: input.network === "PREVIEW" ? 0 : input.network === "PREPROD" ? 0 : 1,
-                        key: {
-                            type: "mnemonic",
-                            words: purchasingWallet.walletMnemonic.split(" ")
-                        }
-                    }), note: purchasingWallet.note,
-                    secret: encrypt(purchasingWallet.walletMnemonic)
-                };
-            });
+
             const sellingWallets = sellingWalletsMesh != null ? await Promise.all(sellingWalletsMesh.map(async (sw) => {
                 const walletVkey = resolvePaymentKeyHash((await sw.wallet.getUnusedAddresses())[0]);
                 return {
@@ -303,28 +302,28 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
                     note: pw.note
                 };
             })) : [];
-
-            await prisma.networkHandler.update({
-                where: { id: input.id }, data: {
-                    SellingWallets: {
-                        deleteMany: {
-                            id: {
-                                in: input.RemoveSellingWallets?.map(rw => rw.id)
-                            }
+            if (input.RemoveSellingWallets != null && input.RemoveSellingWallets.length > 0 || input.RemovePurchasingWallets != null && input.RemovePurchasingWallets.length > 0) {
+                await prisma.networkHandler.update({
+                    where: { id: input.id }, data: {
+                        SellingWallets: {
+                            deleteMany: input.RemoveSellingWallets != null && input.RemoveSellingWallets.length > 0 ? {
+                                id: {
+                                    in: input.RemoveSellingWallets?.map(rw => rw.id)
+                                }
+                            } : undefined,
                         },
+                        PurchasingWallets: {
+                            deleteMany: input.RemovePurchasingWallets != null && input.RemovePurchasingWallets.length > 0 ? {
+                                id: {
+                                    in: input.RemovePurchasingWallets?.map(rw => rw.id)
+                                }
+                            } : undefined,
 
-                    },
-                    PurchasingWallets: {
-                        deleteMany: {
-                            id: {
-                                in: input.RemovePurchasingWallets?.map(rw => rw.id)
-                            }
                         },
-
-                    },
-                }
-            });
-
+                    }
+                });
+            }
+            console.log("adding wallets")
             const paymentSource = await prisma.networkHandler.update({
                 where: { id: input.id },
                 data: {
@@ -332,7 +331,7 @@ export const paymentSourceEndpointPatch = adminAuthenticatedEndpointFactory.buil
                     page: input.page,
                     blockfrostApiKey: input.blockfrostApiKey,
                     CollectionWallet: input.CollectionWallet != undefined ? {
-                        create: { walletAddress: input.CollectionWallet.walletAddress, note: input.CollectionWallet.note },
+                        update: { walletAddress: input.CollectionWallet.walletAddress, note: input.CollectionWallet.note },
                     } : undefined,
                     SellingWallets: {
                         createMany: {

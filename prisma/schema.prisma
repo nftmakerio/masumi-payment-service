@@ -60,7 +60,7 @@ model SellingWallet {
   pendingTransactionId String?
 
   networkHandler   NetworkHandler @relation(fields: [networkHandlerId], references: [id], onDelete: Cascade)
-  networkHandlerId String         @unique
+  networkHandlerId String
 
   note            String?
   PaymentRequest  PaymentRequest[]
@@ -310,24 +310,22 @@ model NetworkHandler {
   blockfrostApiKey String
   latestIdentifier String?
   addressToCheck   String
+  isSyncing        Boolean   @default(false)
 
-  AdminWallets             AdminWallet[]     @relation("AdminWallets")
-  FeeReceiverNetworkWallet AdminWallet       @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id], onDelete: Cascade)
+  AdminWallets             AdminWallet[] @relation("AdminWallets")
+  FeeReceiverNetworkWallet AdminWallet   @relation("FeeReceiverNetworkWallet", fields: [adminWalletId], references: [id], onDelete: Cascade)
   adminWalletId            String
-  FeePermille              Int               @default(50)
-  CollectionWallet         CollectionWallet?
-
-  PurchasingWallets PurchasingWallet[]
-  paymentType       PaymentType
-
-  isSyncing Boolean @default(false)
+  FeePermille              Int           @default(50)
 
   PaymentRequests  PaymentRequest[]  @relation("PaymentRequestHandler")
   PurchaseRequests PurchaseRequest[] @relation("PurchaseRequestNetworkHandler")
 
-  BuyerWallets   BuyerWallet[]
-  SellerWallets  SellerWallet[]
-  SellingWallets SellingWallet[]
+  CollectionWallet  CollectionWallet?
+  paymentType       PaymentType
+  BuyerWallets      BuyerWallet[]
+  SellerWallets     SellerWallet[]
+  SellingWallets    SellingWallet[]
+  PurchasingWallets PurchasingWallet[]
 
   maxCollectRefundRetries  Int @default(3)
   maxCollectPaymentRetries Int @default(3)

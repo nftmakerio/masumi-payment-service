@@ -211,10 +211,10 @@ CREATE TABLE "NetworkHandler" (
     "blockfrostApiKey" TEXT NOT NULL,
     "latestIdentifier" TEXT,
     "addressToCheck" TEXT NOT NULL,
+    "isSyncing" BOOLEAN NOT NULL DEFAULT false,
     "adminWalletId" TEXT NOT NULL,
     "FeePermille" INTEGER NOT NULL DEFAULT 50,
     "paymentType" "PaymentType" NOT NULL,
-    "isSyncing" BOOLEAN NOT NULL DEFAULT false,
     "maxCollectRefundRetries" INTEGER NOT NULL DEFAULT 3,
     "maxCollectPaymentRetries" INTEGER NOT NULL DEFAULT 3,
     "maxCollectionRetries" INTEGER NOT NULL DEFAULT 3,
@@ -245,9 +245,6 @@ CREATE INDEX "apiKey_apiKey_idx" ON "apiKey"("apiKey");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SellingWallet_walletVkey_key" ON "SellingWallet"("walletVkey");
-
--- CreateIndex
-CREATE UNIQUE INDEX "SellingWallet_networkHandlerId_key" ON "SellingWallet"("networkHandlerId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SellingWallet_networkHandlerId_walletVkey_key" ON "SellingWallet"("networkHandlerId", "walletVkey");
