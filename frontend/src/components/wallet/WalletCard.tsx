@@ -7,8 +7,10 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import BlinkingUnderscore from "../BlinkingUnderscore";
+import { getWallet } from "@/lib/api/wallet";
+import { getWalletBalance } from "@/lib/api/balance/get";
 import { TransakWidget } from './TransakWidget';
-import { getUtxos, getWallet } from "@/lib/api/generated";
+import { SwapDialog } from "./SwapDialog";
 
 export function WalletCard({
   type,
@@ -59,23 +61,23 @@ export function WalletCard({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [walletSecret, setWalletSecret] = useState<string | null>(null);
   const [showTransak, setShowTransak] = useState(false);
-  const { apiClient } = useAppContext();
+  const [showSwapDialog, setShowSwapDialog] = useState(false);
 
   const walletType = type === 'selling' ? 'Selling' : 'Purchasing';
+
+  const rpcProviderApiKey = contract?.NetworkHandlerConfig?.rpcProviderApiKey || state.paymentSources?.[0]?.NetworkHandlerConfig?.rpcProviderApiKey || "preprodGUGCdL87Nwt7eglhJiMNBfAsmuCfrObx";
 
   const fetchWalletAddress = useCallback(async () => {
     try {
       setIsFetchingAddress(true);
-      const response = await getWallet({
-        client: apiClient,
-        query: {
-          walletType,
-          id: walletId!,
-          includeSecret: "true"
-        }
+      const response = await getWallet(state.apiKey!, {
+        walletType,
+        id: walletId!,
+        includeSecret: true
       });
 
-      const data = response.data?.data;
+
+      const data = response.data?.wallet;
       return data?.walletAddress;
     } catch (error) {
       console.error('Error fetching wallet address:', error);
@@ -83,7 +85,7 @@ export function WalletCard({
     } finally {
       setIsFetchingAddress(false);
     }
-  }, [apiClient, walletType, walletId]);
+  }, [walletId, state.apiKey, walletType]);
 
   useEffect(() => {
     if (!localAddress && walletId) {
@@ -98,54 +100,35 @@ export function WalletCard({
   const fetchBalancePreprod = useCallback(async (address: string) => {
     try {
       setFetchingBalance(true);
-      const result = await getUtxos({
-        client: apiClient,
-        //no cache
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-        query: {
-          address: address,
-          network: 'Preprod',
-        }
+      const data = await getWalletBalance(state.apiKey!, {
+        walletAddress: address,
+        network: 'preprod',
+        blockfrostApiKey: rpcProviderApiKey
       });
-      const usdmPolicyId = "c48cbb3d5e57ed56e276bc45f99ab39abe94e6cd7ac39fb402da47ad";
-      const usdmHex = "0014df105553444d";
 
-      const lovelace = result?.data?.data?.utxos?.reduce((acc, utxo) => {
-        return acc + utxo.amount.reduce((acc, asset) => {
-          if (asset.unit === 'lovelace' || asset.unit === '') {
-            return acc + (asset.quantity ?? 0);
-          }
-          return acc;
-        }, 0)
-      }, 0);
-      const usdm = result?.data?.data?.utxos?.reduce((acc, utxo) => {
-        return acc + utxo.amount.reduce((acc, asset) => {
-          if (asset.unit === usdmPolicyId + usdmHex) {
-            return acc + (asset.quantity ?? 0);
-          }
-          return acc;
-        }, 0)
-      }, 0);
-      setAdaBalance((lovelace || 0) / 1000000);
-      setUsdmBalance((usdm || 0) / 10000000);
+      setAdaBalance(data?.ada || 0);
+      setUsdmBalance(data?.usdm || 0);
       setFetchingBalance(false);
-      return { ada: (lovelace || 0) / 1000000, usdm: (usdm || 0) / 10000000 };
+      return data;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error
-        ? error.message
+      const errorMessage = error instanceof Error 
+        ? error.message 
         : 'Unknown error fetching balance';
       setBalanceError(errorMessage);
       console.error("Error fetching balance:", errorMessage);
       throw error;
     }
-  }, [apiClient]);
+  }, [rpcProviderApiKey, state.apiKey]);
 
   useEffect(() => {
     const fetchBalances = async () => {
+      if (!rpcProviderApiKey) {
+        const errorMessage = 'No Blockfrost API key found';
+        console.error(errorMessage);
+        setBalanceError(errorMessage);
+        return;
+      }
+
       try {
         setFetchingBalance(true);
         setBalanceError(null);
@@ -153,8 +136,8 @@ export function WalletCard({
         setAdaBalance(data?.ada || 0);
         setUsdmBalance(data?.usdm || 0);
       } catch (error) {
-        const errorMessage = error instanceof Error
-          ? error.message
+        const errorMessage = error instanceof Error 
+          ? error.message 
           : 'Unknown error fetching balance';
         console.error('Error fetching wallet balances:', errorMessage);
         setBalanceError(errorMessage);
@@ -176,8 +159,8 @@ export function WalletCard({
       setAdaBalance(data?.ada || 0);
       setUsdmBalance(data?.usdm || 0);
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
+      const errorMessage = error instanceof Error 
+        ? error.message 
         : 'Unknown error fetching balance';
       console.error('Error fetching wallet balances:', errorMessage);
       setBalanceError(errorMessage);
@@ -200,17 +183,14 @@ export function WalletCard({
     setIsExporting(true);
 
     try {
-      const response = await getWallet({
-        client: apiClient,
-        query: {
-          walletType,
-          id: walletId!,
-          includeSecret: "true"
-        }
+      const response = await getWallet(state.apiKey!, {
+        walletType,
+        id: walletId!,
+        includeSecret: true
       });
 
-      const data = response.data?.data;
-      setWalletSecret(data?.Secret?.mnemonic || '');
+      const data = response.data?.Secret;
+      setWalletSecret(data?.mnemonic || '');
       setShowExportDialog(true);
     } catch (error) {
       console.error('Error exporting wallet:', error);
@@ -298,6 +278,9 @@ export function WalletCard({
               </Button>
               <Button variant="secondary" size="sm" onClick={handleExport} disabled={isExporting}>
                 {isExporting ? 'Exporting...' : 'Export'}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setShowSwapDialog(true)}>
+                Swap
               </Button>
             </>
           )}
@@ -407,6 +390,16 @@ export function WalletCard({
           }}
         />
       )}
+
+      <SwapDialog
+        isOpen={showSwapDialog}
+        onClose={() => setShowSwapDialog(false)}
+        walletAddress={localAddress || ''}
+        network={contract.network}
+        blockfrostApiKey={rpcProviderApiKey}
+        walletType={type}
+        walletId={walletId || ''}
+      />
     </>
   );
 }

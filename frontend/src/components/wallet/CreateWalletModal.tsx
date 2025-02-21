@@ -2,7 +2,7 @@ import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAppContext } from "@/lib/contexts/AppContext";
-import { postWallet } from "@/lib/api/generated";
+import { createWallet } from "@/lib/api/wallet";
 
 type CreateWalletModalProps = {
   type: string;
@@ -14,7 +14,6 @@ export function CreateWalletModal({ type, onClose, contractId }: CreateWalletMod
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const { state, dispatch } = useAppContext();
-  const { apiClient } = useAppContext();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,14 +21,11 @@ export function CreateWalletModal({ type, onClose, contractId }: CreateWalletMod
     setIsLoading(true);
 
     try {
-      const response = await postWallet({
-        client: apiClient,
-        body: {
-          network: "Preprod",
-        }
+      const response = await createWallet(state.apiKey!, {
+        walletType: type,
       });
 
-      const data = response?.data;
+      const data = response?.data?.wallet;
 
       dispatch({
         type: 'SET_PAYMENT_SOURCES',

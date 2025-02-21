@@ -8,8 +8,7 @@ import { CreateContractModal } from "./CreateContractModal";
 import { Pagination } from "../ui/pagination";
 import Link from "next/link";
 import BlinkingUnderscore from '../BlinkingUnderscore';
-import { getPaymentSource, GetPaymentSourceResponse } from '@/lib/api/generated';
-
+import { getPaymentSources, PaymentSource } from '@/lib/api/payment-source';
 
 function shortenAddress(address: string) {
   if (!address) return '';
@@ -19,17 +18,17 @@ function shortenAddress(address: string) {
 
 
 interface MonitoredContractsProps {
-  paymentSourceData?: GetPaymentSourceResponse['data']['paymentSources'];
+  paymentSourceData?: PaymentSource[];
 }
 
 export function MonitoredContracts({ }: MonitoredContractsProps) {
   const router = useRouter();
-  const [contracts, setContracts] = useState<GetPaymentSourceResponse['data']['paymentSources']>([]);
+  const [contracts, setContracts] = useState<PaymentSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
+  const { state } = useAppContext();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const { apiClient } = useAppContext();
 
   const fetchContracts = useCallback(async (cursorId?: string) => {
     setIsLoading(true);
@@ -38,20 +37,14 @@ export function MonitoredContracts({ }: MonitoredContractsProps) {
         setIsLoading(false);
         return;
       }
-      const response = await getPaymentSource({
-        client: apiClient,
-        query: {
-          take: 10,
-          ...(cursorId && { cursorId })
-        }
-      });
+      const response = await getPaymentSources(state.apiKey!, 10, cursorId);
 
       const data = response.data;
 
-      if (data?.data?.paymentSources) {
-        setContracts(cursorId ? [...contracts, ...data?.data?.paymentSources] : data?.data?.paymentSources);
-        setHasMore(data?.data?.paymentSources.length === 10);
-        setCursor(data?.data?.paymentSources[data?.data?.paymentSources.length - 1]?.id || null);
+      if (data?.paymentSources) {
+        setContracts(cursorId ? [...contracts, ...data?.paymentSources] : data?.paymentSources);
+        setHasMore(data?.paymentSources.length === 10);
+        setCursor(data?.paymentSources[data?.paymentSources.length - 1]?.id || null);
         setIsLoading(false);
       }
     } catch (error) {
@@ -59,7 +52,7 @@ export function MonitoredContracts({ }: MonitoredContractsProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [hasMore, apiClient, contracts]);
+  }, [contracts, state.apiKey, hasMore]);
 
   useEffect(() => {
     fetchContracts();
@@ -114,11 +107,19 @@ export function MonitoredContracts({ }: MonitoredContractsProps) {
                   <TableRow key={contract.id}>
                     <TableCell className="font-medium">
                       <Link href={`/contract/${contract.id}`} className="hover:underline">
-                        {shortenAddress(contract.smartContractAddress || '')}
+                        {shortenAddress(contract.paymentContractAddress || contract.smartContractAddress || '')}
                       </Link>
                     </TableCell>
                     <TableCell>{contract.network}</TableCell>
                     <TableCell>{contract.paymentType}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${contract.isSyncing === true
+                        ? 'bg-blue-500/20 text-blue-500'
+                        : 'bg-green-500/20 text-green-500'
+                        }`}>
+                        {contract.isSyncing === true ? 'Syncing' : 'Active'}
+                      </span>
+                    </TableCell>
                     <TableCell>{new Date(contract.createdAt).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}

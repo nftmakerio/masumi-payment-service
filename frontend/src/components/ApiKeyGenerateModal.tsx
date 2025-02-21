@@ -5,6 +5,7 @@ import { useAppContext } from "@/lib/contexts/AppContext";
 import { toast } from 'react-toastify';
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { createApiKey } from "@/lib/api/api-keys/create";
 
 type UsageCredit = {
   unit: string;
@@ -32,22 +33,12 @@ export function ApiKeyGenerateModal({
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/api-keys/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.apiKey}`
-        },
-        body: JSON.stringify({
-          usageLimited: usageLimited.toString(),
-          UsageCredits: usageLimited ? usageCredits : undefined,
-          permission: "ADMIN"
-        })
+      await createApiKey(state.apiKey!, {
+        name: "API Key",
+        description: "API Key for the payment API"
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate API key');
-      }
+
 
       toast.success('API key generated successfully');
       onSuccess();

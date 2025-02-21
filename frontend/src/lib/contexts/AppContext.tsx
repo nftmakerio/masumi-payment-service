@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext, useReducer, useState, useCallback } from 'react';
 import { ErrorDialog } from '@/components/ui/error-dialog';
-import { Client, createClient } from '@hey-api/client-axios';
-
 
 interface AppState {
   paymentSources: {
     id: string;
     name: string;
     paymentContractAddress: string;
+    smartContractAddress: string;
     network: string;
     paymentType: string;
     NetworkHandlerConfig: {
@@ -89,28 +88,23 @@ export const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
   showError: (error: { code?: number; message: string; details?: unknown }) => void;
-  apiClient: Client;
-  setApiClient: React.Dispatch<React.SetStateAction<Client>>;
 } | undefined>(undefined);
 
 export function AppProvider({ children, initialState }: { children: React.ReactNode; initialState: AppState }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const [error, setError] = useState<{ code?: number; message: string; details?: unknown } | null>(null);
-  const [apiClient, setApiClient] = useState(createClient({
-    baseURL: process.env.NEXT_PUBLIC_PAYMENT_API_BASE_URL,
-  }));
 
   const showError = useCallback((error: { code?: number; message: string; details?: unknown }) => {
     setError(error);
   }, []);
 
   return (
-    <AppContext.Provider value={{ state, dispatch, showError, apiClient, setApiClient }}>
+    <AppContext.Provider value={{ state, dispatch, showError }}>
       {children}
-      <ErrorDialog
-        open={!!error}
-        onClose={() => setError(null)}
-        error={error || { message: '' }}
+      <ErrorDialog 
+        open={!!error} 
+        onClose={() => setError(null)} 
+        error={error || { message: '' }} 
       />
     </AppContext.Provider>
   );

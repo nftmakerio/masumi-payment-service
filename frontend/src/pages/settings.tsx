@@ -10,22 +10,32 @@ import { toast } from "react-toastify";
 import { ApiKeyGenerateModal } from "@/components/ApiKeyGenerateModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { getApiKey, GetApiKeyResponse, deleteApiKey, patchApiKey } from "@/lib/api/generated";
-
+import { deleteApiKey } from "@/lib/api/api-keys/delete";
+import { updateApiKey } from "@/lib/api/api-keys/update";
+import { listApiKeys } from "@/lib/api/api-keys";
+type ApiKey = {
+  apiKey: string;
+  permission: "ADMIN" | "USER";
+  usageLimited: boolean;
+  RemainingUsageCredits?: {
+    unit: string;
+    amount: number;
+  }[];
+  status: "ACTIVE" | "INACTIVE";
+};
 
 export default function Settings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const { state, dispatch } = useAppContext();
   const router = useRouter();
-  const [apiKeys, setApiKeys] = useState<GetApiKeyResponse['data']['apiKeys']>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedKey, setSelectedKey] = useState<GetApiKeyResponse['data']['apiKeys'][0] | null>(null);
-  const { apiClient } = useAppContext();
+  const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null);
 
   const fetchApiKeys = useCallback(async (cursorId?: string) => {
     setIsLoading(true);
@@ -33,43 +43,41 @@ export default function Settings() {
     try {
 
 
-      const response = await getApiKey({
-        client: apiClient,
-        query: {
-          limit: 10,
-          cursorApiKey: cursorId
-        }
-      })
+      const response = await listApiKeys(state.apiKey!, {
+        limit: 10,
+        ...(cursorId && { cursorApiKey: cursorId })
+      });
 
-
-      const data = response?.data?.data?.apiKeys;
+      const data = response?.keys;
 
       const newKeys = data || [];
 
+      console.log("response", data);
+
       setApiKeys(prevKeys => {
         if (cursorId) {
-          const existingIds = new Set(prevKeys.map((key) => key.token));
-          const uniqueNewKeys = newKeys.filter((key) => !existingIds.has(key.token));
+          const existingIds = new Set(prevKeys.map((key) => key.apiKey));
+          const uniqueNewKeys = newKeys.filter((key) => !existingIds.has(key.apiKey));
           return [...prevKeys, ...uniqueNewKeys];
         }
         return newKeys;
       });
 
       setHasMore(newKeys.length === 10);
-      setCursor(newKeys[newKeys.length - 1]?.token || null);
+      setCursor(newKeys[newKeys.length - 1]?.apiKey || null);
     } catch (error) {
       console.error('Failed to fetch API keys:', error);
       toast.error('Failed to fetch API keys');
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient]);
+  }, [state.apiKey]);
 
   useEffect(() => {
     fetchApiKeys();
   }, [fetchApiKeys]);
 
-  const handleKeyClick = (keyDetails: GetApiKeyResponse['data']['apiKeys'][0]) => {
+  const handleKeyClick = (keyDetails: ApiKey) => {
     console.log(keyDetails);
   };
 
@@ -93,12 +101,7 @@ export default function Settings() {
 
   const handleDeleteApiKey = async (apiKey: string) => {
     try {
-      await deleteApiKey({
-        client: apiClient,
-        body: {
-          token: apiKey
-        }
-      })
+      await deleteApiKey(state.apiKey!, { apiKey });
 
       await fetchApiKeys();
       toast.success('API key deleted successfully');
@@ -112,7 +115,7 @@ export default function Settings() {
     if (!selectedKey) return;
 
     try {
-      await handleDeleteApiKey(selectedKey.token);
+      await handleDeleteApiKey(selectedKey.apiKey);
       setShowDeleteModal(false);
       setSelectedKey(null);
     } catch (error) {
@@ -186,20 +189,20 @@ export default function Settings() {
                   <tbody>
                     {apiKeys.map((key) => (
                       <tr
-                        key={key.token}
+                        key={key.apiKey}
                         className="hover:bg-secondary cursor-pointer"
                         onClick={() => handleKeyClick(key)}
                       >
                         <td className="py-2">{key.permission}</td>
                         <td
                           className="py-2 font-mono"
-                          onMouseEnter={() => setHoveredKey(key.token)}
+                          onMouseEnter={() => setHoveredKey(key.apiKey)}
                           onMouseLeave={() => setHoveredKey(null)}
                         >
-                          {hoveredKey === key.token ? key.token : "•".repeat(32)}
+                          {hoveredKey === key.apiKey ? key.apiKey : "•".repeat(32)}
                         </td>
                         <td className="py-2">
-                          <span className={`px-2 py-1 rounded-full text-sm ${key.status === "Active"
+                          <span className={`px-2 py-1 rounded-full text-sm ${key.status?.toLowerCase() === "active"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-300 text-red-800"
                             }`}>
@@ -302,17 +305,13 @@ export default function Settings() {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Switch
-                checked={selectedKey?.status === "Active"}
+                checked={selectedKey?.status === "ACTIVE"}
                 onCheckedChange={async () => {
                   if (!selectedKey) return;
                   try {
-                    await patchApiKey({
-                      client: apiClient,
-                      body: {
-                        token: selectedKey.token,
-                        status: selectedKey.status === "Active" ? "Revoked" : "Active"
-                      }
-                    })
+                    await updateApiKey(state.apiKey!, {
+                      apiKey: selectedKey.apiKey,
+                    });
                     await fetchApiKeys();
                     setShowUpdateModal(false);
                     setSelectedKey(null);

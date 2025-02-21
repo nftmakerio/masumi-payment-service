@@ -8,14 +8,50 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAppContext } from "@/lib/contexts/AppContext";
-import { getPayment, getPurchase } from "@/lib/api/generated";
+import { getTransactions } from "@/lib/api/transactions";
+import { Pagination } from "../ui/pagination";
 
 type TransactionType = string;
 
+type Transaction = {
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+  status: string;
+  txHash?: string;
+  utxo?: string;
+  errorType?: string;
+  errorNote?: string;
+  errorRequiresManualReview?: boolean;
+  identifier: string;
+  sellingWallet: {
+    walletAddress: string;
+    note?: string;
+  };
+  collectionWallet: {
+    walletAddress: string;
+    note?: string;
+  };
+  buyerWallet?: {
+    walletAddress: string;
+    note?: string;
+  };
+  amounts: {
+    amount: number;
+  }[];
+  checkedBy?: {
+    network: string;
+    paymentType: string;
+  };
+  networkHandler: {
+    network: string;
+    paymentType: string;
+  };
+}
 
 type TransactionListProps = {
   contractAddress?: string;
-  network: "Preprod" | "Mainnet";
+  network?: string;
   paymentType?: string;
   walletAddress?: string;
 }
@@ -37,64 +73,49 @@ const formatStatus = (status: string) => {
 };
 
 export function ContractTransactionList({ contractAddress, network, paymentType }: TransactionListProps) {
-  const [transactions, setTransactions] = useState<{ id: string; createdAt: string; updatedAt: string; blockchainIdentifier: string; lastCheckedAt: string | null; submitResultTime: string; unlockTime: string; refundTime: string; requestedById: string; onChainState: "FundsLocked" | "FundsOrDatumInvalid" | "ResultSubmitted" | "RefundRequested" | "Disputed" | "Withdrawn" | "RefundWithdrawn" | "DisputedWithdrawn"; resultHash: string; NextAction: { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "SubmitResultRequested" | "SubmitResultInitiated" | "WithdrawRequested" | "WithdrawInitiated" | "AuthorizeRefundRequested" | "AuthorizeRefundInitiated"; errorType: "NetworkError" | "Unknown"; errorNote: string | null; } | { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "FundsLockingRequested" | "FundsLockingInitiated" | "SetRefundRequestedRequested" | "SetRefundRequestedInitiated" | "UnSetRefundRequestedRequested" | "UnSetRefundRequestedInitiated" | "WithdrawRefundRequested" | "WithdrawRefundInitiated"; errorType: "NetworkError" | "InsufficientFunds" | "Unknown"; errorNote: string | null; }; CurrentTransaction: { id: string; createdAt: string; updatedAt: string; txHash: string | null; } | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; } | null; TransactionHistory: { id: string; createdAt: string; updatedAt: string; txHash: string | null; }[] | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; }[] | null; Amounts: { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[] | { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[]; PaymentSource: { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; } | { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; }; SellerWallet?: { id: string; walletVkey: string; } | null; SmartContractWallet: { id: string; walletVkey: string; walletAddress: string; } | { id: string; walletVkey: string; walletAddress: string; } | null; metadata: string | null; type: string; BuyerWallet?: { id: string; walletVkey: string; } | null; }[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [cursorIdentifier, setCursorIdentifier] = useState<string | null>(null);
   const [filter, setFilter] = useState<TransactionType>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTransaction, setSelectedTransaction] = useState<{ id: string; createdAt: string; updatedAt: string; blockchainIdentifier: string; lastCheckedAt: string | null; submitResultTime: string; unlockTime: string; refundTime: string; requestedById: string; onChainState: "FundsLocked" | "FundsOrDatumInvalid" | "ResultSubmitted" | "RefundRequested" | "Disputed" | "Withdrawn" | "RefundWithdrawn" | "DisputedWithdrawn"; resultHash: string; NextAction: { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "SubmitResultRequested" | "SubmitResultInitiated" | "WithdrawRequested" | "WithdrawInitiated" | "AuthorizeRefundRequested" | "AuthorizeRefundInitiated"; errorType: "NetworkError" | "Unknown"; errorNote: string | null; } | { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "FundsLockingRequested" | "FundsLockingInitiated" | "SetRefundRequestedRequested" | "SetRefundRequestedInitiated" | "UnSetRefundRequestedRequested" | "UnSetRefundRequestedInitiated" | "WithdrawRefundRequested" | "WithdrawRefundInitiated"; errorType: "NetworkError" | "InsufficientFunds" | "Unknown"; errorNote: string | null; }; CurrentTransaction: { id: string; createdAt: string; updatedAt: string; txHash: string | null; } | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; } | null; TransactionHistory: { id: string; createdAt: string; updatedAt: string; txHash: string | null; }[] | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; }[] | null; Amounts: { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[] | { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[]; PaymentSource: { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; } | { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; }; SellerWallet?: { id: string; walletVkey: string; } | null; SmartContractWallet: { id: string; walletVkey: string; walletAddress: string; } | { id: string; walletVkey: string; walletAddress: string; } | null; metadata: string | null; type: string; BuyerWallet?: { id: string; walletVkey: string; } | null; } | null>(null);
-  const { apiClient } = useAppContext();
-
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const { state } = useAppContext();
 
   const fetchTransactions = useCallback(async (cursor?: string) => {
     setIsLoading(true);
     try {
-      const combined: { id: string; createdAt: string; updatedAt: string; blockchainIdentifier: string; lastCheckedAt: string | null; submitResultTime: string; unlockTime: string; refundTime: string; requestedById: string; onChainState: "FundsLocked" | "FundsOrDatumInvalid" | "ResultSubmitted" | "RefundRequested" | "Disputed" | "Withdrawn" | "RefundWithdrawn" | "DisputedWithdrawn"; resultHash: string; NextAction: { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "SubmitResultRequested" | "SubmitResultInitiated" | "WithdrawRequested" | "WithdrawInitiated" | "AuthorizeRefundRequested" | "AuthorizeRefundInitiated"; errorType: "NetworkError" | "Unknown"; errorNote: string | null; } | { requestedAction: "None" | "Ignore" | "WaitingForManualAction" | "WaitingForExternalAction" | "FundsLockingRequested" | "FundsLockingInitiated" | "SetRefundRequestedRequested" | "SetRefundRequestedInitiated" | "UnSetRefundRequestedRequested" | "UnSetRefundRequestedInitiated" | "WithdrawRefundRequested" | "WithdrawRefundInitiated"; errorType: "NetworkError" | "InsufficientFunds" | "Unknown"; errorNote: string | null; }; CurrentTransaction: { id: string; createdAt: string; updatedAt: string; txHash: string | null; } | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; } | null; TransactionHistory: { id: string; createdAt: string; updatedAt: string; txHash: string | null; }[] | { id: string; createdAt: string; updatedAt: string; txHash: string; status: "Pending" | "Confirmed" | "FailedViaTimeout"; }[] | null; Amounts: { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[] | { id: string; createdAt: string; updatedAt: string; amount: string; unit: string; }[]; PaymentSource: { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; } | { id: string; network: "Preprod" | "Mainnet"; smartContractAddress: string; paymentType: "Web3CardanoV1"; }; SellerWallet?: { id: string; walletVkey: string; } | null; SmartContractWallet: { id: string; walletVkey: string; walletAddress: string; } | { id: string; walletVkey: string; walletAddress: string; } | null; metadata: string | null; type: string; BuyerWallet?: { id: string; walletVkey: string; } | null; }[] = [];
-      const purchases = await getPurchase({
-        client: apiClient,
-        query: {
-          network: network,
-          cursorId: cursor,
-          smartContractAddress: contractAddress,
-          includeHistory: "true",
-          limit: 10
-        }
-      });
-      purchases.data?.data?.purchases.forEach((purchase) => {
-        combined.push({
-          type: 'purchase',
-          ...purchase
-        });
+      if (!network) {
+        throw new Error('Network is required');
+      }
+
+      if (!contractAddress) {
+        throw new Error('Contract address is required');
+      }
+
+      if (!paymentType) {
+        throw new Error('Payment type is required');
+      }
+
+      const response = await getTransactions(state.apiKey!, {
+        ...(contractAddress && { contractAddress }),
+        ...(network && { network }),
+        ...(paymentType && { paymentType }),
+        ...(cursor && { cursorIdentifier: cursor }),
+        limit: 10
       });
 
-      const payments = await getPayment({
-        client: apiClient,
-        query: {
-          network: network,
-          cursorId: cursor,
-          smartContractAddress: contractAddress,
-          includeHistory: "true",
-          limit: 10
-        }
-      });
-      payments.data?.data?.payments.forEach((payment) => {
-        combined.push({
-          type: 'payment',
-          ...payment
-        });
-      });
+      const newTransactions = response.data as Transaction[];
 
-      const newTransactions = combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setTransactions(prev => cursor ? [...prev, ...newTransactions] : newTransactions);
-      setHasMore(purchases.data?.data?.purchases.length === 10 || payments.data?.data?.payments.length === 10);
-      setCursorIdentifier(newTransactions[newTransactions.length - 1]?.id ?? null);
+      setHasMore(newTransactions.length === 10);
+      setCursorIdentifier(newTransactions[newTransactions.length - 1]?.identifier ?? null);
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient, contractAddress, network]);
+  }, [contractAddress, network, paymentType, state.apiKey]);
 
   useEffect(() => {
     if (contractAddress || network || paymentType) {
@@ -102,26 +123,20 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
     }
   }, [contractAddress, fetchTransactions, network, paymentType]);
 
-  const handleLoadMore = () => {
-    if (cursorIdentifier && !isLoading) {
-      fetchTransactions(cursorIdentifier);
-    }
-  };
-
-  const filteredTransactions = transactions.filter((tx) => {
+  const filteredTransactions = transactions.filter((tx: Transaction) => {
     const matchesFilter =
       filter === 'all' ||
       (filter === 'payments' && tx.type === 'payment') ||
       (filter === 'purchases' && tx.type === 'purchase') ||
-      (filter === 'errors' && tx.NextAction?.errorType);
+      (filter === 'errors' && tx.errorType);
 
     const searchTerm = searchQuery.toLowerCase();
     const matchesSearch =
       !searchQuery ||
-      tx.id.toLowerCase().includes(searchTerm) ||
-      tx.NextAction?.errorNote?.toLowerCase().includes(searchTerm) ||
-      tx.onChainState?.toLowerCase().includes(searchTerm) ||
-      tx.CurrentTransaction?.txHash?.toLowerCase().includes(searchTerm)
+      tx.identifier.toLowerCase().includes(searchTerm) ||
+      tx.status.toLowerCase().includes(searchTerm) ||
+      (tx.txHash && tx.txHash.toLowerCase().includes(searchTerm)) ||
+      (tx.errorNote && tx.errorNote.toLowerCase().includes(searchTerm));
 
     return matchesFilter && matchesSearch;
   });
@@ -209,42 +224,45 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((tx, index: number) => (
+                  {filteredTransactions.map((tx: Transaction, index: number) => (
                     <TableRow
-                      key={tx.id || index}
-                      className={`cursor-pointer ${tx.NextAction?.errorType
+                      key={tx.identifier || index}
+                      className={`cursor-pointer ${tx.errorType
                         ? 'bg-destructive/10 hover:bg-destructive/20'
                         : 'hover:bg-muted/50'
                         }`}
-                      onClick={() => setSelectedTransaction(tx)}
+                      onClick={() => {
+                        setSelectedTransaction(tx)
+                      }}
                     >
                       <TableCell className="font-medium">
-                        {shortenText(tx.id, MAX_ID_LENGTH)}
+                        {tx.identifier ? shortenText(tx.identifier, MAX_ID_LENGTH) : '-'}
                       </TableCell>
                       <TableCell>{tx.type === 'payment' ? 'Payment' : 'Purchase'}</TableCell>
-                      <TableCell className={getStatusColor(tx.onChainState, !!tx.NextAction?.errorType)}>
-                        {formatStatus(tx.onChainState)}
+                      <TableCell className={getStatusColor(tx.status, !!tx.errorType)}>
+                        {tx.status ? formatStatus(tx.status) : '-'}
                       </TableCell>
                       <TableCell>
-                        {tx.Amounts?.[0]?.amount
-                          ? `${(parseInt(tx.Amounts[0].amount) / 1000000).toFixed(2)} ₳`
+                        {tx.amounts?.[0]?.amount
+                          ? `${(tx.amounts[0].amount / 1000000).toFixed(2)} ₳`
                           : '-'}
                       </TableCell>
+                      <TableCell>{tx.networkHandler?.network || tx.checkedBy?.network || '-'}</TableCell>
+                      <TableCell>{tx.networkHandler?.paymentType || tx.checkedBy?.paymentType || '-'}</TableCell>
                       <TableCell className="min-w-[100px]">
-                        {tx.CurrentTransaction?.txHash ? shortenText(tx.CurrentTransaction.txHash, MAX_HASH_LENGTH) : '-'}
+                        {tx.txHash ? shortenText(tx.txHash, MAX_HASH_LENGTH) : '-'}
                       </TableCell>
                       <TableCell>{new Date(tx.createdAt).toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
-                  {hasMore && (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center">
-                        <Button onClick={handleLoadMore}>Load More</Button>
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
+              <Pagination
+                hasMore={hasMore}
+                isLoading={isLoading}
+                onLoadMore={() => cursorIdentifier && fetchTransactions(cursorIdentifier)}
+                className="mt-4 mb-4"
+              />
             </div>
           </div>
         )}
@@ -258,10 +276,10 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <h4 className="font-semibold mb-1">Transaction ID</h4>
+                  <h4 className="font-semibold mb-1">Transaction Identifier</h4>
                   <div className="flex items-center gap-2 bg-muted/30 rounded-md p-2">
                     <p className="text-sm font-mono break-all">
-                      {shortenText(selectedTransaction.id, MAX_ID_LENGTH)}
+                      {selectedTransaction.identifier ? shortenText(selectedTransaction.identifier, MAX_ID_LENGTH) : '-'}
                     </p>
                     <Button
                       variant="ghost"
@@ -269,7 +287,7 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
                       className="h-6 w-6 ml-auto shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigator.clipboard.writeText(selectedTransaction.id);
+                        navigator.clipboard.writeText(selectedTransaction.identifier);
                         toast.success('Transaction ID copied to clipboard!');
                       }}
                     >
@@ -292,31 +310,38 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
                 <div className="grid grid-cols-2 gap-4 rounded-md border p-4 bg-muted/10">
                   <div>
                     <h5 className="text-sm font-medium mb-1">Status</h5>
-                    <p className={`text-sm ${getStatusColor(selectedTransaction.onChainState, !!selectedTransaction.NextAction?.errorType)}`}>
-                      {formatStatus(selectedTransaction.onChainState)}
+                    <p className={`text-sm ${getStatusColor(selectedTransaction.status, !!selectedTransaction.errorType)}`}>
+                      {selectedTransaction.status ? formatStatus(selectedTransaction.status) : '-'}
                     </p>
                   </div>
-
+                  <div>
+                    <h5 className="text-sm font-medium mb-1">Network</h5>
+                    <p className="text-sm">{selectedTransaction.checkedBy?.network || '-'}</p>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-medium mb-1">Payment Type</h5>
+                    <p className="text-sm">{selectedTransaction.checkedBy?.paymentType || '-'}</p>
+                  </div>
                   <div>
                     <h5 className="text-sm font-medium mb-1">Amount</h5>
                     <p className="text-sm">
-                      {selectedTransaction.Amounts?.[0]?.amount
-                        ? `${(parseInt(selectedTransaction.Amounts[0].amount) / 1000000).toFixed(2)} ₳`
+                      {selectedTransaction.amounts?.[0]?.amount
+                        ? `${(selectedTransaction.amounts[0].amount / 1000000).toFixed(2)} ₳`
                         : '-'}
                     </p>
                   </div>
                   <div className="col-span-2">
                     <h5 className="text-sm font-medium mb-1">Transaction Hash</h5>
-                    {selectedTransaction.CurrentTransaction?.txHash ? (
+                    {selectedTransaction.txHash ? (
                       <div className="flex items-center gap-2 bg-muted/30 rounded-md p-2">
-                        <p className="text-sm font-mono break-all">{selectedTransaction.CurrentTransaction.txHash}</p>
+                        <p className="text-sm font-mono break-all">{selectedTransaction.txHash}</p>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 ml-auto shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigator.clipboard.writeText(selectedTransaction.CurrentTransaction?.txHash ?? "");
+                            navigator.clipboard.writeText(selectedTransaction.txHash!);
                             toast.success('Transaction hash copied to clipboard!');
                           }}
                         >
@@ -340,21 +365,26 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
                   <div>
                     <h5 className="text-sm font-medium mb-1">Collection Wallet</h5>
                     <p className="text-sm font-mono break-all">
-                      {selectedTransaction.SmartContractWallet?.walletAddress || '-'}
+                      {selectedTransaction.collectionWallet?.walletAddress || '-'}
                     </p>
+                    {selectedTransaction.collectionWallet?.note && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Note: {selectedTransaction.collectionWallet.note}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>}
-              {selectedTransaction.NextAction?.errorType && (
+              {selectedTransaction.errorType && (
                 <div className="space-y-2">
                   <h4 className="font-semibold">Error Details</h4>
                   <div className="space-y-2 rounded-md bg-destructive/20 p-4">
                     <div className="space-y-1">
-                      <p className="text-sm"><span className="font-medium">Error Type:</span> {selectedTransaction.NextAction.errorType}</p>
-                      {selectedTransaction.NextAction.errorNote && (
-                        <p className="text-sm"><span className="font-medium">Error Note:</span> {selectedTransaction.NextAction.errorNote}</p>
+                      <p className="text-sm"><span className="font-medium">Error Type:</span> {selectedTransaction.errorType}</p>
+                      {selectedTransaction.errorNote && (
+                        <p className="text-sm"><span className="font-medium">Error Note:</span> {selectedTransaction.errorNote}</p>
                       )}
-                      {selectedTransaction.NextAction.requestedAction === "WaitingForManualAction" && (
+                      {selectedTransaction.errorRequiresManualReview && (
                         <p className="text-sm font-medium text-destructive mt-2">⚠️ This error requires manual review</p>
                       )}
                     </div>

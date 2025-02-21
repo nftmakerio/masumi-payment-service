@@ -175,7 +175,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                             {!isCollapsed && (
                               <span className="truncate">
-                                {contract.name || contract.paymentContractAddress?.slice(0, 8) + '...' + contract.paymentContractAddress?.slice(-4) || `Contract ${contract.id.slice(0, 8)}...`}
+                                {contract.name || contract.smartContractAddress?.slice(0, 8) + '...' + contract.smartContractAddress?.slice(-4) || contract.paymentContractAddress?.slice(0, 8) + '...' + contract.paymentContractAddress?.slice(-4) || `Contract ${contract.id.slice(0, 8)}...`}
                               </span>
                             )}
                           </Link>

@@ -12,9 +12,11 @@ import { AddWalletModal } from "@/components/wallet/AddWalletModal";
 import { Input } from "@/components/ui/input";
 import { toast } from 'react-toastify';
 import BlinkingUnderscore from '@/components/BlinkingUnderscore';
+import { updatePaymentSource } from '@/lib/api/update-payment-source';
+import { getPaymentSources } from '@/lib/api/payment-source';
 import { GetStaticProps, GetStaticPaths } from 'next';
-import { deletePaymentSource, getPaymentSource, patchPaymentSource } from '@/lib/api/generated';
-
+import { deletePaymentSource } from '@/lib/api/delete-payment-source';
+import { RegisteredAgents } from '@/components/dashboard/RegisteredAgents';
 
 interface ContractPageProps {
   initialContract: any | null;
@@ -63,7 +65,6 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { apiClient } = useAppContext();
 
   const handleAddWallet = (type: 'purchasing' | 'selling') => {
     setSelectedWalletType(type);
@@ -73,21 +74,17 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
   const handleSaveCollectionWallet = async () => {
     try {
       setIsUpdating(true);
-      //TODO: this is now per wallet
-      alert('not implemented')
-      await patchPaymentSource({
-        client: apiClient,
-        body: {
-          id: contract.id,
-
+      await updatePaymentSource({
+        id: contract.id,
+        CollectionWallet: {
+          walletAddress: collectionWalletAddress,
+          note: collectionWalletNote || undefined
         }
-      });
+      }, state.apiKey!,);
 
-      const sources = await getPaymentSource({
-        client: apiClient,
-      });
+      const sources = await getPaymentSources(state.apiKey!);
 
-      const updatedContract = sources.data?.data?.paymentSources.find((c: any) => c.id === contract.id);
+      const updatedContract = sources.data?.paymentSources.find((c: any) => c.id === contract.id);
 
       if (!updatedContract) {
         throw new Error('Updated contract not found in response');
@@ -128,7 +125,8 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
     try {
       setIsDeleting(true);
       setDeleteError(null);
-      await deletePaymentSource({ client: apiClient, query: { id: contract.id } });
+      console.log('delete-contract id', contract.id)
+      await deletePaymentSource(state.apiKey!, contract.id);
 
       dispatch({
         type: 'SET_PAYMENT_SOURCES',
@@ -147,18 +145,13 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
 
   const handleRemoveWallet = async (type: 'purchasing' | 'selling', walletId: string) => {
     try {
-      await patchPaymentSource({
-        client: apiClient,
-        body: {
-          id: contract.id,
-          [`${type === 'purchasing' ? 'RemovePurchasingWallets' : 'RemoveSellingWallets'}`]: [{ id: walletId }]
-        }
-      });
+      await updatePaymentSource({
+        id: contract.id,
+        [`${type === 'purchasing' ? 'RemovePurchasingWallets' : 'RemoveSellingWallets'}`]: [{ id: walletId }]
+      }, state.apiKey!);
 
-      const sources = await getPaymentSource({
-        client: apiClient,
-      });
-      const updatedContract = sources.data?.data?.paymentSources.find((c: any) => c.id === contract.id);
+      const sources = await getPaymentSources(state.apiKey!);
+      const updatedContract = sources.data?.paymentSources.find((c: any) => c.id === contract.id);
 
       if (!updatedContract) {
         throw new Error('Updated contract not found in response');
@@ -208,13 +201,15 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div>Address: {contract.addressToCheck || contract.paymentContractAddress}</div>
+              <div>Address: {contract.addressToCheck || contract.paymentContractAddress || contract.smartContractAddress}</div>
               <div>Network: {contract.network}</div>
               <div>Status: {contract.isSyncing ? 'Syncing' : 'Active'}</div>
               <div>Date Created: {new Date(contract.createdAt).toLocaleString()}</div>
             </div>
           </CardContent>
         </Card>
+
+        <RegisteredAgents paymentContractAddress={contract.addressToCheck || contract.paymentContractAddress || contract.smartContractAddress} network={contract.network} sellingWallets={contract.SellingWallets} />
 
         <Card>
           <CardHeader>
@@ -323,7 +318,7 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
         </Card>
 
         <ContractTransactionList
-          contractAddress={contract.addressToCheck || contract.paymentContractAddress}
+          contractAddress={contract.addressToCheck || contract.paymentContractAddress || contract.smartContractAddress}
           network={contract.network}
           paymentType={contract.paymentType || "WEB3_CARDANO_V1"}
         />
