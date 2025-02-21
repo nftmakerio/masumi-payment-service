@@ -1,4 +1,3 @@
-
 interface CreateApiKeyResponse {
   status: 'success' | 'error';
   data?: {
@@ -10,6 +9,12 @@ interface CreateApiKeyResponse {
 interface CreateApiKeyRequest {
   name: string;
   description?: string;
+  usageLimited?: boolean;
+  UsageCredits: {
+    unit: string;
+    amount: number;
+  }[];
+  permission?: 'READ' | 'READ_PAY' | 'ADMIN';
 }
 
 export async function createApiKey(token: string, data: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {
@@ -27,7 +32,11 @@ export async function createApiKey(token: string, data: CreateApiKeyRequest): Pr
           'Content-Type': 'application/json',
           'token': token
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          usageLimited: data.usageLimited,
+          UsageCredits: data.UsageCredits,
+          permission: data.permission,
+        })
       }
     );
 

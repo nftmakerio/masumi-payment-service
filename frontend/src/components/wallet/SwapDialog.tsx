@@ -15,7 +15,6 @@ import { getWallet } from "@/lib/api/wallet";
 import { useAppContext } from "@/lib/contexts/AppContext";
 import { toast } from "react-toastify";
 import BlinkingUnderscore from "../BlinkingUnderscore";
-import Image from "next/image";
 interface SwapDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -255,7 +254,7 @@ export function SwapDialog({ isOpen, onClose, walletAddress, network, blockfrost
                           </option>
                         ))}
                       </select>
-                      <Image src={selectedToToken.icon} alt="Token" className="w-6 h-6" />
+                      <img src={selectedToToken.icon} alt="Token" className="w-6 h-6" />
                     </div>
                     <div className="text-xs text-gray-500">
                       Balance: {getBalanceForToken(selectedToToken.symbol).toFixed(6)}

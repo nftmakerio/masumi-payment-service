@@ -35,10 +35,11 @@ export function ApiKeyGenerateModal({
     try {
       await createApiKey(state.apiKey!, {
         name: "API Key",
-        description: "API Key for the payment API"
+        description: "API Key for the payment API",
+        usageLimited,
+        UsageCredits: usageCredits,
+        permission: 'ADMIN'
       });
-
-
 
       toast.success('API key generated successfully');
       onSuccess();
