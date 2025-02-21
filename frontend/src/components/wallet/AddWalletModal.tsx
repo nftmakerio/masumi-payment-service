@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAppContext } from "@/lib/contexts/AppContext";
-import { getPaymentSource, patchPaymentSource } from "@/lib/api/generated";
+import { updatePaymentSource } from "@/lib/api/update-payment-source";
+import { getPaymentSources } from "@/lib/api/payment-source";
 
 type AddWalletModalProps = {
   type: 'purchasing' | 'selling';
@@ -17,7 +18,6 @@ export function AddWalletModal({ type, onClose, contractId }: AddWalletModalProp
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const { state, dispatch } = useAppContext();
-  const { apiClient } = useAppContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,24 +25,19 @@ export function AddWalletModal({ type, onClose, contractId }: AddWalletModalProp
     setIsLoading(true);
 
     try {
-      await patchPaymentSource({
-        client: apiClient,
-        body: {
-          id: contractId,
-          [`${type === 'purchasing' ? 'AddPurchasingWallets' : 'AddSellingWallets'}`]: [
-            {
-              walletMnemonic: mnemonic,
-              note: note || undefined
-            }
-          ]
-        }
-      });
+      await updatePaymentSource({
+        id: contractId,
+        [`${type === 'purchasing' ? 'AddPurchasingWallets' : 'AddSellingWallets'}`]: [
+          {
+            walletMnemonic: mnemonic,
+            note: note || undefined
+          }
+        ]
+      }, state.apiKey!);
 
-      const sourceData = await getPaymentSource({
-        client: apiClient,
-      });
+      const sourceData = await getPaymentSources(state.apiKey!);
 
-      const sources = sourceData?.data?.data?.paymentSources || [];
+      const sources = sourceData?.data?.paymentSources || [];
 
       const updatedContract = sources.find((c: { id: string }) => c.id === contractId);
       if (!updatedContract) {
