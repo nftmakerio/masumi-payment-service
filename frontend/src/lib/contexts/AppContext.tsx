@@ -9,14 +9,9 @@ interface AppState {
     id: string;
     name: string;
     paymentContractAddress: string;
+    smartContractAddress: string;
     network: string;
     paymentType: string;
-    NetworkHandlerConfig: {
-      rpcProviderApiKey: string;
-    };
-    adminWallets: {
-      walletAddress: string;
-    }[];
     collectionWallet: {
       walletAddress: string;
       note?: string;
@@ -35,6 +30,10 @@ interface AppState {
     paymentContractAddress: string;
     network: string;
     paymentType: string;
+    adminWallets: {
+      walletAddress: string;
+      note?: string;
+    }[];
   }[];
   wallets: {
     id: string;
@@ -42,6 +41,14 @@ interface AppState {
     note?: string;
   }[];
   apiKey: string | null;
+  rpcProviderApiKeys: {
+    id: string;
+    rpcProviderApiKey: string;
+    rpcProvider: string;
+    createdAt: string;
+    updatedAt: string;
+    network: string;
+  }[];
 }
 
 type AppAction =
@@ -49,12 +56,13 @@ type AppAction =
   | { type: 'SET_CONTRACTS'; payload: any[] }
   | { type: 'SET_WALLETS'; payload: any[] }
   | { type: 'SET_API_KEY'; payload: string }
-
+  | { type: 'SET_RPC_API_KEYS'; payload: any[] }
 
 const initialAppState: AppState = {
   paymentSources: [],
   contracts: [],
   wallets: [],
+  rpcProviderApiKeys: [],
   apiKey: null,
 };
 
@@ -79,6 +87,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         apiKey: action.payload
+      };
+    case 'SET_RPC_API_KEYS':
+      return {
+        ...state,
+        rpcProviderApiKeys: action.payload
       };
     default:
       return state;

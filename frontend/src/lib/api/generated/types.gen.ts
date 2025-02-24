@@ -1349,73 +1349,6 @@ export type PostPurchaseCancelRefundRequestResponses = {
 export type PostPurchaseCancelRefundRequestResponse =
   PostPurchaseCancelRefundRequestResponses[keyof PostPurchaseCancelRefundRequestResponses];
 
-export type GetRegistryWalletData = {
-  body?: never;
-  path?: never;
-  query: {
-    /**
-     * The payment key of the wallet to be queried
-     */
-    walletVKey: string;
-    /**
-     * The Cardano network used to register the agent on
-     */
-    network: 'Preprod' | 'Mainnet';
-    /**
-     * The smart contract address of the payment source to which the registration belongs
-     */
-    smartContractAddress?: string;
-  };
-  url: '/registry/wallet';
-};
-
-export type GetRegistryWalletResponses = {
-  /**
-   * Agent metadata
-   */
-  200: {
-    status: string;
-    data: {
-      assets: Array<{
-        policyId: string;
-        assetName: string;
-        agentIdentifier: string;
-        metadata: {
-          name: string;
-          description?: string | null;
-          apiUrl: string;
-          exampleOutput?: string | null;
-          tags: Array<string>;
-          requestsPerHour?: string | null;
-          capability: {
-            name: string;
-            version: string;
-          };
-          author: {
-            name: string;
-            contact?: string | null;
-            organization?: string | null;
-          };
-          legal?: {
-            privacyPolicy?: string | null;
-            terms?: string | null;
-            other?: string | null;
-          } | null;
-          pricing: Array<{
-            quantity: number;
-            unit: string;
-          }>;
-          image: string;
-          metadataVersion: number;
-        };
-      }>;
-    };
-  };
-};
-
-export type GetRegistryWalletResponse =
-  GetRegistryWalletResponses[keyof GetRegistryWalletResponses];
-
 export type DeleteRegistryData = {
   body?: never;
   path?: never;
@@ -1423,7 +1356,7 @@ export type DeleteRegistryData = {
     /**
      * The identifier of the registration (asset) to be deregistered
      */
-    assetIdentifier: string;
+    assetName: string;
     /**
      * The network the registration was made on
      */
@@ -1443,14 +1376,13 @@ export type DeleteRegistryResponses = {
   200: {
     status: string;
     data: {
-      id: string;
       name: string;
-      apiUrl: string;
-      capabilityName: string;
-      capabilityVersion: string;
+      api_url: string;
+      capability_name: string;
+      capability_version: string;
       description: string | null;
-      requestsPerHour: string | null;
-      privacyPolicy: string | null;
+      requests_per_hour: string | null;
+      privacy_policy: string | null;
       terms: string | null;
       other: string | null;
       tags: Array<string>;
@@ -1483,9 +1415,9 @@ export type GetRegistryData = {
   path?: never;
   query: {
     /**
-     * The cursor id to paginate through the results
+     * The payment key of the wallet to be queried
      */
-    cursorId?: string;
+    walletVKey: string;
     /**
      * The Cardano network used to register the agent on
      */
@@ -1506,40 +1438,36 @@ export type GetRegistryResponses = {
     status: string;
     data: {
       assets: Array<{
-        id: string;
-        name: string;
-        description: string | null;
-        apiUrl: string;
-        capabilityName: string;
-        capabilityVersion: string;
-        requestsPerHour: string | null;
-        authorName: string;
-        authorContact: string | null;
-        authorOrganization: string | null;
-        privacyPolicy: string | null;
-        terms: string | null;
-        other: string | null;
-        state:
-          | 'RegistrationRequested'
-          | 'RegistrationInitiated'
-          | 'RegistrationConfirmed'
-          | 'RegistrationFailed'
-          | 'DeregistrationRequested'
-          | 'DeregistrationInitiated'
-          | 'DeregistrationConfirmed'
-          | 'DeregistrationFailed';
-        tags: Array<string>;
-        createdAt: string;
-        updatedAt: string;
-        lastCheckedAt: string | null;
-        agentIdentifier: string | null;
-        Pricing: Array<{
-          unit: string;
-          quantity: string;
-        }>;
-        SmartContractWallet: {
-          walletVkey: string;
-          walletAddress: string;
+        policyId: string;
+        assetName: string;
+        agentIdentifier: string;
+        metadata: {
+          name: string;
+          description?: string | null;
+          api_url: string;
+          example_output?: string | null;
+          tags: Array<string>;
+          requests_per_hour?: string | null;
+          capability: {
+            name: string;
+            version: string;
+          };
+          author: {
+            name: string;
+            contact?: string | null;
+            organization?: string | null;
+          };
+          legal?: {
+            privacy_policy?: string | null;
+            terms?: string | null;
+            other?: string | null;
+          } | null;
+          pricing: Array<{
+            quantity: number;
+            unit: string;
+          }>;
+          image: string;
+          metadata_version: number;
         };
       }>;
     };
@@ -1566,7 +1494,7 @@ export type PostRegistryData = {
     /**
      * Link to a example output of the agent
      */
-    exampleOutput?: string;
+    example_output?: string;
     /**
      * Tags used in the registry metadata
      */
@@ -1578,7 +1506,7 @@ export type PostRegistryData = {
     /**
      * Base URL of the agent, to request interactions
      */
-    apiUrl: string;
+    api_url: string;
     /**
      * Description of the agent
      */
@@ -1593,7 +1521,7 @@ export type PostRegistryData = {
     /**
      * The request the agent can handle per hour
      */
-    requestsPerHour: string;
+    requests_per_hour: string;
     /**
      * Price for a default interaction
      */
@@ -1605,7 +1533,7 @@ export type PostRegistryData = {
      * Legal information about the agent
      */
     legal?: {
-      privacyPolicy?: string;
+      privacy_policy?: string;
       terms?: string;
       other?: string;
     };
@@ -1630,14 +1558,13 @@ export type PostRegistryResponses = {
   200: {
     status: string;
     data: {
-      id: string;
       name: string;
-      apiUrl: string;
-      capabilityName: string;
-      capabilityVersion: string;
+      api_url: string;
+      capability_name: string;
+      capability_version: string;
       description: string | null;
-      requestsPerHour: string | null;
-      privacyPolicy: string | null;
+      requests_per_hour: string | null;
+      privacy_policy: string | null;
       terms: string | null;
       other: string | null;
       tags: Array<string>;

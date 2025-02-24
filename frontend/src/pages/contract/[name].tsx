@@ -75,6 +75,7 @@ export default function ContractPage({ initialContract }: ContractPageProps) {
       setIsUpdating(true);
       //TODO: this is now per wallet
       alert('not implemented')
+      return;
       await patchPaymentSource({
         client: apiClient,
         body: {

@@ -9,7 +9,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useRouter } from 'next/router';
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
-import { getHealth, getPaymentSource } from "@/lib/api/generated";
+import { getHealth, getPaymentSource, getRpcApiKeys } from "@/lib/api/generated";
 
 function InitializeApp() {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
@@ -38,6 +38,20 @@ function InitializeApp() {
     } catch (error) {
       console.error('Failed to fetch payment sources:', error);
       toast.error('Error fetching payment sources. Please try again later.');
+    }
+  }, [apiClient, dispatch]);
+
+  const fetchRpcApiKeys = useCallback(async () => {
+    try {
+      const response = await getRpcApiKeys({
+        client: apiClient,
+      });
+
+      const rpcKeys = response.data?.rpcProviderKeys || [];
+      dispatch({ type: 'SET_RPC_API_KEYS', payload: rpcKeys });
+    } catch (error) {
+      console.error('Failed to fetch RPC API keys:', error);
+      toast.error('Error fetching RPC API keys. Please try again later.');
     }
   }, [apiClient, dispatch]);
 
@@ -77,6 +91,12 @@ function InitializeApp() {
       fetchPaymentSources();
     }
   }, [router.pathname, isHealthy, fetchPaymentSources, state.apiKey, state.paymentSources?.length]);
+
+  useEffect(() => {
+    if (isHealthy && state.apiKey) {
+      fetchRpcApiKeys();
+    }
+  }, [isHealthy, state.apiKey, fetchRpcApiKeys]);
 
   if (isHealthy === null) {
     return <div className="flex items-center justify-center bg-[#000] fixed top-0 left-0 w-full h-full z-50">

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import BlinkingUnderscore from "../BlinkingUnderscore";
 import { TransakWidget } from './TransakWidget';
 import { getUtxos, getWallet } from "@/lib/api/generated";
+import { SwapDialog } from "./SwapDialog";
 
 export function WalletCard({
   type,
@@ -59,9 +60,15 @@ export function WalletCard({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [walletSecret, setWalletSecret] = useState<string | null>(null);
   const [showTransak, setShowTransak] = useState(false);
+  const [showSwapDialog, setShowSwapDialog] = useState(false);
   const { apiClient } = useAppContext();
 
   const walletType = type === 'selling' ? 'Selling' : 'Purchasing';
+
+  const networkRpcProviderApiKey = contract.network?.toLowerCase() === "preprod" ? process.env.NEXT_PUBLIC_PREPROD_BLOCKFROST_API_KEY : process.env.NEXT_PUBLIC_DEV_BLOCKFROST_API_KEY;
+
+  const rpcProviderApiKey = contract?.NetworkHandlerConfig?.rpcProviderApiKey || state.rpcProviderApiKeys?.find(key => key.network === contract.network)?.rpcProviderApiKey || networkRpcProviderApiKey || "";
+
 
   const fetchWalletAddress = useCallback(async () => {
     try {
@@ -299,6 +306,9 @@ export function WalletCard({
               <Button variant="secondary" size="sm" onClick={handleExport} disabled={isExporting}>
                 {isExporting ? 'Exporting...' : 'Export'}
               </Button>
+              <Button variant="secondary" size="sm" onClick={() => setShowSwapDialog(true)}>
+                Swap
+              </Button>
             </>
           )}
         </div>
@@ -407,6 +417,16 @@ export function WalletCard({
           }}
         />
       )}
+
+      <SwapDialog
+        isOpen={showSwapDialog}
+        onClose={() => setShowSwapDialog(false)}
+        walletAddress={localAddress || ''}
+        network={contract.network}
+        blockfrostApiKey={rpcProviderApiKey}
+        walletType={type}
+        walletId={walletId || ''}
+      />
     </>
   );
 }

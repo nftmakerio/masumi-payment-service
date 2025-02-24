@@ -79,7 +79,7 @@ export function ImportWalletModal({ type, onClose }: ImportWalletModalProps) {
               className="w-full p-2 rounded-md bg-background border min-h-[100px]"
               value={importData.seedPhrase}
               onChange={(e) => setImportData({ ...importData, seedPhrase: e.target.value })}
-              placeholder="Enter your 24-word seed phrase"
+              placeholder="Enter your seed phrase"
               required
             />
           </div>

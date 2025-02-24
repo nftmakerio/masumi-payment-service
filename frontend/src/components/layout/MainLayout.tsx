@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -54,6 +56,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   const isContractActive = (contractId: string) => {
     return router.pathname === `/contract/${contractId}`;
   };
+
+  useEffect(() => {
+    console.log(state)
+  }, []);
 
   return (
     <>
@@ -175,7 +181,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                             </div>
                             {!isCollapsed && (
                               <span className="truncate">
-                                {contract.name || contract.paymentContractAddress?.slice(0, 8) + '...' + contract.paymentContractAddress?.slice(-4) || `Contract ${contract.id.slice(0, 8)}...`}
+                                {contract.name || contract.smartContractAddress?.slice(0, 8) + '...' + contract.smartContractAddress?.slice(-4) || contract.paymentContractAddress?.slice(0, 8) + '...' + contract.paymentContractAddress?.slice(-4) || `Contract ${contract.id.slice(0, 8)}...`}
                               </span>
                             )}
                           </Link>
