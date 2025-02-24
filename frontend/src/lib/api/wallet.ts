@@ -27,21 +27,21 @@ export interface WalletQuery {
 
 export async function getWallet(
   token: string,
-  params: WalletQuery
+  params: WalletQuery,
 ): Promise<WalletResponse> {
   if (!token) {
-    throw new Error('Authorization token is required')
+    throw new Error('Authorization token is required');
   }
 
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_PAYMENT_API_BASE_URL}/api/v1/wallet/?${new URLSearchParams(params as Record<string, string>).toString()}`,
+      `${process.env.NEXT_PUBLIC_PAYMENT_API_BASE_URL}/wallet/?${new URLSearchParams(params as Record<string, string>).toString()}`,
       {
         headers: {
-          'accept': 'application/json',
-          'token': token
-        }
-      }
+          accept: 'application/json',
+          token: token,
+        },
+      },
     );
 
     const res = await response.json();
@@ -53,7 +53,7 @@ export async function getWallet(
 
     return {
       status: 'success',
-      data
+      data,
     };
   } catch (error) {
     console.error('Error fetching wallet data:', error);
@@ -63,16 +63,19 @@ export async function getWallet(
 
 export async function createWallet(
   token: string,
-  params: WalletQuery
+  params: WalletQuery,
 ): Promise<WalletResponse> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_PAYMENT_API_BASE_URL}/api/v1/wallet/`, {
-      method: 'POST',
-      headers: {
-        'token': token
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_PAYMENT_API_BASE_URL}/api/v1/wallet/`,
+      {
+        method: 'POST',
+        headers: {
+          token: token,
+        },
+        body: JSON.stringify(params),
       },
-      body: JSON.stringify(params)
-    });
+    );
     const data = await response.json();
     return data;
   } catch (error) {
