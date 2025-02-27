@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useAppContext } from '@/lib/contexts/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useRouter } from 'next/router';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/router';
 export function AdminWalletSection({ contractId }: { contractId: string }) {
   const { state } = useAppContext();
   const router = useRouter();
-  const contract = state.paymentSources?.find((c) => c.id === contractId || c.name === contractId);
+  const contract: any = state.paymentSources?.find((c) => c.id === contractId || c.name === contractId);
 
   if (!contract) return null;
 
@@ -20,7 +21,7 @@ export function AdminWalletSection({ contractId }: { contractId: string }) {
           <CardTitle>Admin Wallets</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
-          {contract.adminWallets.map((wallet: { walletAddress: string }, index: number) => (
+          {contract?.adminWallets?.map((wallet: { walletAddress: string }, index: number) => (
             <Card
               key={wallet.walletAddress}
               className="bg-[#fff1] hover:bg-[#fff2] cursor-pointer transition-colors"

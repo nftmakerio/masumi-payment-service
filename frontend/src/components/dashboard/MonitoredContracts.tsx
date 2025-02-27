@@ -66,8 +66,8 @@ export function MonitoredContracts({ }: MonitoredContractsProps) {
   }, [fetchContracts]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleRowClick = (contractName: string) => {
-    router.push(`/contract/${contractName}`);
+  const handleRowClick = (contractId: string) => {
+    router.push(`/contract/${contractId}`);
   };
 
   const handleAddContract = () => {
@@ -101,17 +101,16 @@ export function MonitoredContracts({ }: MonitoredContractsProps) {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead>Contract Address</TableHead>
                   <TableHead>Network</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Created At</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {contracts.map((contract) => (
-                  <TableRow key={contract.id}>
+                  <TableRow key={contract.id} className="cursor-pointer hover:bg-transparent" onClick={() => handleRowClick(contract.id)}>
                     <TableCell className="font-medium">
                       <Link href={`/contract/${contract.id}`} className="hover:underline">
                         {shortenAddress(contract.smartContractAddress || '')}

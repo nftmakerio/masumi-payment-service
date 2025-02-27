@@ -216,19 +216,27 @@ export function ContractTransactionList({ contractAddress, network, paymentType 
                         ? 'bg-destructive/10 hover:bg-destructive/20'
                         : 'hover:bg-muted/50'
                         }`}
-                      onClick={() => setSelectedTransaction(tx)}
+                      onClick={() => {
+                        setSelectedTransaction(tx)
+                      }}
                     >
                       <TableCell className="font-medium">
                         {shortenText(tx.id, MAX_ID_LENGTH)}
                       </TableCell>
                       <TableCell>{tx.type === 'payment' ? 'Payment' : 'Purchase'}</TableCell>
                       <TableCell className={getStatusColor(tx.onChainState, !!tx.NextAction?.errorType)}>
-                        {formatStatus(tx.onChainState)}
+                        {formatStatus(tx.onChainState) || '-'}
                       </TableCell>
                       <TableCell>
-                        {tx.Amounts?.[0]?.amount
-                          ? `${(parseInt(tx.Amounts[0].amount) / 1000000).toFixed(2)} ₳`
+                        {tx.Amounts?.length
+                          ? `${(tx.Amounts.reduce((sum, amt) => sum + parseInt(amt.amount), 0) / 1000000).toFixed(2)} ₳`
                           : '-'}
+                      </TableCell>
+                      <TableCell className="min-w-[100px]">
+                        {tx.PaymentSource?.network}
+                      </TableCell>
+                      <TableCell className="min-w-[100px]">
+                        {tx.PaymentSource?.paymentType}
                       </TableCell>
                       <TableCell className="min-w-[100px]">
                         {tx.CurrentTransaction?.txHash ? shortenText(tx.CurrentTransaction.txHash, MAX_HASH_LENGTH) : '-'}

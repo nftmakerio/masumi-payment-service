@@ -3,7 +3,6 @@ import { GetStaticProps } from 'next';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface WalletsProps {
-  // Add props if needed in the future
 }
 
 export const getStaticProps: GetStaticProps<WalletsProps> = async () => {

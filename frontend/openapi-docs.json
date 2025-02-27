@@ -1520,7 +1520,7 @@
                                                 "format": "date-time"
                                             }
                                         ],
-                                        "default": "2025-02-23T23:03:36.362Z",
+                                        "default": "2025-02-23T18:19:37.520Z",
                                         "description": "The time after which the payment has to be submitted to the smart contract"
                                     },
                                     "unlockTime": {
@@ -4154,7 +4154,7 @@
                 }
             }
         },
-        "/registry/wallet": {
+        "/registry/": {
             "get": {
                 "description": "Gets the agent metadata.",
                 "summary": "REQUIRES API KEY Authentication (+READ)",
@@ -4244,11 +4244,11 @@
                                                                         "nullable": true,
                                                                         "maxLength": 250
                                                                     },
-                                                                    "apiUrl": {
+                                                                    "api_url": {
                                                                         "type": "string",
                                                                         "maxLength": 250
                                                                     },
-                                                                    "exampleOutput": {
+                                                                    "example_output": {
                                                                         "type": "string",
                                                                         "nullable": true,
                                                                         "maxLength": 250
@@ -4260,7 +4260,7 @@
                                                                             "maxLength": 250
                                                                         }
                                                                     },
-                                                                    "requestsPerHour": {
+                                                                    "requests_per_hour": {
                                                                         "type": "string",
                                                                         "nullable": true,
                                                                         "maxLength": 250
@@ -4308,7 +4308,7 @@
                                                                         "type": "object",
                                                                         "nullable": true,
                                                                         "properties": {
-                                                                            "privacyPolicy": {
+                                                                            "privacy_policy": {
                                                                                 "type": "string",
                                                                                 "nullable": true,
                                                                                 "maxLength": 250
@@ -4350,7 +4350,7 @@
                                                                         "type": "string",
                                                                         "maxLength": 250
                                                                     },
-                                                                    "metadataVersion": {
+                                                                    "metadata_version": {
                                                                         "type": "integer",
                                                                         "minimum": 1,
                                                                         "maximum": 1
@@ -4358,13 +4358,13 @@
                                                                 },
                                                                 "required": [
                                                                     "name",
-                                                                    "apiUrl",
+                                                                    "api_url",
                                                                     "tags",
                                                                     "capability",
                                                                     "author",
                                                                     "pricing",
                                                                     "image",
-                                                                    "metadataVersion"
+                                                                    "metadata_version"
                                                                 ]
                                                             }
                                                         },
@@ -4397,8 +4397,8 @@
                                                     "metadata": {
                                                         "name": "name",
                                                         "description": "description",
-                                                        "apiUrl": "api_url",
-                                                        "exampleOutput": "example_output",
+                                                        "api_url": "api_url",
+                                                        "example_output": "example_output",
                                                         "tags": [
                                                             "tag1",
                                                             "tag2"
@@ -4413,7 +4413,7 @@
                                                             "organization": "author_organization"
                                                         },
                                                         "legal": {
-                                                            "privacyPolicy": "privacy_policy",
+                                                            "privacy_policy": "privacy_policy",
                                                             "terms": "terms",
                                                             "other": "other"
                                                         },
@@ -4424,271 +4424,7 @@
                                                                 "unit": "unit"
                                                             }
                                                         ],
-                                                        "metadataVersion": 1
-                                                    }
-                                                }
-                                            ]
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/registry/": {
-            "get": {
-                "description": "Gets the agent metadata.",
-                "summary": "REQUIRES API KEY Authentication (+READ)",
-                "tags": [
-                    "registry"
-                ],
-                "security": [
-                    {
-                        "API-Key": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "schema": {
-                            "type": "string",
-                            "description": "The cursor id to paginate through the results"
-                        },
-                        "required": false,
-                        "description": "The cursor id to paginate through the results",
-                        "name": "cursorId",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "Preprod",
-                                "Mainnet"
-                            ],
-                            "description": "The Cardano network used to register the agent on"
-                        },
-                        "required": true,
-                        "description": "The Cardano network used to register the agent on",
-                        "name": "network",
-                        "in": "query"
-                    },
-                    {
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 250,
-                            "description": "The smart contract address of the payment source to which the registration belongs"
-                        },
-                        "required": false,
-                        "description": "The smart contract address of the payment source to which the registration belongs",
-                        "name": "smartContractAddress",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Agent metadata",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "status": {
-                                            "type": "string"
-                                        },
-                                        "data": {
-                                            "type": "object",
-                                            "properties": {
-                                                "assets": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "string"
-                                                            },
-                                                            "name": {
-                                                                "type": "string"
-                                                            },
-                                                            "description": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "apiUrl": {
-                                                                "type": "string"
-                                                            },
-                                                            "capabilityName": {
-                                                                "type": "string"
-                                                            },
-                                                            "capabilityVersion": {
-                                                                "type": "string"
-                                                            },
-                                                            "requestsPerHour": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "authorName": {
-                                                                "type": "string"
-                                                            },
-                                                            "authorContact": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "authorOrganization": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "privacyPolicy": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "terms": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "other": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "state": {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "RegistrationRequested",
-                                                                    "RegistrationInitiated",
-                                                                    "RegistrationConfirmed",
-                                                                    "RegistrationFailed",
-                                                                    "DeregistrationRequested",
-                                                                    "DeregistrationInitiated",
-                                                                    "DeregistrationConfirmed",
-                                                                    "DeregistrationFailed"
-                                                                ]
-                                                            },
-                                                            "tags": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "createdAt": {
-                                                                "type": "string"
-                                                            },
-                                                            "updatedAt": {
-                                                                "type": "string"
-                                                            },
-                                                            "lastCheckedAt": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "agentIdentifier": {
-                                                                "type": "string",
-                                                                "nullable": true
-                                                            },
-                                                            "Pricing": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "type": "object",
-                                                                    "properties": {
-                                                                        "unit": {
-                                                                            "type": "string"
-                                                                        },
-                                                                        "quantity": {
-                                                                            "type": "string"
-                                                                        }
-                                                                    },
-                                                                    "required": [
-                                                                        "unit",
-                                                                        "quantity"
-                                                                    ]
-                                                                }
-                                                            },
-                                                            "SmartContractWallet": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "walletVkey": {
-                                                                        "type": "string"
-                                                                    },
-                                                                    "walletAddress": {
-                                                                        "type": "string"
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "walletVkey",
-                                                                    "walletAddress"
-                                                                ]
-                                                            }
-                                                        },
-                                                        "required": [
-                                                            "id",
-                                                            "name",
-                                                            "description",
-                                                            "apiUrl",
-                                                            "capabilityName",
-                                                            "capabilityVersion",
-                                                            "requestsPerHour",
-                                                            "authorName",
-                                                            "authorContact",
-                                                            "authorOrganization",
-                                                            "privacyPolicy",
-                                                            "terms",
-                                                            "other",
-                                                            "state",
-                                                            "tags",
-                                                            "createdAt",
-                                                            "updatedAt",
-                                                            "lastCheckedAt",
-                                                            "agentIdentifier",
-                                                            "Pricing",
-                                                            "SmartContractWallet"
-                                                        ]
-                                                    }
-                                                }
-                                            },
-                                            "required": [
-                                                "assets"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "status",
-                                        "data"
-                                    ],
-                                    "example": {
-                                        "status": "success",
-                                        "data": {
-                                            "assets": [
-                                                {
-                                                    "id": "asset_id",
-                                                    "name": "name",
-                                                    "description": "description",
-                                                    "apiUrl": "api_url",
-                                                    "capabilityName": "capability_name",
-                                                    "capabilityVersion": "capability_version",
-                                                    "requestsPerHour": "100",
-                                                    "authorName": "author_name",
-                                                    "authorContact": "author_contact",
-                                                    "authorOrganization": "author_organization",
-                                                    "privacyPolicy": "link to privacy policy",
-                                                    "terms": "link to terms",
-                                                    "other": "link to other",
-                                                    "state": "RegistrationRequested",
-                                                    "tags": [
-                                                        "tag1",
-                                                        "tag2"
-                                                    ],
-                                                    "createdAt": "1970-01-20T20:00:36.260Z",
-                                                    "updatedAt": "1970-01-20T20:00:36.260Z",
-                                                    "lastCheckedAt": "1970-01-20T20:00:36.260Z",
-                                                    "agentIdentifier": "agent_identifier",
-                                                    "Pricing": [
-                                                        {
-                                                            "unit": "unit",
-                                                            "quantity": "1000000"
-                                                        }
-                                                    ],
-                                                    "SmartContractWallet": {
-                                                        "walletVkey": "wallet_vkey",
-                                                        "walletAddress": "wallet_address"
+                                                        "metadata_version": 1
                                                     }
                                                 }
                                             ]
@@ -4736,7 +4472,7 @@
                                         "maxLength": 250,
                                         "description": "The payment key of a specific wallet used for the registration"
                                     },
-                                    "exampleOutput": {
+                                    "example_output": {
                                         "type": "string",
                                         "maxLength": 250,
                                         "description": "Link to a example output of the agent"
@@ -4756,7 +4492,7 @@
                                         "maxLength": 250,
                                         "description": "Name of the agent"
                                     },
-                                    "apiUrl": {
+                                    "api_url": {
                                         "type": "string",
                                         "maxLength": 250,
                                         "description": "Base URL of the agent, to request interactions"
@@ -4784,7 +4520,7 @@
                                         ],
                                         "description": "Provide information about the used AI model and version"
                                     },
-                                    "requestsPerHour": {
+                                    "requests_per_hour": {
                                         "type": "string",
                                         "maxLength": 250,
                                         "description": "The request the agent can handle per hour"
@@ -4800,7 +4536,7 @@
                                                 },
                                                 "quantity": {
                                                     "type": "string",
-                                                    "maxLength": 25
+                                                    "maxLength": 55
                                                 }
                                             },
                                             "required": [
@@ -4814,7 +4550,7 @@
                                     "legal": {
                                         "type": "object",
                                         "properties": {
-                                            "privacyPolicy": {
+                                            "privacy_policy": {
                                                 "type": "string",
                                                 "maxLength": 250
                                             },
@@ -4856,23 +4592,23 @@
                                     "sellingWalletVkey",
                                     "tags",
                                     "name",
-                                    "apiUrl",
+                                    "api_url",
                                     "description",
                                     "capability",
-                                    "requestsPerHour",
+                                    "requests_per_hour",
                                     "pricing",
                                     "author"
                                 ],
                                 "example": {
                                     "network": "Preprod",
                                     "smartContractAddress": "addr_test1",
-                                    "exampleOutput": "example_output",
+                                    "example_output": "example_output",
                                     "tags": [
                                         "tag1",
                                         "tag2"
                                     ],
                                     "name": "Agent Name",
-                                    "apiUrl": "https://api.example.com",
+                                    "api_url": "https://api.example.com",
                                     "description": "Agent Description",
                                     "author": {
                                         "name": "Author Name",
@@ -4880,7 +4616,7 @@
                                         "organization": "Author Organization"
                                     },
                                     "legal": {
-                                        "privacyPolicy": "Privacy Policy URL",
+                                        "privacy_policy": "Privacy Policy URL",
                                         "terms": "Terms of Service URL",
                                         "other": "Other Legal Information URL"
                                     },
@@ -4889,7 +4625,7 @@
                                         "name": "Capability Name",
                                         "version": "1.0.0"
                                     },
-                                    "requestsPerHour": "100",
+                                    "requests_per_hour": "100",
                                     "pricing": [
                                         {
                                             "unit": "usdm",
@@ -4915,30 +4651,27 @@
                                         "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
                                                 "name": {
                                                     "type": "string"
                                                 },
-                                                "apiUrl": {
+                                                "api_url": {
                                                     "type": "string"
                                                 },
-                                                "capabilityName": {
+                                                "capability_name": {
                                                     "type": "string"
                                                 },
-                                                "capabilityVersion": {
+                                                "capability_version": {
                                                     "type": "string"
                                                 },
                                                 "description": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
-                                                "requestsPerHour": {
+                                                "requests_per_hour": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
-                                                "privacyPolicy": {
+                                                "privacy_policy": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
@@ -5004,14 +4737,13 @@
                                                 }
                                             },
                                             "required": [
-                                                "id",
                                                 "name",
-                                                "apiUrl",
-                                                "capabilityName",
-                                                "capabilityVersion",
+                                                "api_url",
+                                                "capability_name",
+                                                "capability_version",
                                                 "description",
-                                                "requestsPerHour",
-                                                "privacyPolicy",
+                                                "requests_per_hour",
+                                                "privacy_policy",
                                                 "terms",
                                                 "other",
                                                 "tags",
@@ -5028,15 +4760,14 @@
                                     "example": {
                                         "status": "success",
                                         "data": {
-                                            "id": "cuid2",
-                                            "apiUrl": "api_url",
+                                            "api_url": "api_url",
                                             "tags": [
                                                 "tag1",
                                                 "tag2"
                                             ],
-                                            "capabilityName": "capability_name",
-                                            "capabilityVersion": "capability_version",
-                                            "requestsPerHour": "100",
+                                            "capability_name": "capability_name",
+                                            "capability_version": "capability_version",
+                                            "requests_per_hour": "100",
                                             "Pricing": [
                                                 {
                                                     "unit": "usdm",
@@ -5050,7 +4781,7 @@
                                             "state": "RegistrationRequested",
                                             "description": "description",
                                             "name": "name",
-                                            "privacyPolicy": "link to privacy policy",
+                                            "privacy_policy": "link to privacy policy",
                                             "terms": "link to terms",
                                             "other": "link to other"
                                         }
@@ -5081,7 +4812,7 @@
                         },
                         "required": true,
                         "description": "The identifier of the registration (asset) to be deregistered",
-                        "name": "assetIdentifier",
+                        "name": "assetName",
                         "in": "query"
                     },
                     {
@@ -5124,30 +4855,27 @@
                                         "data": {
                                             "type": "object",
                                             "properties": {
-                                                "id": {
-                                                    "type": "string"
-                                                },
                                                 "name": {
                                                     "type": "string"
                                                 },
-                                                "apiUrl": {
+                                                "api_url": {
                                                     "type": "string"
                                                 },
-                                                "capabilityName": {
+                                                "capability_name": {
                                                     "type": "string"
                                                 },
-                                                "capabilityVersion": {
+                                                "capability_version": {
                                                     "type": "string"
                                                 },
                                                 "description": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
-                                                "requestsPerHour": {
+                                                "requests_per_hour": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
-                                                "privacyPolicy": {
+                                                "privacy_policy": {
                                                     "type": "string",
                                                     "nullable": true
                                                 },
@@ -5213,14 +4941,13 @@
                                                 }
                                             },
                                             "required": [
-                                                "id",
                                                 "name",
-                                                "apiUrl",
-                                                "capabilityName",
-                                                "capabilityVersion",
+                                                "api_url",
+                                                "capability_name",
+                                                "capability_version",
                                                 "description",
-                                                "requestsPerHour",
-                                                "privacyPolicy",
+                                                "requests_per_hour",
+                                                "privacy_policy",
                                                 "terms",
                                                 "other",
                                                 "tags",
@@ -5237,15 +4964,14 @@
                                     "example": {
                                         "status": "success",
                                         "data": {
-                                            "id": "cuid2",
-                                            "apiUrl": "api_url",
+                                            "api_url": "api_url",
                                             "tags": [
                                                 "tag1",
                                                 "tag2"
                                             ],
-                                            "capabilityName": "capability_name",
-                                            "capabilityVersion": "capability_version",
-                                            "requestsPerHour": "100",
+                                            "capability_name": "capability_name",
+                                            "capability_version": "capability_version",
+                                            "requests_per_hour": "100",
                                             "Pricing": [
                                                 {
                                                     "unit": "usdm",
@@ -5259,7 +4985,7 @@
                                             "state": "RegistrationRequested",
                                             "description": "description",
                                             "name": "name",
-                                            "privacyPolicy": "link to privacy policy",
+                                            "privacy_policy": "link to privacy policy",
                                             "terms": "link to terms",
                                             "other": "link to other"
                                         }

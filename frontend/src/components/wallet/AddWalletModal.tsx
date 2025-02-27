@@ -88,7 +88,7 @@ export function AddWalletModal({ type, onClose, contractId }: AddWalletModalProp
             className="w-full min-h-[100px] p-2 rounded-md bg-background border"
             value={mnemonic}
             onChange={(e) => setMnemonic(e.target.value)}
-            placeholder="Enter your 24-word mnemonic phrase"
+            placeholder="Enter your mnemonic phrase"
             required
           />
         </div>

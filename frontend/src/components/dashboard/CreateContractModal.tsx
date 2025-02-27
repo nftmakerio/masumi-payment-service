@@ -3,15 +3,16 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useAppContext } from "@/lib/contexts/AppContext";
 import { X } from "lucide-react";
-import { postPaymentSource, getPaymentSource } from "@/lib/api/generated";
+import { createPaymentSource } from "@/lib/api/create-payment-source";
+import { getPaymentSources } from "@/lib/api/payment-source";
 
 type CreateContractModalProps = {
   onClose: () => void;
 }
 
 type FormData = {
-  network: 'Mainnet' | 'Preprod';
-  paymentType: 'Web3CardanoV1';
+  network: 'MAINNET' | 'PREPROD';
+  paymentType: string;
   blockfrostApiKey: string;
   adminWallets: { walletAddress: string }[];
   feeReceiverWallet: { walletAddress: string };
@@ -31,8 +32,8 @@ type FormData = {
 }
 
 const initialFormData: FormData = {
-  network: 'Preprod',
-  paymentType: 'Web3CardanoV1',
+  network: 'PREPROD',
+  paymentType: 'WEB3_CARDANO_V1',
   blockfrostApiKey: '',
   adminWallets: [{ walletAddress: '' }],
   feeReceiverWallet: { walletAddress: '' },
@@ -44,16 +45,14 @@ const initialFormData: FormData = {
 
 export function CreateContractModal({ onClose }: CreateContractModalProps) {
   const { state } = useAppContext();
-  const defaultBlockfrostApiKey = state.paymentSources?.[0]?.NetworkHandlerConfig?.rpcProviderApiKey || '';
-
+  
   const [formData, setFormData] = useState<FormData>({
     ...initialFormData,
-    blockfrostApiKey: defaultBlockfrostApiKey
   });
+
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { dispatch } = useAppContext();
-  const { apiClient } = useAppContext();
 
   const handleAdd = async () => {
     setError('');
@@ -80,52 +79,27 @@ export function CreateContractModal({ onClose }: CreateContractModalProps) {
         return;
       }
 
-      if (formData.adminWallets.length != 3) {
-        setError('At least 3 admin wallets are required');
-        return;
-      }
+      const payload = {
+        network: formData.network,
+        paymentType: formData.paymentType,
+        blockfrostApiKey: formData.blockfrostApiKey,
+        AdminWallets: formData.adminWallets.filter(w => w.walletAddress.trim()),
+        FeeReceiverNetworkWallet: formData.feeReceiverWallet,
+        FeePermille: formData.feePermille,
+        CollectionWallet: formData.collectionWallet,
+        PurchasingWallets: formData.purchasingWallets.filter(w => w.walletMnemonic.trim()),
+        SellingWallets: formData.sellingWallets.filter(w => w.walletMnemonic.trim())
+      };
 
-      await postPaymentSource({
-        client: apiClient,
-        body: {
-          AdminWallets: formData.adminWallets.filter(w => w.walletAddress.trim()).slice(0, 3) as [
-            { walletAddress: string },
-            { walletAddress: string },
-            { walletAddress: string }
-          ],
-          network: formData.network,
-          paymentType: formData.paymentType,
-          feeRatePermille: formData.feePermille,
-          FeeReceiverNetworkWallet: formData.feeReceiverWallet,
-          PurchasingWallets: formData.purchasingWallets.filter(w => w.walletMnemonic.trim()).map(w => ({
-            walletMnemonic: w.walletMnemonic,
-            collectionAddress: formData.collectionWallet.walletAddress.trim(),
-            note: w.note || ''
-          })),
-          SellingWallets: formData.sellingWallets.filter(w => w.walletMnemonic.trim()).map(w => ({
-            walletMnemonic: w.walletMnemonic,
-            collectionAddress: formData.collectionWallet.walletAddress.trim(),
-            note: w.note || ''
-          })),
-          PaymentSourceConfig: {
-            rpcProviderApiKey: formData.blockfrostApiKey,
-            rpcProvider: 'Blockfrost'
-          },
-        }
-      });
+      await createPaymentSource(payload, state.apiKey!);
 
-      //TODO: refetch all
-      const sourcesData = await getPaymentSource({
-        client: apiClient,
-        query: {
-          cursorId: undefined,
-          take: 100,
-        }
-      });
+
+
+      const sourcesData = await getPaymentSources(state.apiKey!);
 
       dispatch({
         type: 'SET_PAYMENT_SOURCES',
-        payload: sourcesData?.data?.data?.paymentSources || []
+        payload: sourcesData?.data?.paymentSources || []
       });
 
       onClose();
@@ -183,7 +157,7 @@ export function CreateContractModal({ onClose }: CreateContractModalProps) {
                 <select
                   className="w-full p-2 rounded-md bg-background border"
                   value={formData.network}
-                  onChange={(e) => setFormData({ ...formData, network: e.target.value as 'Mainnet' | 'Preprod' })}
+                  onChange={(e) => setFormData({ ...formData, network: e.target.value as 'MAINNET' | 'PREPROD' })}
                 >
                   <option value="PREPROD">Preprod</option>
                   <option value="MAINNET">Mainnet</option>
@@ -199,8 +173,8 @@ export function CreateContractModal({ onClose }: CreateContractModalProps) {
                   className="w-full p-2 rounded-md bg-background border"
                   value={formData.blockfrostApiKey}
                   onChange={(e) => setFormData({ ...formData, blockfrostApiKey: e.target.value })}
-                  placeholder="Using default Blockfrost API key"
-                  disabled={state.paymentSources?.[0]?.NetworkHandlerConfig?.rpcProviderApiKey == undefined}
+                  placeholder={`${formData.network} Blockfrost API key`}
+                  required
                 />
               </div>
 

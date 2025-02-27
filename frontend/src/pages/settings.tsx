@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Switch } from "@/components/ui/switch";
 import { getApiKey, GetApiKeyResponse, deleteApiKey, patchApiKey } from "@/lib/api/generated";
 
-
 export default function Settings() {
   const [showApiKey, setShowApiKey] = useState(false);
   const { state, dispatch } = useAppContext();
@@ -26,6 +25,7 @@ export default function Settings() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedKey, setSelectedKey] = useState<GetApiKeyResponse['data']['apiKeys'][0] | null>(null);
   const { apiClient } = useAppContext();
+
 
   const fetchApiKeys = useCallback(async (cursorId?: string) => {
     setIsLoading(true);
@@ -120,6 +120,17 @@ export default function Settings() {
     }
   };
 
+  const handleCopyToken = async (token: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(token);
+      toast.success('Token copied to clipboard', { theme: "dark" });
+    } catch (error) {
+      console.error('Failed to copy token:', error);
+      toast.error('Failed to copy token', { theme: "dark" });
+    }
+  };
+
   return (
     <MainLayout>
       <div className="flex flex-col gap-4">
@@ -177,7 +188,7 @@ export default function Settings() {
                   <thead>
                     <tr>
                       <th className="text-left py-2">Key Name</th>
-                      <th className="text-left py-2">Value (hover to expose)</th>
+                      <th className="text-left py-2">Value (hover to expose, click to copy)</th>
                       <th className="text-left py-2">Status</th>
                       <th className="text-left py-2">Usage Credits</th>
                       {/* <th className="text-right py-2">Actions</th> */}
@@ -192,14 +203,16 @@ export default function Settings() {
                       >
                         <td className="py-2">{key.permission}</td>
                         <td
-                          className="py-2 font-mono"
+                          className="py-2 font-mono cursor-copy"
                           onMouseEnter={() => setHoveredKey(key.token)}
                           onMouseLeave={() => setHoveredKey(null)}
+                          onClick={(e) => handleCopyToken(key.token, e)}
+                          title="Click to copy"
                         >
                           {hoveredKey === key.token ? key.token : "•".repeat(32)}
                         </td>
                         <td className="py-2">
-                          <span className={`px-2 py-1 rounded-full text-sm ${key.status === "Active"
+                          <span className={`px-2 py-1 rounded-full text-sm ${key.status?.toLowerCase() === "active"
                             ? "bg-green-100 text-green-800"
                             : "bg-red-300 text-red-800"
                             }`}>
@@ -301,7 +314,7 @@ export default function Settings() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <Switch
+            <Switch
                 checked={selectedKey?.status === "Active"}
                 onCheckedChange={async () => {
                   if (!selectedKey) return;

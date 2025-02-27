@@ -85,13 +85,13 @@ body {
   }
 }
 
-nextjs-portal {
+/* nextjs-portal {
   display: none !important;
 
   * {
     display: none !important;
   }
-}
+} */
 
 #transakRoot{
   background-color: #000a !important;
@@ -99,4 +99,29 @@ nextjs-portal {
 
 #main-content{
   overflow-y: scroll !important;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+@keyframes bounceBottom {
+  0% {
+    transform: translateY(100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-bounce-bottom {
+  animation: bounceBottom 0.3s ease forwards;
 }

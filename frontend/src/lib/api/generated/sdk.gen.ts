@@ -38,8 +38,6 @@ import type {
   PostPurchaseRequestRefundResponse,
   PostPurchaseCancelRefundRequestData,
   PostPurchaseCancelRefundRequestResponse,
-  GetRegistryWalletData,
-  GetRegistryWalletResponse,
   DeleteRegistryData,
   DeleteRegistryResponse,
   GetRegistryData,
@@ -482,29 +480,6 @@ export const postPurchaseCancelRefundRequest = <
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-};
-
-/**
- * REQUIRES API KEY Authentication (+READ)
- * Gets the agent metadata.
- */
-export const getRegistryWallet = <ThrowOnError extends boolean = false>(
-  options: Options<GetRegistryWalletData, ThrowOnError>,
-) => {
-  return (options.client ?? _heyApiClient).get<
-    GetRegistryWalletResponse,
-    unknown,
-    ThrowOnError
-  >({
-    security: [
-      {
-        name: 'token',
-        type: 'apiKey',
-      },
-    ],
-    url: '/registry/wallet',
-    ...options,
   });
 };
 
