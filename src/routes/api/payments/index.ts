@@ -354,8 +354,8 @@ export const paymentInitPost = readAuthenticatedEndpointFactory.build({
     );
     const assetId = input.agentIdentifier;
     const policyAsset = assetId.startsWith(policyId)
-      ? assetId
-      : policyId + assetId;
+      ? policyId + assetId
+      : assetId;
     const assetInWallet = await provider.assetsAddresses(policyAsset, {
       order: 'desc',
       count: 1,
