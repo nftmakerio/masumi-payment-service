@@ -385,11 +385,11 @@ export const createPurchaseInitPost = payAuthenticatedEndpointFactory.build({
       throw createHttpError(404, 'No valid purchasing wallets found');
     }
     //require at least 3 hours between unlock time and the submit result time
-    const additionalRefundTime = BigInt(1000 * 60 * 15);
+    const additionalexternalDisputeUnlockTime = BigInt(1000 * 60 * 15);
     const submitResultTime = BigInt(input.submitResultTime);
     const unlockTime = BigInt(input.unlockTime);
     const externalDisputeUnlockTime = BigInt(input.externalDisputeUnlockTime);
-    if (externalDisputeUnlockTime < unlockTime + additionalRefundTime) {
+    if (externalDisputeUnlockTime < unlockTime + additionalexternalDisputeUnlockTime) {
       throw createHttpError(
         400,
         'Refund request time must be after unlock time with at least 15 minutes difference',

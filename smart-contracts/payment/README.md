@@ -112,7 +112,7 @@ The flow has several key phases:
      jobId: "your-encrypted-job-id",  // Which job this is for
      resultHash: "",                  // Will be filled when work is done
      unlockTime: 0,                   // When seller can take the money
-     refundTime: 0,                   // When refunds auto-approve
+     externalDisputeUnlockTime: 0,    // When refunds auto-approve
      refundRequested: false,          // Has buyer asked for money back
      refundDenied: false             // Has seller said no to refund
    };
@@ -176,7 +176,7 @@ When your job is complete, there's a carefully designed process to ensure everyo
            jobId,
            resultHash,     // This proves what you received is real
            unlockTime,
-           refundTime,
+           externalDisputeUnlockTime,
            false,         // No refund requested
            false          // No refund denied
          ]
@@ -278,7 +278,7 @@ Sometimes things don't go as planned. Here's how the refund process works:
    a) **Auto-Approval** (after 3 days of no response):
    ```typescript
    // Check if refund is auto-approved
-   const isAutoApproved = currentTime > refundTime && 
+   const isAutoApproved = currentTime > externalDisputeUnlockTime && 
                          datum.refundRequested && 
                          !datum.refundDenied;
 

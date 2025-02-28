@@ -19,7 +19,7 @@ export async function lockAndQueryPayments({
   onChainState?: OnChainState | { in: OnChainState[] } | undefined;
   resultHash?: string | { not: string } | undefined;
   requestedResultHash?: string | { not: null } | undefined;
-  refundTime?: { lte: number } | undefined | { gte: number };
+  externalDisputeUnlockTime?: { lte: number } | undefined | { gte: number };
   unlockTime?: { lte: number } | undefined | { gte: number };
   smartContractWalletPendingTransaction?: undefined | null | string;
 }) {
